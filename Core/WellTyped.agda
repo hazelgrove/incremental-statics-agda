@@ -28,11 +28,12 @@ data MergeInfo : NewType -> NewType -> NewType -> Set where
     MergeInfo (t1 , n1) (t2 , New) (t2 , New)
   MergeInfoOld : ∀ {t1 n1} -> 
     MergeInfo (t1 , n1) (t1 , Old) (t1 , n1)
-  MergeInfoArrow : ∀ {t1 t2 t3 t4 t5 t6 n n1 n2 n3 n4 n5 n6} -> 
+  MergeInfoArrow : ∀ {t1 t2 t3 t4 t5 t6 n n1 n2 n3 n4 n5 n6 n7} -> 
     n ▸NArrow n1 , n2 ->
     MergeInfo (t1 , n1) (t3 , n3) (t5 , n5) ->
     MergeInfo (t2 , n2) (t4 , n4) (t6 , n6) ->
-    MergeInfo (TArrow t1 t2 , n) (TArrow t3 t4 , NArrow n3 n4) (TArrow t5 t6 , narrow n5 n6)
+    narrow n5 n6 ≡ n7 ->
+    MergeInfo (TArrow t1 t2 , n) (TArrow t3 t4 , NArrow n3 n4) (TArrow t5 t6 , n7)
 
 mutual 
   data _⊢_⇒_ : (Γ : Ctx) (e : ExpUp) (t : NewType) → Set where 
@@ -42,9 +43,10 @@ mutual
     SynHole : ∀ {Γ info syn} ->
       MergeInfo info (THole , Old) syn -> 
       Γ ⊢ (EUp (⇑ info) EHole) ⇒ syn
-    SynFun : ∀ {Γ info t1 t2 n1 n2 syn e} ->
+    SynFun : ∀ {Γ info t1 t2 n1 n2 n3 syn e} ->
       ((t1 , n1) , Γ) ⊢ e ⇒ (t2 , n2) ->
-      MergeInfo info (TArrow t1 t2 , narrow n1 n2) syn -> 
+      narrow n1 n2 ≡ n3 ->
+      MergeInfo info (TArrow t1 t2 , n3) syn -> 
       Γ ⊢ (EUp (⇑ info) (EFun (t1 , n1) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ syn
     SynFunVoid : ∀ {Γ t1 t2 n1 n2 ana e} ->
       ((t1 , n1) , Γ) ⊢ e ⇒ (t2 , n2) ->
@@ -56,6 +58,13 @@ mutual
       Γ ⊢ e2 ⇐ (t1 , n1) ->
       MergeInfo info (t2 , n2) syn -> 
       Γ ⊢ (EUp (⇑ info) (EAp (ELow ̸⇓ Unmarked e1) Unmarked e2)) ⇒ syn
+    SynApFail : ∀ {Γ info t n n1 n2 e1 e2 syn} ->
+      Γ ⊢ e1 ⇒ (t , n) ->
+      t ̸▸TArrow ->
+      n ▸NArrow n1 , n2 ->
+      Γ ⊢ e2 ⇐ (THole , n1) ->
+      MergeInfo info (THole , n2) syn -> 
+      Γ ⊢ (EUp (⇑ info) (EAp (ELow ̸⇓ Unmarked e1) Marked e2)) ⇒ syn
     SynVar : ∀ {Γ info x t syn} ->
       x , t ∈ Γ ->
       MergeInfo info t syn -> 
@@ -102,3 +111,19 @@ mutual
       ((tasc , nasc) , Γ) ⊢ e ⇒ syn ->
       MergeInfo syn-info syn syn-info' -> 
       Γ ⊢ (ELow (⇓ ana-info) Marked (EUp (⇑ syn-info) (EFun (tasc , nasc) Unmarked (ELow ̸⇓ Unmarked e)))) ⇐ ana
+
+-- syn-consist : ∀ {Γ t n e t' n'} ->
+--   Γ ⊢ EUp (⇑ (t , n)) e ⇒ (t' , n') -> 
+--   t ≡ t'
+-- syn-consist (SynConst MergeInfoOld) = refl
+-- syn-consist (SynHole MergeInfoOld) = refl
+-- syn-consist {t = TBase} (SynFun {n1 = Old} {n2 = Old} syn ())
+-- syn-consist {t = TBase} (SynFun {n1 = Old} {n2 = New} syn ())
+-- syn-consist {t = TBase} (SynFun {n1 = Old} {n2 = NArrow n2 n3} syn ())
+-- syn-consist {t = TBase} (SynFun {n1 = New} {n2 = New} syn MergeInfoNew) = {!   !}
+-- syn-consist {t = THole} (SynFun {n1 = n1} {n2 = n2} syn x) = {!   !}
+-- syn-consist {t = TArrow t t₁} (SynFun syn x) = {!   !}
+-- syn-consist (SynAp syn x x₁ x₂ x₃) = {!   !}
+-- syn-consist (SynVar x x₁) = {!   !}
+-- syn-consist (SynVarFail x x₁) = {!   !}
+-- syn-consist (SynAsc x x₁) = {!   !}

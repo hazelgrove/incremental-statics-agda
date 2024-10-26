@@ -105,13 +105,19 @@ data _U↦_ : ExpUp -> ExpUp -> Set where
   StepVoidSynFun : ∀ {t1 n1 m t2 n2 e} ->
     EUp ̸⇑ (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , n2)) e))) U↦
     EUp (⇑ (TArrow t1 t2 , New)) (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , Old)) e)))
-  -- Ap Step
+  -- Ap Steps
   StepAp : ∀ {t n t1 t2 n1 n2 syn ana e1 e2 m1 m2} ->
     IsNew n ->
     t ▸TArrow t1 , t2 ->
     n ▸NArrow n1 , n2 ->
     EUp syn (EAp (ELow ̸⇓ Unmarked (EUp (⇑ (t , n)) e1)) m1 (ELow ana m2 e2)) U↦
-    EUp (⇑ (t1 , n1)) (EAp (ELow ̸⇓ Unmarked (EUp (⇑ (t , Old)) e1)) Unmarked (ELow (⇓ (t1 , n1)) m2 e2))
+    EUp (⇑ (t2 , n2)) (EAp (ELow ̸⇓ Unmarked (EUp (⇑ (t , Old)) e1)) Unmarked (ELow (⇓ (t1 , n1)) m2 e2))
+  StepApFail : ∀ {t n n1 n2 syn ana e1 e2 m1 m2} ->
+    IsNew n ->
+    t ̸▸TArrow ->
+    n ▸NArrow n1 , n2 ->
+    EUp syn (EAp (ELow ̸⇓ Unmarked (EUp (⇑ (t , n)) e1)) m1 (ELow ana m2 e2)) U↦
+    EUp (⇑ (THole , n2)) (EAp (ELow ̸⇓ Unmarked (EUp (⇑ (t , Old)) e1)) Marked (ELow (⇓ (THole , n1)) m2 e2))
   -- Asc Step
   StepAsc : ∀ {syn t n ana m e} ->
     IsNew n ->
