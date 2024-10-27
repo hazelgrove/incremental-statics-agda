@@ -74,6 +74,25 @@ syn-child2 (SynVarFail x m) s with m
 syn-child2 (SynAsc x m) (SettledSynExceptAsc x₂) with m 
 ... | MergeInfoOld = refl
 
+syn-child3 : ∀ {Γ e t n} ->
+  Γ ⊢ e ⇒ (t , n) -> 
+  SettledSynExcept Γ e ->
+  Σ[ n' ∈ Newness ] Σ[ e' ∈ ExpMid ] e ≡ EUp (⇑ (t , n')) e'
+syn-child3 (SynConst MergeInfoOld) s = _ , _ , refl
+syn-child3 (SynHole MergeInfoOld) s = _ , _ , refl
+syn-child3 (SynFun syn eq m) (SettledSynExceptFun s) rewrite (settled-syn-old syn s) rewrite (sym eq) with m 
+... | MergeInfoOld = _ , _ , refl
+syn-child3 (SynAp syn x mn x₂ m) (SettledSynExceptAp s _) rewrite (settled-syn-old syn s) with mn | m
+... | MNArrowOld | MergeInfoOld = _ , _ , refl
+syn-child3 (SynApFail syn x mn x₂ m) (SettledSynExceptAp s _) rewrite (settled-syn-old syn s) with mn | m
+... | MNArrowOld | MergeInfoOld = _ , _ , refl
+syn-child3 (SynVar ctx1 m) (SettledSynExceptVar (Inl ctx2)) rewrite (ctx-unique ctx1 ctx2) with m 
+... | MergeInfoOld = _ , _ , refl
+syn-child3 (SynVar ctx _) (SettledSynExceptVar (Inr notin)) = ⊥-elim (notin ctx)
+syn-child3 (SynVarFail x m) s with m 
+... | MergeInfoOld = _ , _ , refl
+syn-child3 (SynAsc x m) (SettledSynExceptAsc x₂) with m 
+... | MergeInfoOld = _ , _ , refl
 
 settle-no-except : ∀ {Γ t e} ->
   SettledSynExcept Γ (EUp (⇑ (t , Old)) e) ->
@@ -135,6 +154,7 @@ mutual
   
   StepsOrSettledSyn : 
     ∀ {Γ e} ->
+    -- AllOld Γ ->
     Σ[ t ∈ NewType ] (Γ ⊢ e ⇒ t) ->
     Σ[ e' ∈ ExpUp ] (e Up↦ e') + (SettledSynExcept Γ e)
   StepsOrSettledSyn (t , SynConst _) = Inr SettledSynExceptConst
@@ -146,13 +166,25 @@ mutual
   StepsOrSettledSyn (t , SynAp syn mt mn ana m) | Inl (e1' , StepLow fill1 step fill2) | ssana = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2))))
   StepsOrSettledSyn (t , SynAp syn mt mn ana m) | Inr s1 | Inl (e2' , StepUp fill1 step fill2) = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvAp2 fill1)) step (FillUEnvUpRec (FillUEnvAp2 fill2)))
   StepsOrSettledSyn (t , SynAp syn mt mn ana m) | Inr s1 | Inl (e2' , StepLow fill1 step fill2) = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2)))
-  StepsOrSettledSyn (t , SynAp syn mt mn ana m) | Inr s1 | Inr s2 with syn-child syn s1 
-  StepsOrSettledSyn (t , SynAp {e2 = (ELow _ _ _)} syn mt mn ana m) | Inr s1 | Inr s2 | (_ , New) , _ , refl = Inl (_ , StepUp FillU⊙ (StepAp IsNewNew {!   !} {!   !}) FillU⊙)
-  StepsOrSettledSyn (t , SynAp syn mt mn ana m) | Inr s1 | Inr s2 | (_ , NArrow n n₁) , _ , refl = {!   !}
-  StepsOrSettledSyn (t , SynAp syn mt mn ana m) | Inr s1 | Inr s2 | (_ , Old) , _ , refl = Inr (SettledSynExceptAp (settle-no-except s1) s2)
-  StepsOrSettledSyn (t , SynApFail syn mt mn ana m) = {!   !}
-  StepsOrSettledSyn (t , SynVar _ _) = {!   !} -- Inr (SettledSynExceptVar ?)
-  StepsOrSettledSyn (t , SynVarFail _ _) = {!   !} -- Inr (SettledSynExceptVar ?)
+  StepsOrSettledSyn (t , SynAp syn mt mn ana m) | Inr s1 | Inr s2 with syn-child3 syn s1 
+  StepsOrSettledSyn (t , SynAp {e2 = (ELow _ _ _)} syn mt mn ana m) | Inr s1 | Inr s2 | New , _ , refl = Inl (_ , StepUp FillU⊙ (StepAp IsNewNew mt MNArrowNew) FillU⊙)
+  StepsOrSettledSyn (t , SynAp {e2 = (ELow _ _ _)} syn mt mn ana m) | Inr s1 | Inr s2 | NArrow n n₁ , _ , refl = Inl (_ , StepUp FillU⊙ (StepAp IsNewArrow mt MNArrowArrow) FillU⊙)
+  StepsOrSettledSyn (t , SynAp syn mt mn ana m) | Inr s1 | Inr s2 | Old , _ , refl = Inr (SettledSynExceptAp (settle-no-except s1) s2)
+  StepsOrSettledSyn (t , SynApFail syn mt mn ana m) with StepsOrSettledSyn (_ , syn) | StepsOrSettledAna ana 
+  StepsOrSettledSyn (t , SynApFail syn mt mn ana m) | Inl (e1' , StepUp fill1 step fill2) | ssana = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill2))))
+  StepsOrSettledSyn (t , SynApFail syn mt mn ana m) | Inl (e1' , StepLow fill1 step fill2) | ssana = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2))))
+  StepsOrSettledSyn (t , SynApFail syn mt mn ana m) | Inr s1 | Inl (e2' , StepUp fill1 step fill2) = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvAp2 fill1)) step (FillUEnvUpRec (FillUEnvAp2 fill2)))
+  StepsOrSettledSyn (t , SynApFail syn mt mn ana m) | Inr s1 | Inl (e2' , StepLow fill1 step fill2) = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2)))
+  StepsOrSettledSyn (t , SynApFail syn mt mn ana m) | Inr s1 | Inr s2 with syn-child3 syn s1 
+  StepsOrSettledSyn (t , SynApFail {e2 = (ELow _ _ _)} syn mt mn ana m) | Inr s1 | Inr s2 | New , _ , refl = Inl (_ , StepUp FillU⊙ (StepApFail IsNewNew mt MNArrowNew) FillU⊙)
+  StepsOrSettledSyn (t , SynApFail {e2 = (ELow _ _ _)} syn mt mn ana m) | Inr s1 | Inr s2 | NArrow n n₁ , _ , refl = Inl (_ , StepUp FillU⊙ (StepApFail IsNewArrow mt MNArrowArrow) FillU⊙)
+  StepsOrSettledSyn (t , SynApFail syn mt mn ana m) | Inr s1 | Inr s2 | Old , _ , refl = Inr (SettledSynExceptAp (settle-no-except s1) s2)
+  -- StepsOrSettledSyn (t , SynVar {info = _ , New} _ _) = {! Inr (SettledSynExceptVar ?)  !}
+  -- StepsOrSettledSyn (t , SynVar {info = _ , NArrow n n₁} _ _) = {!   !} --Inr (SettledSynExceptVar ?)
+  StepsOrSettledSyn (t , SynVar {t = _ , New} ctx _) = {!   !}
+  StepsOrSettledSyn (t , SynVar {t = _ , NArrow n n₁} ctx _) = {!   !}
+  StepsOrSettledSyn (t , SynVar {t = _ , Old} ctx _) = Inr (SettledSynExceptVar (Inl ctx))
+  StepsOrSettledSyn (t , SynVarFail notin _) = Inr (SettledSynExceptVar {t1 = THole} (Inr notin)) 
   StepsOrSettledSyn (t , SynAsc ana _) with StepsOrSettledAna ana
   StepsOrSettledSyn (t , SynAsc ana _) | Inl (_ , StepUp fill1 step fill2) = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvAsc fill1)) step (FillUEnvUpRec (FillUEnvAsc fill2)))
   StepsOrSettledSyn (t , SynAsc ana _) | Inl (_ , StepLow fill1 step fill2) = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc fill2)))
@@ -162,6 +194,6 @@ mutual
  
   StepsOrSettledAna :  
     ∀ {Γ e t} ->
-    (Γ ⊢ e ⇐ t) ->   
+    (Γ ⊢ e ⇐ t) ->     
     Σ[ e' ∈ ExpLow ] (e Low↦ e') + (SettledAna Γ e)
   StepsOrSettledAna ana = {!   !}     

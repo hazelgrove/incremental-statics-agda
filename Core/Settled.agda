@@ -122,9 +122,9 @@ data SettledSynExcept : Ctx -> ExpUp -> Set where
     SettledSyn Γ e1 -> 
     SettledAna Γ e2 -> 
     SettledSynExcept Γ (EUp (⇑ (t , n)) (EAp (ELow ̸⇓ m1 e1) m2 e2))
-  SettledSynExceptVar : ∀ {Γ t1 t2 x m} ->
+  SettledSynExceptVar : ∀ {Γ t1 t2 x m n} ->
     ((x , (t1 , Old) ∈ Γ) + (x ̸∈ Γ)) ->
-    SettledSynExcept Γ (EUp (⇑ (t2 , Old)) (EVar x m))
+    SettledSynExcept Γ (EUp (⇑ (t2 , n)) (EVar x m))
   -- SettledSynExceptVarFail : ∀ {Γ t x m} ->
   --   x ̸∈ Γ ->
   --   SettledSynExcept Γ (EUp (⇑ (t , Old)) (EVar x m))
