@@ -11,9 +11,6 @@ open import Core.Core
 
 module Core.Settled where
 
-Ctx : Set 
-Ctx = Context NewType
-
 data Settled : ExpUp -> Set where 
   SettledConst : ∀ {t} ->
     Settled (EUp (⇑ (t , Old)) EConst)

@@ -128,3 +128,6 @@ data _,_∈_ {A : Set} : ℕ → A → (Context A) → Set where
 
 _̸∈_ : ∀ {A} -> ℕ → (Context A) → Set
 x ̸∈ Γ = ∀ {t} -> ¬(x , t ∈ Γ)
+
+Ctx : Set 
+Ctx = Context NewType

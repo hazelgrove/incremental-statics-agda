@@ -1,13 +1,7 @@
-(Well-formed predicate)
-Well-typed predicate
-Settled predicate
-Marked exp -> bare exp
-Bare exp -> marked exp (from scratch marking)
-
-Actions and update steps preserve well-typedness
-Settled, well-typed -> agrees with from-scratch
-Either settled or can step 
-Termination :)
+Preservation: actions and update steps preserve well-typedness
+Progress: each well-typed program either can step or is settled 
+Correctness: each well-typed, settled program agrees with from-scratch marking 
+Termination: a program cannot update step forever 
 
 Now the original big theorem follows from action commutativity
 Which I don't even know how I'd express honestly

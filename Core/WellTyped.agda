@@ -11,9 +11,6 @@ open import Core.Core
 
 module Core.WellTyped where
 
-Ctx : Set 
-Ctx = Context NewType
-
 -- MergeInfo (t1 , n1) (t2 , n2) (t3 , n3) holds with:
 -- (t1 , n1) is the stored info
 -- (t2 , n2) is the calculated true info 
@@ -48,9 +45,9 @@ mutual
       narrow n1 n2 ≡ n3 ->
       MergeInfo info (TArrow t1 t2 , n3) syn -> 
       Γ ⊢ (EUp (⇑ info) (EFun (t1 , n1) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ syn
-    SynFunVoid : ∀ {Γ t1 t2 n1 n2 ana e} ->
+    SynFunVoid : ∀ {Γ t1 t2 n1 n2 e} ->
       ((t1 , n1) , Γ) ⊢ e ⇒ (t2 , n2) ->
-      Γ ⊢ (EUp ̸⇑ (EFun (t1 , n1) Unmarked (ELow ana Unmarked e))) ⇒ (TArrow t1 t2 , New)
+      Γ ⊢ (EUp ̸⇑ (EFun (t1 , n1) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ (TArrow t1 t2 , New)
     SynAp : ∀ {Γ info t t1 t2 n n1 n2 e1 e2 syn} ->
       Γ ⊢ e1 ⇒ (t , n) ->
       t ▸TArrow t1 , t2 ->
@@ -111,19 +108,3 @@ mutual
       ((tasc , nasc) , Γ) ⊢ e ⇒ syn ->
       MergeInfo syn-info syn syn-info' -> 
       Γ ⊢ (ELow (⇓ ana-info) Marked (EUp (⇑ syn-info) (EFun (tasc , nasc) Unmarked (ELow ̸⇓ Unmarked e)))) ⇐ ana
-
--- syn-consist : ∀ {Γ t n e t' n'} ->
---   Γ ⊢ EUp (⇑ (t , n)) e ⇒ (t' , n') -> 
---   t ≡ t'
--- syn-consist (SynConst MergeInfoOld) = refl
--- syn-consist (SynHole MergeInfoOld) = refl
--- syn-consist {t = TBase} (SynFun {n1 = Old} {n2 = Old} syn ())
--- syn-consist {t = TBase} (SynFun {n1 = Old} {n2 = New} syn ())
--- syn-consist {t = TBase} (SynFun {n1 = Old} {n2 = NArrow n2 n3} syn ())
--- syn-consist {t = TBase} (SynFun {n1 = New} {n2 = New} syn MergeInfoNew) = {!   !}
--- syn-consist {t = THole} (SynFun {n1 = n1} {n2 = n2} syn x) = {!   !}
--- syn-consist {t = TArrow t t₁} (SynFun syn x) = {!   !}
--- syn-consist (SynAp syn x x₁ x₂ x₃) = {!   !}
--- syn-consist (SynVar x x₁) = {!   !}
--- syn-consist (SynVarFail x x₁) = {!   !}
--- syn-consist (SynAsc x x₁) = {!   !}

@@ -12,10 +12,10 @@ open import Core.Core
 
 module Core.Lemmas-Context where
 
-  ctx-unique : ∀ {A} -> ∀ {Γ : Context A} -> ∀ {t1 t2 x} -> 
+  ctx-unicity : ∀ {A} -> ∀ {Γ : Context A} -> ∀ {t1 t2 x} -> 
     (x , t1 ∈ Γ) ->
     (x , t2 ∈ Γ) ->
     t1 ≡ t2 
-  ctx-unique {Γ = ∅} () () 
-  ctx-unique {Γ = x , Γ} InCtx0 InCtx0 = refl
-  ctx-unique {Γ = x , Γ} (InCtxSuc in1) (InCtxSuc in2) = ctx-unique in1 in2
+  ctx-unicity {Γ = ∅} () () 
+  ctx-unicity {Γ = x , Γ} InCtx0 InCtx0 = refl
+  ctx-unicity {Γ = x , Γ} (InCtxSuc in1) (InCtxSuc in2) = ctx-unicity in1 in2
