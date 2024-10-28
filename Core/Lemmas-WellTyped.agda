@@ -50,6 +50,14 @@ module Core.Lemmas-WellTyped where
   oldify-merge MergeInfoOld = Old , MergeInfoOld
   oldify-merge (MergeInfoArrow x m1 m2 x₁) with oldify-merge m1 | oldify-merge m2 
   ... | n1 , m1' | n2 , m2' = narrow n1 n2 , MergeInfoArrow MNArrowOld m1' m2' refl
+  
+  merge-same : 
+    ∀ {t1 t2 t3 n1 n2 n3} ->
+    MergeInfo (t1 , n1) (t2 , n2) (t3 , n3) -> 
+    t2 ≡ t3
+  merge-same MergeInfoNew = refl
+  merge-same MergeInfoOld = refl
+  merge-same (MergeInfoArrow x m m₁ x₁) rewrite (merge-same m) rewrite (merge-same m₁) = refl
 
   syn-unicity : 
     ∀ {Γ e t1 t2} ->

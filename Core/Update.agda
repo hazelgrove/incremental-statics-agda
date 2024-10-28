@@ -8,8 +8,16 @@ open import Relation.Binary.PropositionalEquality hiding (inspect)
 open import Prelude
 
 open import Core.Core
+open import Core.WellTyped
 
 module Core.Update where
+
+-- data MergeSyn : SynData -> NewType -> SynData -> Set where 
+--   MergeSynVoid : ∀ {syn} -> 
+--     MergeSyn ̸⇑ syn (⇑ syn)
+--   MergeSynMerge : ∀ {t1 n1} -> 
+--     MergeInfo syn1 syn2 syn3 ->
+--     MergeSyn (⇑ syn1) syn2 (⇑ syn3)
 
 data VarsSynthesize : ℕ -> NewType -> ExpUp -> ExpUp -> Set where 
   VSConst : ∀ {x t syn} ->
@@ -117,10 +125,12 @@ data _U↦_ : ExpUp -> ExpUp -> Set where
     EUp syn (EAp (ELow ̸⇓ Unmarked (EUp (⇑ (t , n)) e1)) m1 (ELow ana m2 e2)) U↦
     EUp (⇑ (THole , n2)) (EAp (ELow ̸⇓ Unmarked (EUp (⇑ (t , Old)) e1)) Marked (ELow (⇓ (THole , n1)) m2 e2))
   -- Asc Step
-  StepAsc : ∀ {syn t n ana m e} ->
+  StepAsc : ∀ {syn syn' t n ana ana' m e} ->
     IsNew n ->
-    EUp syn (EAsc (t , n) (ELow ana m e)) U↦
-    EUp (⇑ (t , n)) (EAsc (t , Old) (ELow (⇓ (t , n)) m e))
+    MergeInfo syn (t , n) syn' -> 
+    MergeInfo ana (t , n) ana' -> 
+    EUp (⇑ syn) (EAsc (t , n) (ELow (⇓ ana) m e)) U↦
+    EUp (⇑ syn') (EAsc (t , Old) (ELow (⇓ ana') m e))
 
 mutual 
 

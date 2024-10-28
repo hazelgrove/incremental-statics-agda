@@ -165,6 +165,22 @@ module Core.Preservation where
   oldify-syn (SynAsc x m) with oldify-merge m 
   ... | n , m' = n , SynAsc x m'
 
+  merge-lemma : 
+    ∀ {syn syn' t t' n} ->
+    MergeInfo syn (t , n) t' ->
+    MergeInfo syn (t , n) syn' ->
+    MergeInfo syn' (t , Old) t'
+  merge-lemma MergeInfoNew MergeInfoNew = MergeInfoOld
+  merge-lemma MergeInfoOld MergeInfoOld = MergeInfoOld
+  merge-lemma (MergeInfoArrow x m1 m2 x₁) (MergeInfoArrow x₂ m3 m4 x₃) 
+    rewrite (merge-same m1) 
+    rewrite (merge-same m2)
+    rewrite (merge-same m3) 
+    rewrite (merge-same m4)
+    with (▸NArrow-unicity x x₂) 
+  ... | refl , refl  
+    rewrite (sym (merge-same m1)) = {! MergeInfoOld  !}
+
   PreservationStepSyn :  
     ∀ {Γ e e' t} ->
     (Γ ⊢ e ⇒ t) ->
@@ -180,7 +196,7 @@ module Core.Preservation where
   PreservationStepSyn (SynAp syn x x₁ x₂ x₃) (StepApFail x₄ x₅ x₆) = {!   !}
   PreservationStepSyn (SynApFail syn x x₁ x₂ x₃) (StepAp x₄ x₅ x₆) = {!   !}
   PreservationStepSyn (SynApFail syn x x₁ x₂ x₃) (StepApFail x₄ x₅ x₆) = {!   !}
-  PreservationStepSyn (SynAsc ana m) (StepAsc n) = SynAsc {!   !} {!   !}
+  PreservationStepSyn (SynAsc ana m) (StepAsc _ m1 m2) = SynAsc {!   !} {!   !}
   -- PreservationStepSyn (SynAsc ana MergeInfoNew) (StepAsc n) = SynAsc {!   !} MergeInfoOld
   -- PreservationStepSyn (SynAsc ana (MergeInfoArrow x m m₁ x₁)) (StepAsc n) = SynAsc {!   !} {! MergeInfoOld !} 
 
