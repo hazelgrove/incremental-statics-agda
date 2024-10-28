@@ -17,43 +17,43 @@ open import Core.Lemmas-WellTyped
 
 module Core.Preservation where
 
-  mutual 
+  -- mutual 
 
-    UEnvUpCtx : Ctx -> UEnvUp -> Ctx 
-    UEnvUpCtx Γ U⊙ = Γ
-    UEnvUpCtx Γ (UEnvUpRec x ε) = UEnvMidCtx Γ ε
+  --   UEnvUpCtx : Ctx -> UEnvUp -> Ctx 
+  --   UEnvUpCtx Γ U⊙ = Γ
+  --   UEnvUpCtx Γ (UEnvUpRec x ε) = UEnvMidCtx Γ ε
 
-    UEnvMidCtx : Ctx -> UEnvMid -> Ctx
-    UEnvMidCtx Γ (UEnvFun t x₁ ε) = UEnvLowCtx (t , Γ) ε
-    UEnvMidCtx Γ (UEnvAp1 ε x₁ x₂) = UEnvLowCtx Γ ε
-    UEnvMidCtx Γ (UEnvAp2 x x₁ ε) = UEnvLowCtx Γ ε
-    UEnvMidCtx Γ (UEnvAsc x ε) = UEnvLowCtx Γ ε
+  --   UEnvMidCtx : Ctx -> UEnvMid -> Ctx
+  --   UEnvMidCtx Γ (UEnvFun t x₁ ε) = UEnvLowCtx (t , Γ) ε
+  --   UEnvMidCtx Γ (UEnvAp1 ε x₁ x₂) = UEnvLowCtx Γ ε
+  --   UEnvMidCtx Γ (UEnvAp2 x x₁ ε) = UEnvLowCtx Γ ε
+  --   UEnvMidCtx Γ (UEnvAsc x ε) = UEnvLowCtx Γ ε
 
-    UEnvLowCtx : Ctx -> UEnvLow -> Ctx
-    UEnvLowCtx Γ (UEnvLowRec x x₁ ε) = UEnvUpCtx Γ ε 
+  --   UEnvLowCtx : Ctx -> UEnvLow -> Ctx
+  --   UEnvLowCtx Γ (UEnvLowRec x x₁ ε) = UEnvUpCtx Γ ε 
 
-  LEnvUpCtx : Ctx -> LEnvUp -> Ctx
-  LEnvUpCtx = {!   !}
+  -- LEnvUpCtx : Ctx -> LEnvUp -> Ctx
+  -- LEnvUpCtx = {!   !}
 
-  LEnvUpFillTyping : 
-    ∀ {Γ ε e e' t e-in e-in' t-in } ->
-    ((LEnvUpCtx Γ ε) ⊢ e-in ⇐ t-in) ->
-    (ε L⟦ e-in ⟧Up== e) -> 
-    (Γ ⊢ e ⇒ t) ->
-    ((LEnvUpCtx Γ ε) ⊢ e-in' ⇐ t-in) ->
-    (ε L⟦ e-in' ⟧Up== e') -> 
-    (Γ ⊢ e' ⇒ t)
-  LEnvUpFillTyping = {!   !}
+  -- LEnvUpFillTyping : 
+  --   ∀ {Γ ε e e' t e-in e-in' t-in } ->
+  --   ((LEnvUpCtx Γ ε) ⊢ e-in ⇐ t-in) ->
+  --   (ε L⟦ e-in ⟧Up== e) -> 
+  --   (Γ ⊢ e ⇒ t) ->
+  --   ((LEnvUpCtx Γ ε) ⊢ e-in' ⇐ t-in) ->
+  --   (ε L⟦ e-in' ⟧Up== e') -> 
+  --   (Γ ⊢ e' ⇒ t)
+  -- LEnvUpFillTyping = {!   !}
 
-  UEnvLowFillTyping : 
-    ∀ {Γ ε e e' t e-in e-in' t-in } ->
-    ((UEnvLowCtx Γ ε) ⊢ e-in ⇒ t-in) ->
-    (ε U⟦ e-in ⟧Low== e) -> 
-    (Γ ⊢ e ⇐ t) ->
-    ((UEnvLowCtx Γ ε) ⊢ e-in' ⇒ t-in) ->
-    (ε U⟦ e-in' ⟧Low== e') -> 
-    (Γ ⊢ e' ⇐ t)
-  UEnvLowFillTyping = {!   !}
+  -- UEnvLowFillTyping : 
+  --   ∀ {Γ ε e e' t e-in e-in' t-in } ->
+  --   ((UEnvLowCtx Γ ε) ⊢ e-in ⇒ t-in) ->
+  --   (ε U⟦ e-in ⟧Low== e) -> 
+  --   (Γ ⊢ e ⇐ t) ->
+  --   ((UEnvLowCtx Γ ε) ⊢ e-in' ⇒ t-in) ->
+  --   (ε U⟦ e-in' ⟧Low== e') -> 
+  --   (Γ ⊢ e' ⇐ t)
+  -- UEnvLowFillTyping = {!   !}
 
   -- UEnvUpFillTyping : 
   --   ∀ {Γ ε e e' t e-in e-in' t-in } ->
@@ -72,84 +72,124 @@ module Core.Preservation where
   -- UEnvUpFillTyping syn-in1 (FillUEnvUpRec (FillUEnvAp2 fill1)) (SynApFail syn mt mn ana m) syn-in2 (FillUEnvUpRec (FillUEnvAp2 fill2)) = SynApFail syn mt mn (UEnvLowFillTyping syn-in1 fill1 ana syn-in2 fill2) m
   -- UEnvUpFillTyping syn-in1 (FillUEnvUpRec (FillUEnvAsc fill1)) (SynAsc ana m) syn-in2 (FillUEnvUpRec (FillUEnvAsc fill2)) = SynAsc (UEnvLowFillTyping syn-in1 fill1 ana syn-in2 fill2) m
 
+  -- Thing : 
+  --   ∀ {Γ ana1 m1 e1 ana2 m2 e2 t n} ->
+  --   (Γ ⊢ e1 ⇒ (t , n)) -> 
+  --   (ELow ana1 m1 e1 L↦ ELow ana2 m2 e2) -> 
+  --   ∃[ n' ] (Γ ⊢ e2 ⇒ (t , n'))
+  -- Thing (SynConst MergeInfoOld) (StepNewSynConsist x x₁) = Old , SynConst MergeInfoOld
+  -- Thing (SynHole MergeInfoOld) (StepNewSynConsist x x₁) = Old , SynHole MergeInfoOld
+  -- Thing (SynFun syn x₂ m) (StepNewSynConsist x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynFun syn x₂ m'
+  -- Thing (SynAp syn x₂ x₃ x₄ m) (StepNewSynConsist x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynAp syn x₂ x₃ x₄ m'
+  -- Thing (SynApFail syn x₂ x₃ x₄ m) (StepNewSynConsist x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynApFail syn x₂ x₃ x₄ m'
+  -- Thing (SynVar x₂ m) (StepNewSynConsist x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynVar x₂ m'
+  -- Thing (SynVarFail x₂ m) (StepNewSynConsist x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynVarFail x₂ m'
+  -- Thing (SynAsc x₂ m) (StepNewSynConsist x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynAsc x₂ m'
+  -- Thing (SynConst MergeInfoOld) (StepNewSynInconsist x x₁) = Old , SynConst MergeInfoOld
+  -- Thing (SynHole MergeInfoOld) (StepNewSynInconsist x x₁) = Old , SynHole MergeInfoOld
+  -- Thing (SynFun syn x₂ m) (StepNewSynInconsist x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynFun syn x₂ m'
+  -- Thing (SynAp syn x₂ x₃ x₄ m) (StepNewSynInconsist x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynAp syn x₂ x₃ x₄ m'
+  -- Thing (SynApFail syn x₂ x₃ x₄ m) (StepNewSynInconsist x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynApFail syn x₂ x₃ x₄ m'
+  -- Thing (SynVar x₂ m) (StepNewSynInconsist x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynVar x₂ m'
+  -- Thing (SynVarFail x₂ m) (StepNewSynInconsist x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynVarFail x₂ m'
+  -- Thing (SynAsc x₂ m) (StepNewSynInconsist x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynAsc x₂ m'
+  -- Thing (SynConst MergeInfoOld) (StepNewAnaConsist _ x x₁) = Old , SynConst MergeInfoOld
+  -- Thing (SynHole MergeInfoOld) (StepNewAnaConsist _ x x₁) = Old , SynHole MergeInfoOld
+  -- Thing (SynFun syn x₂ m) (StepNewAnaConsist _ x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynFun syn x₂ m'
+  -- Thing (SynAp syn x₂ x₃ x₄ m) (StepNewAnaConsist _ x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynAp syn x₂ x₃ x₄ m'
+  -- Thing (SynApFail syn x₂ x₃ x₄ m) (StepNewAnaConsist _ x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynApFail syn x₂ x₃ x₄ m'
+  -- Thing (SynVar x₂ m) (StepNewAnaConsist _ x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynVar x₂ m'
+  -- Thing (SynVarFail x₂ m) (StepNewAnaConsist _ x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynVarFail x₂ m'
+  -- Thing (SynAsc x₂ m) (StepNewAnaConsist _ x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynAsc x₂ m'
+  -- Thing (SynConst MergeInfoOld) (StepNewAnaInconsist _ x x₁) = Old , SynConst MergeInfoOld
+  -- Thing (SynHole MergeInfoOld) (StepNewAnaInconsist _ x x₁) = Old , SynHole MergeInfoOld
+  -- Thing (SynFun syn x₂ m) (StepNewAnaInconsist _ x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynFun syn x₂ m'
+  -- Thing (SynAp syn x₂ x₃ x₄ m) (StepNewAnaInconsist _ x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynAp syn x₂ x₃ x₄ m'
+  -- Thing (SynApFail syn x₂ x₃ x₄ m) (StepNewAnaInconsist _ x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynApFail syn x₂ x₃ x₄ m'
+  -- Thing (SynVar x₂ m) (StepNewAnaInconsist _ x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynVar x₂ m'
+  -- Thing (SynVarFail x₂ m) (StepNewAnaInconsist _ x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynVarFail x₂ m'
+  -- Thing (SynAsc x₂ m) (StepNewAnaInconsist _ x x₁) with oldify-merge m 
+  -- ... | n , m' = _ , SynAsc x₂ m'
+  -- Thing (SynFun syn x₄ x₅) (StepAnaFun x x₁ x₂ x₃) = {!   !}
+  -- Thing (SynFunVoid syn) (StepAnaFun x x₁ x₂ x₃) = {!   !}
+  -- Thing syn (StepAnaFunFail1 x x₁ x₂ x₃) = {!   !}
+
+  -- Silly : 
+  --   ∀ {Γ syn e1 t n e2} ->
+  --   (Γ ⊢ EUp syn e1 ⇒ (t , n)) -> 
+  --   (e1 L↦ e2) -> 
+  --   ∃[ n' ] (Γ ⊢ EUp syn e2 ⇒ (t , n'))
+  -- Silly syn step = ?
+
+  oldify-syn : 
+    ∀ {Γ e t1 t2 n1 n2} ->
+    (Γ ⊢ EUp (⇑ (t1 , n1)) e ⇒ (t2 , n2)) ->
+    ∃[ n3 ] (Γ ⊢ EUp (⇑ (t1 , Old)) e ⇒ (t2 , n3)) 
+  oldify-syn (SynConst m) with oldify-merge m 
+  ... | n , m' = n , SynConst m'
+  oldify-syn (SynHole m) with oldify-merge m 
+  ... | n , m' = n , SynHole m'
+  oldify-syn (SynFun syn x m) with oldify-merge m 
+  ... | n , m' = n , SynFun syn x m'
+  oldify-syn (SynAp syn x x₁ ana m) with oldify-merge m 
+  ... | n , m' = n , SynAp syn x x₁ ana m'
+  oldify-syn (SynApFail syn x x₁ ana m) with oldify-merge m 
+  ... | n , m' = n , SynApFail syn x x₁ ana m'
+  oldify-syn (SynVar x m) with oldify-merge m 
+  ... | n , m' = n , SynVar x m'
+  oldify-syn (SynVarFail x m) with oldify-merge m 
+  ... | n , m' = n , SynVarFail x m'
+  oldify-syn (SynAsc x m) with oldify-merge m 
+  ... | n , m' = n , SynAsc x m'
+
   PreservationStepSyn :  
     ∀ {Γ e e' t} ->
     (Γ ⊢ e ⇒ t) ->
     (e U↦ e') ->   
     (Γ ⊢ e' ⇒ t)
-  PreservationStepSyn syn step = {!   !}
+  PreservationStepSyn (SynFun syn x x₁) (StepNewAnnFun2 x₂ x₃ x₄) = {!   !}
+  PreservationStepSyn (SynFun syn x x₁) (StepNewSynFun2 x₂ x₃) = {!   !}
+  PreservationStepSyn (SynFunVoid syn) (StepNewAnnFun1 x x₁) = {!   !}
+  PreservationStepSyn (SynFunVoid syn) (StepNewSynFun1 x) = {!   !}
+  PreservationStepSyn (SynFunVoid syn) StepVoidSynFun = {!   !}
+  PreservationStepSyn (SynAp syn x x₁ x₂ x₃) (StepAp x₄ x₅ x₆) with oldify-syn syn
+  ... | _ , syn' = SynAp syn' x {!   !} {!   !} {!   !}
+  PreservationStepSyn (SynAp syn x x₁ x₂ x₃) (StepApFail x₄ x₅ x₆) = {!   !}
+  PreservationStepSyn (SynApFail syn x x₁ x₂ x₃) (StepAp x₄ x₅ x₆) = {!   !}
+  PreservationStepSyn (SynApFail syn x x₁ x₂ x₃) (StepApFail x₄ x₅ x₆) = {!   !}
+  PreservationStepSyn (SynAsc ana m) (StepAsc n) = SynAsc {!   !} {!   !}
+  -- PreservationStepSyn (SynAsc ana MergeInfoNew) (StepAsc n) = SynAsc {!   !} MergeInfoOld
+  -- PreservationStepSyn (SynAsc ana (MergeInfoArrow x m m₁ x₁)) (StepAsc n) = SynAsc {!   !} {! MergeInfoOld !} 
 
-  PreservationStepAna :  
-    ∀ {Γ e e' t} ->
-    (Γ ⊢ e ⇐ t) ->
-    (e L↦ e') ->   
-    (Γ ⊢ e' ⇐ t)
-  PreservationStepAna ana step = {!   !}
-
-  Thing : 
-    ∀ {Γ ana1 m1 e1 ana2 m2 e2 t n} ->
-    (Γ ⊢ e1 ⇒ (t , n)) -> 
-    (ELow ana1 m1 e1 L↦ ELow ana2 m2 e2) -> 
-    ∃[ n' ] (Γ ⊢ e2 ⇒ (t , n'))
-  Thing (SynConst MergeInfoOld) (StepNewSynConsist x x₁) = Old , SynConst MergeInfoOld
-  Thing (SynHole MergeInfoOld) (StepNewSynConsist x x₁) = Old , SynHole MergeInfoOld
-  Thing (SynFun syn x₂ m) (StepNewSynConsist x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynFun syn x₂ m'
-  Thing (SynAp syn x₂ x₃ x₄ m) (StepNewSynConsist x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynAp syn x₂ x₃ x₄ m'
-  Thing (SynApFail syn x₂ x₃ x₄ m) (StepNewSynConsist x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynApFail syn x₂ x₃ x₄ m'
-  Thing (SynVar x₂ m) (StepNewSynConsist x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynVar x₂ m'
-  Thing (SynVarFail x₂ m) (StepNewSynConsist x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynVarFail x₂ m'
-  Thing (SynAsc x₂ m) (StepNewSynConsist x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynAsc x₂ m'
-  Thing (SynConst MergeInfoOld) (StepNewSynInconsist x x₁) = Old , SynConst MergeInfoOld
-  Thing (SynHole MergeInfoOld) (StepNewSynInconsist x x₁) = Old , SynHole MergeInfoOld
-  Thing (SynFun syn x₂ m) (StepNewSynInconsist x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynFun syn x₂ m'
-  Thing (SynAp syn x₂ x₃ x₄ m) (StepNewSynInconsist x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynAp syn x₂ x₃ x₄ m'
-  Thing (SynApFail syn x₂ x₃ x₄ m) (StepNewSynInconsist x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynApFail syn x₂ x₃ x₄ m'
-  Thing (SynVar x₂ m) (StepNewSynInconsist x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynVar x₂ m'
-  Thing (SynVarFail x₂ m) (StepNewSynInconsist x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynVarFail x₂ m'
-  Thing (SynAsc x₂ m) (StepNewSynInconsist x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynAsc x₂ m'
-  Thing (SynConst MergeInfoOld) (StepNewAnaConsist _ x x₁) = Old , SynConst MergeInfoOld
-  Thing (SynHole MergeInfoOld) (StepNewAnaConsist _ x x₁) = Old , SynHole MergeInfoOld
-  Thing (SynFun syn x₂ m) (StepNewAnaConsist _ x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynFun syn x₂ m'
-  Thing (SynAp syn x₂ x₃ x₄ m) (StepNewAnaConsist _ x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynAp syn x₂ x₃ x₄ m'
-  Thing (SynApFail syn x₂ x₃ x₄ m) (StepNewAnaConsist _ x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynApFail syn x₂ x₃ x₄ m'
-  Thing (SynVar x₂ m) (StepNewAnaConsist _ x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynVar x₂ m'
-  Thing (SynVarFail x₂ m) (StepNewAnaConsist _ x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynVarFail x₂ m'
-  Thing (SynAsc x₂ m) (StepNewAnaConsist _ x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynAsc x₂ m'
-  Thing (SynConst MergeInfoOld) (StepNewAnaInconsist _ x x₁) = Old , SynConst MergeInfoOld
-  Thing (SynHole MergeInfoOld) (StepNewAnaInconsist _ x x₁) = Old , SynHole MergeInfoOld
-  Thing (SynFun syn x₂ m) (StepNewAnaInconsist _ x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynFun syn x₂ m'
-  Thing (SynAp syn x₂ x₃ x₄ m) (StepNewAnaInconsist _ x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynAp syn x₂ x₃ x₄ m'
-  Thing (SynApFail syn x₂ x₃ x₄ m) (StepNewAnaInconsist _ x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynApFail syn x₂ x₃ x₄ m'
-  Thing (SynVar x₂ m) (StepNewAnaInconsist _ x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynVar x₂ m'
-  Thing (SynVarFail x₂ m) (StepNewAnaInconsist _ x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynVarFail x₂ m'
-  Thing (SynAsc x₂ m) (StepNewAnaInconsist _ x x₁) with oldify-merge m 
-  ... | n , m' = _ , SynAsc x₂ m'
-  Thing (SynFun syn x₄ x₅) (StepAnaFun x x₁ x₂ x₃) = {!   !}
-  Thing (SynFunVoid syn) (StepAnaFun x x₁ x₂ x₃) = {!   !}
-  Thing syn (StepAnaFunFail1 x x₁ x₂ x₃) = {!   !}
+  -- PreservationStepAna :  
+  --   ∀ {Γ e e' t} ->
+  --   (Γ ⊢ e ⇐ t) ->
+  --   (e L↦ e') ->   
+  --   (Γ ⊢ e' ⇐ t)
+  -- PreservationStepAna ana step = {!   !}
 
   PreservationAna :  
     ∀ {Γ e e' t} ->
@@ -158,27 +198,27 @@ module Core.Preservation where
     (Γ ⊢ e' ⇐ t)
   PreservationAna = {!   !}
 
-  PreservationSyn :  
-    ∀ {Γ e e' t} ->
-    (Γ ⊢ e ⇒ t) ->
-    (e Up↦ e') ->   
-    (Γ ⊢ e' ⇒ t)
-  PreservationSyn syn (StepUp FillU⊙ step FillU⊙) = PreservationStepSyn syn step
-  PreservationSyn (SynFun syn x x₁) (StepUp (FillUEnvUpRec (FillUEnvFun (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvFun (FillUEnvLowRec fill2)))) = SynFun (PreservationSyn syn (StepUp fill1 step fill2)) x x₁
-  PreservationSyn (SynFunVoid syn) (StepUp (FillUEnvUpRec (FillUEnvFun (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvFun (FillUEnvLowRec fill2)))) = SynFunVoid (PreservationSyn syn (StepUp fill1 step fill2))
-  PreservationSyn (SynAp syn x x₁ x₂ x₃) (StepUp (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill2)))) = SynAp (PreservationSyn syn (StepUp fill1 step fill2)) x x₁ x₂ x₃
-  PreservationSyn (SynApFail syn x x₁ x₂ x₃) (StepUp (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill2)))) = SynApFail (PreservationSyn syn (StepUp fill1 step fill2)) x x₁ x₂ x₃
-  PreservationSyn (SynAp syn x x₁ ana x₃) (StepUp (FillUEnvUpRec (FillUEnvAp2 fill1)) step (FillUEnvUpRec (FillUEnvAp2 fill2))) = SynAp syn x x₁ (PreservationAna ana (StepUp fill1 step fill2)) x₃
-  PreservationSyn (SynApFail syn x x₁ ana x₃) (StepUp (FillUEnvUpRec (FillUEnvAp2 fill1)) step (FillUEnvUpRec (FillUEnvAp2 fill2))) = SynApFail syn x x₁ (PreservationAna ana (StepUp fill1 step fill2)) x₃
-  PreservationSyn (SynAsc ana m) (StepUp (FillUEnvUpRec (FillUEnvAsc fill1)) step (FillUEnvUpRec (FillUEnvAsc fill2))) = SynAsc (PreservationAna ana (StepUp fill1 step fill2)) m
-  PreservationSyn (SynFun (SynFunVoid syn) x x₁) (StepLow (FillLEnvUpRec (FillLEnvFun FillL⊙)) () (FillLEnvUpRec (FillLEnvFun FillL⊙)))
-  PreservationSyn (SynFun syn x x₁) (StepLow (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec fill2)))) = SynFun (PreservationSyn syn (StepLow fill1 step fill2)) x x₁
-  PreservationSyn (SynFunVoid ()) (StepLow {e-in' = ELow _ _ _} (FillLEnvUpRec (FillLEnvFun FillL⊙)) StepNoAnaFun (FillLEnvUpRec (FillLEnvFun FillL⊙)))
-  PreservationSyn (SynFunVoid syn) (StepLow (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec x))) step (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec x₁)))) = {!  step !}
-  PreservationSyn (SynAp syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 FillL⊙)) step (FillLEnvUpRec (FillLEnvAp1 FillL⊙))) = {!   !}
-  PreservationSyn (SynAp syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec x₅))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec x₆)))) = {!   !}
-  PreservationSyn (SynApFail syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 FillL⊙)) step (FillLEnvUpRec (FillLEnvAp1 FillL⊙))) = {!   !}
-  PreservationSyn (SynApFail syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2)))) = SynApFail (PreservationSyn syn (StepLow fill1 step fill2)) x x₁ ana x₃
-  PreservationSyn (SynAp syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) = SynAp syn x x₁ (PreservationAna ana (StepLow fill1 step fill2)) x₃
-  PreservationSyn (SynApFail syn x x₁ ana m) (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) = SynApFail syn x x₁ (PreservationAna ana (StepLow fill1 step fill2)) m
-  PreservationSyn (SynAsc ana m) (StepLow (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc fill2))) = SynAsc (PreservationAna ana (StepLow fill1 step fill2)) m    
+  -- PreservationSyn :  
+  --   ∀ {Γ e e' t} ->
+  --   (Γ ⊢ e ⇒ t) ->
+  --   (e Up↦ e') ->   
+  --   (Γ ⊢ e' ⇒ t)
+  -- PreservationSyn syn (StepUp FillU⊙ step FillU⊙) = PreservationStepSyn syn step
+  -- PreservationSyn (SynFun syn x x₁) (StepUp (FillUEnvUpRec (FillUEnvFun (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvFun (FillUEnvLowRec fill2)))) = SynFun (PreservationSyn syn (StepUp fill1 step fill2)) x x₁
+  -- PreservationSyn (SynFunVoid syn) (StepUp (FillUEnvUpRec (FillUEnvFun (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvFun (FillUEnvLowRec fill2)))) = SynFunVoid (PreservationSyn syn (StepUp fill1 step fill2))
+  -- PreservationSyn (SynAp syn x x₁ x₂ x₃) (StepUp (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill2)))) = SynAp (PreservationSyn syn (StepUp fill1 step fill2)) x x₁ x₂ x₃
+  -- PreservationSyn (SynApFail syn x x₁ x₂ x₃) (StepUp (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill2)))) = SynApFail (PreservationSyn syn (StepUp fill1 step fill2)) x x₁ x₂ x₃
+  -- PreservationSyn (SynAp syn x x₁ ana x₃) (StepUp (FillUEnvUpRec (FillUEnvAp2 fill1)) step (FillUEnvUpRec (FillUEnvAp2 fill2))) = SynAp syn x x₁ (PreservationAna ana (StepUp fill1 step fill2)) x₃
+  -- PreservationSyn (SynApFail syn x x₁ ana x₃) (StepUp (FillUEnvUpRec (FillUEnvAp2 fill1)) step (FillUEnvUpRec (FillUEnvAp2 fill2))) = SynApFail syn x x₁ (PreservationAna ana (StepUp fill1 step fill2)) x₃
+  -- PreservationSyn (SynAsc ana m) (StepUp (FillUEnvUpRec (FillUEnvAsc fill1)) step (FillUEnvUpRec (FillUEnvAsc fill2))) = SynAsc (PreservationAna ana (StepUp fill1 step fill2)) m
+  -- PreservationSyn (SynFun (SynFunVoid syn) x x₁) (StepLow (FillLEnvUpRec (FillLEnvFun FillL⊙)) () (FillLEnvUpRec (FillLEnvFun FillL⊙)))
+  -- PreservationSyn (SynFun syn x x₁) (StepLow (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec fill2)))) = SynFun (PreservationSyn syn (StepLow fill1 step fill2)) x x₁
+  -- PreservationSyn (SynFunVoid ()) (StepLow {e-in' = ELow _ _ _} (FillLEnvUpRec (FillLEnvFun FillL⊙)) StepNoAnaFun (FillLEnvUpRec (FillLEnvFun FillL⊙)))
+  -- PreservationSyn (SynFunVoid syn) (StepLow (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec fill2)))) = SynFunVoid (PreservationSyn syn (StepLow fill1 step fill2))
+  -- PreservationSyn (SynAp () x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 FillL⊙)) StepNoAnaFun (FillLEnvUpRec (FillLEnvAp1 FillL⊙)))
+  -- PreservationSyn (SynAp syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2)))) = SynAp (PreservationSyn syn (StepLow fill1 step fill2)) x x₁ ana x₃
+  -- PreservationSyn (SynApFail () x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 FillL⊙)) StepNoAnaFun (FillLEnvUpRec (FillLEnvAp1 FillL⊙)))
+  -- PreservationSyn (SynApFail syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2)))) = SynApFail (PreservationSyn syn (StepLow fill1 step fill2)) x x₁ ana x₃
+  -- PreservationSyn (SynAp syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) = SynAp syn x x₁ (PreservationAna ana (StepLow fill1 step fill2)) x₃
+  -- PreservationSyn (SynApFail syn x x₁ ana m) (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) = SynApFail syn x x₁ (PreservationAna ana (StepLow fill1 step fill2)) m
+  -- PreservationSyn (SynAsc ana m) (StepLow (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc fill2))) = SynAsc (PreservationAna ana (StepLow fill1 step fill2)) m     

@@ -32,6 +32,26 @@ data MergeInfo : NewType -> NewType -> NewType -> Set where
     narrow n5 n6 ≡ n7 ->
     MergeInfo (TArrow t1 t2 , n) (TArrow t3 t4 , NArrow n3 n4) (TArrow t5 t6 , n7)
 
+merge-same : 
+  ∀ {t1 t2 t3 n1 n2 n3} ->
+  MergeInfo (t1 , n1) (t2 , n2) (t3 , n3) -> 
+  t2 ≡ t3
+merge-same MergeInfoNew = refl
+merge-same MergeInfoOld = refl
+merge-same (MergeInfoArrow x m m₁ x₁) rewrite (merge-same m) rewrite (merge-same m₁) = refl
+
+data Merge : Newness -> Newness -> Newness -> Set where 
+  MergeNew : ∀ {n1} -> 
+    Merge  n1 New New
+  MergeOld : ∀ {n1} -> 
+    Merge n1 Old n1
+  MergeArrow : ∀ {n n1 n2 n3 n4 n5 n6 n7} -> 
+    n ▸NArrow n1 , n2 ->
+    Merge n1 n3 n5 ->
+    Merge n2 n4 n6 ->
+    narrow n5 n6 ≡ n7 ->
+    Merge n (NArrow n3 n4) n7
+
 mutual 
   data _⊢_⇒_ : (Γ : Ctx) (e : ExpUp) (t : NewType) → Set where 
     SynConst : ∀ {Γ info syn} ->
