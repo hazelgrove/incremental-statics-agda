@@ -12,13 +12,6 @@ open import Core.WellTyped
 
 module Core.Update where
 
--- data MergeSyn : SynData -> NewType -> SynData -> Set where 
---   MergeSynVoid : ∀ {syn} -> 
---     MergeSyn ̸⇑ syn (⇑ syn)
---   MergeSynMerge : ∀ {t1 n1} -> 
---     MergeInfo syn1 syn2 syn3 ->
---     MergeSyn (⇑ syn1) syn2 (⇑ syn3)
-
 data VarsSynthesize : ℕ -> NewType -> ExpUp -> ExpUp -> Set where 
   VSConst : ∀ {x t syn} ->
     VarsSynthesize x t (EUp syn EConst) (EUp syn EConst)
@@ -127,9 +120,9 @@ data _U↦_ : ExpUp -> ExpUp -> Set where
   -- Asc Step
   StepAsc : ∀ {syn syn' t n ana ana' m e} ->
     IsNew n ->
-    MergeInfo syn (t , n) syn' -> 
-    MergeInfo ana (t , n) ana' -> 
-    EUp (⇑ syn) (EAsc (t , n) (ELow (⇓ ana) m e)) U↦
+    MergeSyn syn (t , n) syn' -> 
+    MergeAna ana (t , n) ana' -> 
+    EUp syn (EAsc (t , n) (ELow ana m e)) U↦
     EUp (⇑ syn') (EAsc (t , Old) (ELow (⇓ ana') m e))
 
 mutual 

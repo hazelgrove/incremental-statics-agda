@@ -32,19 +32,33 @@ data MergeInfo : NewType -> NewType -> NewType -> Set where
     narrow n5 n6 ≡ n7 ->
     MergeInfo (TArrow t1 t2 , n) (TArrow t3 t4 , NArrow n3 n4) (TArrow t5 t6 , n7)
 
+data MergeSyn : SynData -> NewType -> NewType -> Set where 
+  MergeSynVoid : ∀ {syn} -> 
+    MergeSyn ̸⇑ syn syn
+  MergeSynMerge : ∀ {syn1 syn2 syn3} -> 
+    MergeInfo syn1 syn2 syn3 ->
+    MergeSyn (⇑ syn1) syn2 syn3
+
+data MergeAna : AnaData -> NewType -> NewType -> Set where 
+  MergeAnaVoid : ∀ {ana} -> 
+    MergeAna ̸⇓ ana ana
+  MergeAnaMerge : ∀ {ana1 ana2 ana3} -> 
+    MergeInfo ana1 ana2 ana3 ->
+    MergeAna (⇓ ana1) ana2 ana3
+
 mutual 
   data _⊢_⇒_ : (Γ : Ctx) (e : ExpUp) (t : NewType) → Set where 
     SynConst : ∀ {Γ info syn} ->
-      MergeInfo info (TBase , Old) syn -> 
-      Γ ⊢ (EUp (⇑ info) EConst) ⇒ syn
+      MergeSyn info (TBase , Old) syn -> 
+      Γ ⊢ (EUp info EConst) ⇒ syn
     SynHole : ∀ {Γ info syn} ->
-      MergeInfo info (THole , Old) syn -> 
-      Γ ⊢ (EUp (⇑ info) EHole) ⇒ syn
+      MergeSyn info (THole , Old) syn -> 
+      Γ ⊢ (EUp info EHole) ⇒ syn
     SynFun : ∀ {Γ info t1 t2 n1 n2 n3 syn e} ->
       ((t1 , n1) , Γ) ⊢ e ⇒ (t2 , n2) ->
       narrow n1 n2 ≡ n3 ->
-      MergeInfo info (TArrow t1 t2 , n3) syn -> 
-      Γ ⊢ (EUp (⇑ info) (EFun (t1 , n1) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ syn
+      MergeSyn info (TArrow t1 t2 , n3) syn -> 
+      Γ ⊢ (EUp info (EFun (t1 , n1) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ syn
     SynFunVoid : ∀ {Γ t1 t2 n1 n2 e} ->
       ((t1 , n1) , Γ) ⊢ e ⇒ (t2 , n2) ->
       Γ ⊢ (EUp ̸⇑ (EFun (t1 , n1) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ (TArrow t1 t2 , New)
@@ -53,23 +67,23 @@ mutual
       t ▸TArrow t1 , t2 ->
       n ▸NArrow n1 , n2 ->
       Γ ⊢ e2 ⇐ (t1 , n1) ->
-      MergeInfo info (t2 , n2) syn -> 
-      Γ ⊢ (EUp (⇑ info) (EAp (ELow ̸⇓ Unmarked e1) Unmarked e2)) ⇒ syn
+      MergeSyn info (t2 , n2) syn -> 
+      Γ ⊢ (EUp info (EAp (ELow ̸⇓ Unmarked e1) Unmarked e2)) ⇒ syn
     SynApFail : ∀ {Γ info t n n1 n2 e1 e2 syn} ->
       Γ ⊢ e1 ⇒ (t , n) ->
       t ̸▸TArrow ->
       n ▸NArrow n1 , n2 ->
       Γ ⊢ e2 ⇐ (THole , n1) ->
-      MergeInfo info (THole , n2) syn -> 
-      Γ ⊢ (EUp (⇑ info) (EAp (ELow ̸⇓ Unmarked e1) Marked e2)) ⇒ syn
+      MergeSyn info (THole , n2) syn -> 
+      Γ ⊢ (EUp info (EAp (ELow ̸⇓ Unmarked e1) Marked e2)) ⇒ syn
     SynVar : ∀ {Γ info x t syn} ->
       x , t ∈ Γ ->
-      MergeInfo info t syn -> 
-      Γ ⊢ (EUp (⇑ info) (EVar x Unmarked)) ⇒ syn
+      MergeSyn info t syn -> 
+      Γ ⊢ (EUp info (EVar x Unmarked)) ⇒ syn
     SynVarFail : ∀ {Γ info x syn} ->
       x ̸∈ Γ ->
-      MergeInfo info (THole , Old) syn -> 
-      Γ ⊢ (EUp (⇑ info) (EVar x Marked)) ⇒ syn
+      MergeSyn info (THole , Old) syn -> 
+      Γ ⊢ (EUp info (EVar x Marked)) ⇒ syn
     SynAsc : ∀ {Γ syn t e syn'} ->
       Γ ⊢ e ⇐ t ->
       MergeInfo syn t syn' -> 
@@ -77,31 +91,31 @@ mutual
 
   data _⊢_⇐_ : (Γ : Ctx) (e : ExpLow) (t : NewType) → Set where 
     AnaSubsume : ∀ {Γ info ana t1 t2 n1 n2 e} ->
-      MergeInfo info ana (t2 , n2) -> 
+      MergeAna info ana (t2 , n2) -> 
       Γ ⊢ e ⇒ (t1 , n1) ->
       Subsumable e ->
       (t1 ~ t2) ->
-      Γ ⊢ (ELow (⇓ info) Unmarked e) ⇐ ana
+      Γ ⊢ (ELow info Unmarked e) ⇐ ana
     AnaSubsumeFail : ∀ {Γ info ana t1 t2 n1 n2 e} ->
-      MergeInfo info ana (t2 , n2) -> 
+      MergeAna info ana (t2 , n2) -> 
       Γ ⊢ e ⇒ (t1 , n1) ->
       Subsumable e ->
       ¬(t1 ~ t2) ->
-      Γ ⊢ (ELow (⇓ info) Marked e) ⇐ ana
+      Γ ⊢ (ELow info Marked e) ⇐ ana
     AnaFun : ∀ {Γ info ana t t1 t2 n n1 n2 tasc nasc e} ->
-      MergeInfo info ana (t , n) -> 
+      MergeAna info ana (t , n) -> 
       t ▸TArrow t1 , t2 ->
       n ▸NArrow n1 , n2 ->
       ((tasc , nasc) , Γ) ⊢ e ⇐ (t2 , n2) ->
       (tasc ~ t1) ->
-      Γ ⊢ (ELow (⇓ info) Unmarked (EUp ̸⇑ (EFun (tasc , nasc) Unmarked e))) ⇐ ana
+      Γ ⊢ (ELow info Unmarked (EUp ̸⇑ (EFun (tasc , nasc) Unmarked e))) ⇐ ana
     AnaFunFail1 : ∀ {Γ info ana t t1 t2 n n1 n2 tasc nasc e} ->
-      MergeInfo info ana (t , n) -> 
+      MergeAna info ana (t , n) -> 
       t ▸TArrow t1 , t2 ->
       n ▸NArrow n1 , n2 ->
       ((tasc , nasc) , Γ) ⊢ e ⇐ (t2 , n2) ->
       ¬(tasc ~ t1) ->
-      Γ ⊢ (ELow (⇓ info) Unmarked (EUp ̸⇑ (EFun (tasc , nasc) Marked e))) ⇐ ana
+      Γ ⊢ (ELow info Unmarked (EUp ̸⇑ (EFun (tasc , nasc) Marked e))) ⇐ ana
     AnaFunFail2 : ∀ {Γ syn-info ana-info syn-info' ana syn t tasc n nasc e} ->
       MergeInfo ana-info ana (t , n) -> 
       t ̸▸TArrow ->
