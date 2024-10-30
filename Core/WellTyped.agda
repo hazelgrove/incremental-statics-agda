@@ -34,14 +34,14 @@ data MergeInfo : NewType -> NewType -> NewType -> Set where
 
 data MergeSyn : SynData -> NewType -> NewType -> Set where 
   MergeSynVoid : ∀ {syn} -> 
-    MergeSyn ̸⇑ syn syn
+    MergeSyn ̸⇑ syn syn -- TODO I think maybe this should be  MergeSyn ̸⇑ (t , n) (t , New)
   MergeSynMerge : ∀ {syn1 syn2 syn3} -> 
     MergeInfo syn1 syn2 syn3 ->
     MergeSyn (⇑ syn1) syn2 syn3
 
 data MergeAna : AnaData -> NewType -> NewType -> Set where 
   MergeAnaVoid : ∀ {ana} -> 
-    MergeAna ̸⇓ ana ana
+    MergeAna ̸⇓ ana ana -- TODO see above
   MergeAnaMerge : ∀ {ana1 ana2 ana3} -> 
     MergeInfo ana1 ana2 ana3 ->
     MergeAna (⇓ ana1) ana2 ana3
