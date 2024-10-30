@@ -59,9 +59,9 @@ mutual
       narrow n1 n2 ≡ n3 ->
       MergeSyn info (TArrow t1 t2 , n3) syn -> 
       Γ ⊢ (EUp info (EFun (t1 , n1) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ syn
-    SynFunVoid : ∀ {Γ t1 t2 n1 n2 e} ->
-      ((t1 , n1) , Γ) ⊢ e ⇒ (t2 , n2) ->
-      Γ ⊢ (EUp ̸⇑ (EFun (t1 , n1) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ (TArrow t1 t2 , New)
+    -- SynFunVoid : ∀ {Γ t1 t2 n1 n2 e} ->
+    --   ((t1 , n1) , Γ) ⊢ e ⇒ (t2 , n2) ->
+    --   Γ ⊢ (EUp ̸⇑ (EFun (t1 , n1) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ (TArrow t1 t2 , New)
     SynAp : ∀ {Γ info t t1 t2 n n1 n2 e1 e2 syn} ->
       Γ ⊢ e1 ⇒ (t , n) ->
       t ▸TArrow t1 , t2 ->
@@ -86,8 +86,8 @@ mutual
       Γ ⊢ (EUp info (EVar x Marked)) ⇒ syn
     SynAsc : ∀ {Γ syn t e syn'} ->
       Γ ⊢ e ⇐ t ->
-      MergeInfo syn t syn' -> 
-      Γ ⊢ (EUp (⇑ syn) (EAsc t e)) ⇒ syn'
+      MergeSyn syn t syn' -> 
+      Γ ⊢ (EUp syn (EAsc t e)) ⇒ syn'
 
   data _⊢_⇐_ : (Γ : Ctx) (e : ExpLow) (t : NewType) → Set where 
     AnaSubsume : ∀ {Γ info ana t1 t2 n1 n2 e} ->

@@ -42,6 +42,22 @@ module Core.Lemmas-WellTyped where
   ... | refl , refl with merge-unicity m1 m3 | merge-unicity m2 m4 
   ... | refl | refl = refl
 
+  merge-syn-unicity : 
+    ∀ {i1 i2 i3 i4} ->
+    MergeSyn i1 i2 i3 ->
+    MergeSyn i1 i2 i4 ->
+    i3 ≡ i4
+  merge-syn-unicity MergeSynVoid MergeSynVoid = refl
+  merge-syn-unicity (MergeSynMerge m1) (MergeSynMerge m2) = merge-unicity m1 m2
+
+  merge-ana-unicity : 
+    ∀ {i1 i2 i3 i4} ->
+    MergeAna i1 i2 i3 ->
+    MergeAna i1 i2 i4 ->
+    i3 ≡ i4
+  merge-ana-unicity MergeAnaVoid MergeAnaVoid = refl
+  merge-ana-unicity (MergeAnaMerge m1) (MergeAnaMerge m2) = merge-unicity m1 m2
+
   oldify-merge : 
     ∀ {t1 t2 t3 n1 n2 n3} ->
     MergeInfo (t1 , n1) (t2 , n2) (t3 , n3) ->
@@ -50,7 +66,7 @@ module Core.Lemmas-WellTyped where
   oldify-merge MergeInfoOld = Old , MergeInfoOld
   oldify-merge (MergeInfoArrow x m1 m2 x₁) with oldify-merge m1 | oldify-merge m2 
   ... | n1 , m1' | n2 , m2' = narrow n1 n2 , MergeInfoArrow MNArrowOld m1' m2' refl
-  
+
   merge-same : 
     ∀ {t1 t2 t3 n1 n2 n3} ->
     MergeInfo (t1 , n1) (t2 , n2) (t3 , n3) -> 
@@ -64,18 +80,16 @@ module Core.Lemmas-WellTyped where
     Γ ⊢ e ⇒ t1 ->
     Γ ⊢ e ⇒ t2 ->
     t1 ≡ t2
-  syn-unicity (SynConst m1) (SynConst m2) = merge-unicity m1 m2
-  syn-unicity (SynHole m1) (SynHole m2) = merge-unicity m1 m2
+  syn-unicity (SynConst m1) (SynConst m2) = merge-syn-unicity m1 m2
+  syn-unicity (SynHole m1) (SynHole m2) = merge-syn-unicity m1 m2
   syn-unicity (SynFun syn1 refl m1) (SynFun syn2 refl m2) with syn-unicity syn1 syn2 
-  ... | refl = merge-unicity m1 m2
-  syn-unicity (SynFunVoid syn1) (SynFunVoid syn2) with syn-unicity syn1 syn2 
-  ... | refl = refl
+  ... | refl = merge-syn-unicity m1 m2
   syn-unicity (SynAp syn1 mt1 mn1 ana1 m1) (SynAp syn2 mt2 mn2 ana2 m2) with syn-unicity syn1 syn2 
   ... | refl with ▸TArrow-unicity mt1 mt2 | ▸NArrow-unicity mn1 mn2 
-  ... | refl , refl | refl , refl = merge-unicity m1 m2
+  ... | refl , refl | refl , refl = merge-syn-unicity m1 m2
   syn-unicity (SynApFail syn1 mt1 mn1 ana1 m1) (SynApFail syn2 mt2 mn2 ana2 m2) with syn-unicity syn1 syn2 
   ... | refl with ▸NArrow-unicity mn1 mn2 
-  ... | refl , refl = merge-unicity m1 m2
-  syn-unicity (SynVar inctx1 m1) (SynVar inctx2 m2) rewrite (ctx-unicity inctx1 inctx2) = merge-unicity m1 m2
-  syn-unicity (SynVarFail _ m1) (SynVarFail _ m2) = merge-unicity m1 m2
-  syn-unicity (SynAsc _ m1) (SynAsc _ m2) = merge-unicity m1 m2
+  ... | refl , refl = merge-syn-unicity m1 m2
+  syn-unicity (SynVar inctx1 m1) (SynVar inctx2 m2) rewrite (ctx-unicity inctx1 inctx2) = merge-syn-unicity m1 m2
+  syn-unicity (SynVarFail _ m1) (SynVarFail _ m2) = merge-syn-unicity m1 m2
+  syn-unicity (SynAsc _ m1) (SynAsc _ m2) = merge-syn-unicity m1 m2

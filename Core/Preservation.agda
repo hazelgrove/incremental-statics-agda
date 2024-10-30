@@ -148,57 +148,85 @@ module Core.Preservation where
     ∀ {Γ e t1 t2 n1 n2} ->
     (Γ ⊢ EUp (⇑ (t1 , n1)) e ⇒ (t2 , n2)) ->
     ∃[ n3 ] (Γ ⊢ EUp (⇑ (t1 , Old)) e ⇒ (t2 , n3)) 
-  oldify-syn (SynConst m) with oldify-merge m 
-  ... | n , m' = n , SynConst m'
-  oldify-syn (SynHole m) with oldify-merge m 
-  ... | n , m' = n , SynHole m'
-  oldify-syn (SynFun syn x m) with oldify-merge m 
-  ... | n , m' = n , SynFun syn x m'
-  oldify-syn (SynAp syn x x₁ ana m) with oldify-merge m 
-  ... | n , m' = n , SynAp syn x x₁ ana m'
-  oldify-syn (SynApFail syn x x₁ ana m) with oldify-merge m 
-  ... | n , m' = n , SynApFail syn x x₁ ana m'
-  oldify-syn (SynVar x m) with oldify-merge m 
-  ... | n , m' = n , SynVar x m'
-  oldify-syn (SynVarFail x m) with oldify-merge m 
-  ... | n , m' = n , SynVarFail x m'
-  oldify-syn (SynAsc x m) with oldify-merge m 
-  ... | n , m' = n , SynAsc x m'
+  oldify-syn (SynConst (MergeSynMerge m)) with oldify-merge m 
+  ... | n , m' = n , SynConst (MergeSynMerge m')
+  oldify-syn (SynHole (MergeSynMerge m)) with oldify-merge m 
+  ... | n , m' = n , SynHole (MergeSynMerge m')
+  oldify-syn (SynFun syn x (MergeSynMerge m)) with oldify-merge m 
+  ... | n , m' = n , SynFun syn x (MergeSynMerge m')
+  oldify-syn (SynAp syn x x₁ ana (MergeSynMerge m)) with oldify-merge m 
+  ... | n , m' = n , SynAp syn x x₁ ana (MergeSynMerge m')
+  oldify-syn (SynApFail syn x x₁ ana (MergeSynMerge m)) with oldify-merge m 
+  ... | n , m' = n , SynApFail syn x x₁ ana (MergeSynMerge m')
+  oldify-syn (SynVar x (MergeSynMerge m)) with oldify-merge m 
+  ... | n , m' = n , SynVar x (MergeSynMerge m')
+  oldify-syn (SynVarFail x (MergeSynMerge m)) with oldify-merge m 
+  ... | n , m' = n , SynVarFail x (MergeSynMerge m')
+  oldify-syn (SynAsc x (MergeSynMerge m)) with oldify-merge m 
+  ... | n , m' = n , SynAsc x (MergeSynMerge m')
 
-  merge-lemma : 
-    ∀ {syn syn' t t' n} ->
-    MergeInfo syn (t , n) t' ->
-    MergeInfo syn (t , n) syn' ->
-    MergeInfo syn' (t , Old) t'
-  merge-lemma MergeInfoNew MergeInfoNew = MergeInfoOld
-  merge-lemma MergeInfoOld MergeInfoOld = MergeInfoOld
-  merge-lemma (MergeInfoArrow x m1 m2 x₁) (MergeInfoArrow x₂ m3 m4 x₃) 
-    rewrite (merge-same m1) 
-    rewrite (merge-same m2)
-    rewrite (merge-same m3) 
-    rewrite (merge-same m4)
-    with (▸NArrow-unicity x x₂) 
-  ... | refl , refl  
-    rewrite (sym (merge-same m1)) = {! MergeInfoOld  !}
+  merge-syn-lemma :
+      ∀ {syn syn1 syn2 t n} ->
+    MergeSyn syn (t , n) syn1 ->
+    MergeSyn syn (t , n) syn2 ->
+    MergeInfo syn2 (t , Old) syn1
+  merge-syn-lemma MergeSynVoid MergeSynVoid = MergeInfoOld
+  merge-syn-lemma (MergeSynMerge MergeInfoNew) (MergeSynMerge MergeInfoNew) = MergeInfoOld
+  merge-syn-lemma (MergeSynMerge MergeInfoOld) (MergeSynMerge MergeInfoOld) = MergeInfoOld
+  merge-syn-lemma (MergeSynMerge (MergeInfoArrow nm1 m1 m2 na1)) (MergeSynMerge (MergeInfoArrow nm2 m3 m4 na2)) 
+    with ▸NArrow-unicity nm1 nm2 | na1 | na2 | merge-same m1 | merge-same m2 | merge-same m3 | merge-same m4
+  ... | refl , refl | refl | refl | refl | refl | refl | refl with merge-unicity m1 m3 | merge-unicity m2 m4 
+  ... | refl | refl = MergeInfoOld
+
+  merge-ana-lemma :
+      ∀ {ana ana1 ana2 t n} ->
+    MergeAna ana (t , n) ana1 ->
+    MergeAna ana (t , n) ana2 ->
+    MergeInfo ana2 (t , Old) ana1
+  merge-ana-lemma MergeAnaVoid MergeAnaVoid = MergeInfoOld
+  merge-ana-lemma (MergeAnaMerge MergeInfoNew) (MergeAnaMerge MergeInfoNew) = MergeInfoOld
+  merge-ana-lemma (MergeAnaMerge MergeInfoOld) (MergeAnaMerge MergeInfoOld) = MergeInfoOld
+  merge-ana-lemma (MergeAnaMerge (MergeInfoArrow nm1 m1 m2 na1)) (MergeAnaMerge (MergeInfoArrow nm2 m3 m4 na2)) 
+    with ▸NArrow-unicity nm1 nm2 | na1 | na2 | merge-same m1 | merge-same m2 | merge-same m3 | merge-same m4
+  ... | refl , refl | refl | refl | refl | refl | refl | refl with merge-unicity m1 m3 | merge-unicity m2 m4 
+  ... | refl | refl = MergeInfoOld
+
+
+  update-ana-lemma : 
+    ∀ {Γ ana ana' m e t n} ->
+    Γ ⊢ ELow ana m e ⇐ (t , n) ->
+    MergeAna ana (t , n) ana' ->
+    Γ ⊢ ELow (⇓ ana') m e ⇐ (t , Old)
+  update-ana-lemma (AnaSubsume x x₁ x₂ x₃) m = AnaSubsume (MergeAnaMerge (merge-ana-lemma x m)) x₁ x₂ x₃
+  update-ana-lemma (AnaSubsumeFail x x₁ x₂ x₃) m = AnaSubsumeFail (MergeAnaMerge (merge-ana-lemma x m)) x₁ x₂ x₃
+  update-ana-lemma (AnaFun x x₁ x₂ ana x₃) m = AnaFun (MergeAnaMerge (merge-ana-lemma x m)) x₁ x₂ ana x₃
+  update-ana-lemma (AnaFunFail1 x x₁ x₂ ana x₃) m = AnaFunFail1 (MergeAnaMerge (merge-ana-lemma x m)) x₁ x₂ ana x₃
+  update-ana-lemma (AnaFunFail2 x x₁ x₂ x₃) m = AnaFunFail2 (merge-ana-lemma (MergeAnaMerge x) m) x₁ x₂ x₃
 
   PreservationStepSyn :  
     ∀ {Γ e e' t} ->
     (Γ ⊢ e ⇒ t) ->
     (e U↦ e') ->   
     (Γ ⊢ e' ⇒ t)
+  PreservationStepSyn (SynFun syn x x₁) (StepNewAnnFun1 x₂ x₃) = {!   !}
+  PreservationStepSyn (SynFun syn x x₁) (StepNewSynFun1 x₂) = {!   !}
+  PreservationStepSyn (SynFun syn x x₁) StepVoidSynFun = {!   !}
   PreservationStepSyn (SynFun syn x x₁) (StepNewAnnFun2 x₂ x₃ x₄) = {!   !}
   PreservationStepSyn (SynFun syn x x₁) (StepNewSynFun2 x₂ x₃) = {!   !}
-  PreservationStepSyn (SynFunVoid syn) (StepNewAnnFun1 x x₁) = {!   !}
-  PreservationStepSyn (SynFunVoid syn) (StepNewSynFun1 x) = {!   !}
-  PreservationStepSyn (SynFunVoid syn) StepVoidSynFun = {!   !}
-  PreservationStepSyn (SynAp syn x x₁ x₂ x₃) (StepAp x₄ x₅ x₆) with oldify-syn syn
-  ... | _ , syn' = SynAp syn' x {!   !} {!   !} {!   !}
-  PreservationStepSyn (SynAp syn x x₁ x₂ x₃) (StepApFail x₄ x₅ x₆) = {!   !}
-  PreservationStepSyn (SynApFail syn x x₁ x₂ x₃) (StepAp x₄ x₅ x₆) = {!   !}
-  PreservationStepSyn (SynApFail syn x x₁ x₂ x₃) (StepApFail x₄ x₅ x₆) = {!   !}
-  PreservationStepSyn (SynAsc ana m) (StepAsc _ m1 m2) = SynAsc {!   !} {!   !}
-  -- PreservationStepSyn (SynAsc ana MergeInfoNew) (StepAsc n) = SynAsc {!   !} MergeInfoOld
-  -- PreservationStepSyn (SynAsc ana (MergeInfoArrow x m m₁ x₁)) (StepAsc n) = SynAsc {!   !} {! MergeInfoOld !} 
+  PreservationStepSyn {e = EUp syn-info (EAp (ELow ̸⇓ Unmarked (EUp (⇑ (t , nw)) e1)) Unmarked (ELow ana-info mark e2))} 
+    (SynAp {n = n} syn mt1 mn1 ana m) (StepAp is-new mt2 mn2 m1 m2) with oldify-syn syn | n | mn1 | m
+  ... | _ , syn' | Old | MNArrowOld | MergeSynVoid = SynAp syn' mt1 {!   !} {!   !} {!   !}
+  ... | _ , syn' | Old | MNArrowOld | MergeSynMerge x = {!   !}
+  ... | _ , syn' | New | MNArrowNew | MergeSynVoid = {!   !}
+  ... | _ , syn' | New | MNArrowNew | MergeSynMerge x = {!   !}
+  ... | _ , syn' | NArrow n₁ n₂ | MNArrowArrow | MergeSynVoid = {!   !}
+  ... | _ , syn' | NArrow n₁ n₂ | MNArrowArrow | MergeSynMerge x = {!   !}
+  
+  -- = SynAp syn' mt1 {!   !} (update-ana-lemma ana {!   !}) {!   !}
+  PreservationStepSyn (SynAp syn x x₁ x₂ x₃) (StepApFail x₄ x₅ x₆ m1 m2) = {!   !}
+  PreservationStepSyn (SynApFail syn x x₁ x₂ x₃) (StepAp x₄ x₅ x₆ m1 m2) = {!   !}
+  PreservationStepSyn (SynApFail syn x x₁ x₂ x₃) (StepApFail x₄ x₅ x₆ m1 m2) = {!   !}
+  PreservationStepSyn (SynAsc ana m) (StepAsc _ m1 m2) = SynAsc (update-ana-lemma ana m2) (MergeSynMerge (merge-syn-lemma m m1))
 
   -- PreservationStepAna :  
   --   ∀ {Γ e e' t} ->
@@ -233,7 +261,7 @@ module Core.Preservation where
   -- PreservationSyn (SynFunVoid syn) (StepLow (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec fill2)))) = SynFunVoid (PreservationSyn syn (StepLow fill1 step fill2))
   -- PreservationSyn (SynAp () x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 FillL⊙)) StepNoAnaFun (FillLEnvUpRec (FillLEnvAp1 FillL⊙)))
   -- PreservationSyn (SynAp syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2)))) = SynAp (PreservationSyn syn (StepLow fill1 step fill2)) x x₁ ana x₃
-  -- PreservationSyn (SynApFail () x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 FillL⊙)) StepNoAnaFun (FillLEnvUpRec (FillLEnvAp1 FillL⊙)))
+  -- PreservationSyn (SynApFail () x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 FillL⊙)) StepNoAnaFun (FillLEnvUpRec (FillLEnvAp1 FillL⊙))) 
   -- PreservationSyn (SynApFail syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2)))) = SynApFail (PreservationSyn syn (StepLow fill1 step fill2)) x x₁ ana x₃
   -- PreservationSyn (SynAp syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) = SynAp syn x x₁ (PreservationAna ana (StepLow fill1 step fill2)) x₃
   -- PreservationSyn (SynApFail syn x x₁ ana m) (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) = SynApFail syn x x₁ (PreservationAna ana (StepLow fill1 step fill2)) m
