@@ -92,15 +92,16 @@ data _U↦_ : ExpUp -> ExpUp -> Set where
     VarsSynthesize 0 (t1 , n1) (EUp (⇑ (t2 , n2)) e) e' ->
     EUp (⇑ (TArrow oldt1 oldt2 , n)) (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , n2)) e))) U↦
     EUp (⇑ (TArrow t1 oldt2 , NArrow n1 oldn2)) (EFun (t1 , Old) Unmarked (ELow ̸⇓ m e'))
-  StepNewSynFun1 : ∀ {t1 n1 m t2 n2 e} ->
+  StepNewSynFun : ∀ {t1 n1 m t2 n2 e syn syn'} ->
     IsNew n2 ->
-    EUp ̸⇑ (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , n2)) e))) U↦
-    EUp (⇑ (TArrow t1 t2 , New)) (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , Old)) e)))
-  StepNewSynFun2 : ∀ {n oldt1 oldt2 oldn1 oldn2 t1 n1 m t2 n2 e} ->
-    IsNew n2 ->
-    n ▸NArrow oldn1 , oldn2 ->
-    EUp (⇑ (TArrow oldt1 oldt2 , n)) (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , n2)) e))) U↦
-    EUp (⇑ (TArrow oldt1 t2 , NArrow oldn1 n2)) (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , Old)) e)))
+    MergeSyn syn (TArrow t1 t2 , NArrow Old n2) syn' -> 
+    EUp syn (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , n2)) e))) U↦
+    EUp (⇑ syn') (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , Old)) e)))
+  -- StepNewSynFun2 : ∀ {n oldt1 oldt2 oldn1 oldn2 t1 n1 m t2 n2 e} ->
+  --   IsNew n2 ->
+  --   n ▸NArrow oldn1 , oldn2 ->
+  --   EUp (⇑ (TArrow oldt1 oldt2 , n)) (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , n2)) e))) U↦
+  --   EUp (⇑ (TArrow oldt1 t2 , NArrow oldn1 n2)) (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , Old)) e)))
   StepVoidSynFun : ∀ {t1 n1 m t2 n2 e} ->
     EUp ̸⇑ (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , n2)) e))) U↦
     EUp (⇑ (TArrow t1 t2 , New)) (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , Old)) e)))

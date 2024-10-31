@@ -33,15 +33,15 @@ data MergeInfo : NewType -> NewType -> NewType -> Set where
     MergeInfo (TArrow t1 t2 , n) (TArrow t3 t4 , NArrow n3 n4) (TArrow t5 t6 , n7)
 
 data MergeSyn : SynData -> NewType -> NewType -> Set where 
-  MergeSynVoid : ∀ {syn} -> 
-    MergeSyn ̸⇑ syn syn -- TODO I think maybe this should be  MergeSyn ̸⇑ (t , n) (t , New)
+  MergeSynVoid : ∀ {t n} -> 
+    MergeSyn ̸⇑ (t , n) (t , n)
   MergeSynMerge : ∀ {syn1 syn2 syn3} -> 
     MergeInfo syn1 syn2 syn3 ->
     MergeSyn (⇑ syn1) syn2 syn3
 
 data MergeAna : AnaData -> NewType -> NewType -> Set where 
-  MergeAnaVoid : ∀ {ana} -> 
-    MergeAna ̸⇓ ana ana -- TODO see above
+  MergeAnaVoid : ∀ {t n} -> 
+    MergeAna ̸⇓ (t , n) (t , New)
   MergeAnaMerge : ∀ {ana1 ana2 ana3} -> 
     MergeInfo ana1 ana2 ana3 ->
     MergeAna (⇓ ana1) ana2 ana3
@@ -54,11 +54,11 @@ mutual
     SynHole : ∀ {Γ info syn} ->
       MergeSyn info (THole , Old) syn -> 
       Γ ⊢ (EUp info EHole) ⇒ syn
-    SynFun : ∀ {Γ info t1 t2 n1 n2 n3 syn e} ->
+    SynFun : ∀ {Γ syn syn' t1 t2 n1 n2 n3 e} ->
       ((t1 , n1) , Γ) ⊢ e ⇒ (t2 , n2) ->
       narrow n1 n2 ≡ n3 ->
-      MergeSyn info (TArrow t1 t2 , n3) syn -> 
-      Γ ⊢ (EUp info (EFun (t1 , n1) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ syn
+      MergeSyn syn (TArrow t1 t2 , n3) syn' -> 
+      Γ ⊢ (EUp syn (EFun (t1 , n1) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ syn'
     -- SynFunVoid : ∀ {Γ t1 t2 n1 n2 e} ->
     --   ((t1 , n1) , Γ) ⊢ e ⇒ (t2 , n2) ->
     --   Γ ⊢ (EUp ̸⇑ (EFun (t1 , n1) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ (TArrow t1 t2 , New)

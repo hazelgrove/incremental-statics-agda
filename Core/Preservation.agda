@@ -144,6 +144,31 @@ module Core.Preservation where
   --   ∃[ n' ] (Γ ⊢ EUp syn e2 ⇒ (t , n'))
   -- Silly syn step = ?
 
+
+
+  -- the classification is not true - it only works on a part-by-part basis
+
+  data SynClass (Γ : Ctx) (t1 : Type) (n1 : Newness) (t2 : Type) (n2 : Newness) (e : ExpMid) : Set where 
+    UpToDate : t1 ≡ t2 -> n1 ≡ n2 -> SynClass Γ t1 n1 t2 n2 e
+    OutOfDate : (∀ {t1' n1' t2' n2'} -> (Γ ⊢ EUp (⇑ (t1' , n1')) e ⇒ (t2' , n2')) -> (t1 ≡ t2) × (n1 ≡ n2)) -> SynClass Γ t1 n1 t2 n2 e
+
+  classify-syn : 
+    ∀ {Γ e t1 t2 n1 n2} ->
+    (Γ ⊢ EUp (⇑ (t1 , n1)) e ⇒ (t2 , n2)) ->
+    SynClass Γ t1 n1 t2 n2 e
+  classify-syn (SynConst (MergeSynMerge MergeInfoOld)) = UpToDate refl refl
+  classify-syn (SynHole (MergeSynMerge MergeInfoOld)) = UpToDate refl refl
+  classify-syn (SynFun {n1 = Old} {n2 = Old} syn refl (MergeSynMerge MergeInfoOld)) = UpToDate refl refl
+  classify-syn (SynFun {n1 = New} {n2 = Old} syn refl (MergeSynMerge (MergeInfoArrow nm MergeInfoNew MergeInfoOld refl))) = {!   !}
+  classify-syn (SynFun {n1 = NArrow n1 n2} {n2 = Old} syn refl (MergeSynMerge (MergeInfoArrow nm m1 m2 refl))) = {!   !}
+  classify-syn (SynFun {n2 = New} syn refl (MergeSynMerge m)) = {!   !}
+  classify-syn (SynFun {n2 = NArrow n2 n3} syn refl (MergeSynMerge m)) = {!   !}
+  classify-syn (SynAp syn x x₁ x₂ x₃) = {!   !}
+  classify-syn (SynApFail syn x x₁ x₂ x₃) = {!   !}
+  classify-syn (SynVar x x₁) = {!   !}
+  classify-syn (SynVarFail x x₁) = {!   !}
+  classify-syn (SynAsc x x₁) = {!   !}
+
   oldify-syn : 
     ∀ {Γ e t1 t2 n1 n2} ->
     (Γ ⊢ EUp (⇑ (t1 , n1)) e ⇒ (t2 , n2)) ->
@@ -209,10 +234,16 @@ module Core.Preservation where
     (e U↦ e') ->   
     (Γ ⊢ e' ⇒ t)
   PreservationStepSyn (SynFun syn x x₁) (StepNewAnnFun1 x₂ x₃) = {!   !}
-  PreservationStepSyn (SynFun syn x x₁) (StepNewSynFun1 x₂) = {!   !}
+
+  PreservationStepSyn (SynFun {n2 = Old} syn refl MergeSynVoid) (StepNewSynFun n MergeSynVoid) with oldify-syn syn
+  ... | _ , syn' = SynFun syn' refl (MergeSynMerge {!  !})
+  PreservationStepSyn (SynFun {n2 = New} syn refl MergeSynVoid) (StepNewSynFun n m) with oldify-syn syn
+  ... | _ , syn' = SynFun syn' refl (MergeSynMerge {!  !})
+  PreservationStepSyn (SynFun {n2 = NArrow n2 n3} syn refl MergeSynVoid) (StepNewSynFun n m) = {!   !} --SynFun {!   !} {!   !} (MergeSynMerge {!   !})
+  PreservationStepSyn (SynFun {n2 = n2} syn refl m1) (StepNewSynFun n m2) = {!   !} 
+  
   PreservationStepSyn (SynFun syn x x₁) StepVoidSynFun = {!   !}
   PreservationStepSyn (SynFun syn x x₁) (StepNewAnnFun2 x₂ x₃ x₄) = {!   !}
-  PreservationStepSyn (SynFun syn x x₁) (StepNewSynFun2 x₂ x₃) = {!   !}
   PreservationStepSyn {e = EUp syn-info (EAp (ELow ̸⇓ Unmarked (EUp (⇑ (t , nw)) e1)) Unmarked (ELow ana-info mark e2))} 
     (SynAp {n = n} syn mt1 mn1 ana m) (StepAp is-new mt2 mn2 m1 m2) with oldify-syn syn | n | mn1 | m
   ... | _ , syn' | Old | MNArrowOld | MergeSynVoid = SynAp syn' mt1 {!   !} {!   !} {!   !}
@@ -265,4 +296,4 @@ module Core.Preservation where
   -- PreservationSyn (SynApFail syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2)))) = SynApFail (PreservationSyn syn (StepLow fill1 step fill2)) x x₁ ana x₃
   -- PreservationSyn (SynAp syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) = SynAp syn x x₁ (PreservationAna ana (StepLow fill1 step fill2)) x₃
   -- PreservationSyn (SynApFail syn x x₁ ana m) (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) = SynApFail syn x x₁ (PreservationAna ana (StepLow fill1 step fill2)) m
-  -- PreservationSyn (SynAsc ana m) (StepLow (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc fill2))) = SynAsc (PreservationAna ana (StepLow fill1 step fill2)) m     
+  -- PreservationSyn (SynAsc ana m) (StepLow (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc fill2))) = SynAsc (PreservationAna ana (StepLow fill1 step fill2)) m      
