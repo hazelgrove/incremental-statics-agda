@@ -58,6 +58,11 @@ data _▸NArrow_,_ : Newness -> Newness -> Newness -> Set where
   MNArrowNew : New ▸NArrow New , New
   MNArrowArrow : ∀ {n1 n2} → (NArrow n1 n2) ▸NArrow n1 , n2
 
+dec▸NArrow : (n : Newness) -> (Newness × Newness)
+dec▸NArrow Old = Old , Old
+dec▸NArrow New = New , New
+dec▸NArrow (NArrow n1 n2) = n1 , n2
+
 narrow : Newness -> Newness -> Newness 
 narrow Old Old = Old 
 narrow New New = New 
