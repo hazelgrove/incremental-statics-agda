@@ -90,25 +90,22 @@ structify (TArrow t1 t2 , New) with structify (t1 , New) | structify (t2 , New)
 structify (TArrow t1 t2 , NArrow n1 n2) with structify (t1 , n1) | structify (t2 , n2)
 ... | (t1' , n1') | (t2' , n2') = TArrow t1' t2' , NArrow n1' n2'
 
--- structify-wf : {t : NewType} -> (NTWf t) -> (NTSWf (structify t))
--- structify-wf {TBase , n} (NTWfSingleton s1 s2) = NTSWfSingleton s1 s2
--- structify-wf {THole , n} (NTWfSingleton s1 s2) = NTSWfSingleton s1 s2
--- structify-wf {TArrow t1 t2 , Old} (NTWfArrow MNArrowOld wf1 wf2) with structify-wf {t1 , Old} wf1 | structify-wf {t2 , Old} wf2
--- ... | wf1' | wf2' = NTSWfArrow wf1' wf2'
--- structify-wf {TArrow t1 t2 , New} (NTWfArrow MNArrowNew wf1 wf2) with structify-wf {t1 , New} wf1 | structify-wf {t2 , New} wf2
--- ... | wf1' | wf2' = NTSWfArrow wf1' wf2'
--- structify-wf {TArrow t1 t2 , NArrow n1 n2} (NTWfArrow MNArrowArrow wf1 wf2) with structify-wf {t1 , n1} wf1 | structify-wf {t2 , n2} wf2
--- ... | wf1' | wf2' = NTSWfArrow wf1' wf2'
+CWF-WF : {t : NewType} -> (NTCWf t) -> (NTWf t)
+CWF-WF (NTCWfSingleton x) = NTWfSingleton x
+CWF-WF (NTCWfArrow x wf wf₁) = NTWfArrow (CWF-WF wf) (CWF-WF wf₁)
 
-structify-wf : {t : NewType} -> (NTCWf t) -> (NTSWf (structify t))
-structify-wf {TBase , n} (NTCWfSingleton x) = NTSWfSingleton TBaseSingleton x
-structify-wf {THole , n} (NTCWfSingleton x) = NTSWfSingleton THoleSingleton x
-structify-wf {TArrow t1 t2 , Old} (NTCWfSingleton NOldSingleton) with structify-wf {t1 , Old} (NTCWfSingleton NOldSingleton) | structify-wf {t2 , Old} (NTCWfSingleton NOldSingleton)
+structify-wf : {t : NewType} -> (NTWf t) -> (NTSWf (structify t))
+structify-wf {TBase , n} (NTWfSingleton x) = NTSWfSingleton TBaseSingleton x
+structify-wf {THole , n} (NTWfSingleton x) = NTSWfSingleton THoleSingleton x
+structify-wf {TArrow t1 t2 , Old} (NTWfSingleton NOldSingleton) with structify-wf {t1 , Old} (NTWfSingleton NOldSingleton) | structify-wf {t2 , Old} (NTWfSingleton NOldSingleton)
 ... | wf1' | wf2' = NTSWfArrow wf1' wf2'
-structify-wf {TArrow t1 t2 , New} (NTCWfSingleton NNewSingleton) with structify-wf {t1 , New} (NTCWfSingleton NNewSingleton) | structify-wf {t2 , New} (NTCWfSingleton NNewSingleton)
+structify-wf {TArrow t1 t2 , New} (NTWfSingleton NNewSingleton) with structify-wf {t1 , New} (NTWfSingleton NNewSingleton) | structify-wf {t2 , New} (NTWfSingleton NNewSingleton)
 ... | wf1' | wf2' = NTSWfArrow wf1' wf2'
-structify-wf {TArrow t1 t2 , (NArrow n1 n2)} (NTCWfArrow _ wf1 wf2) with structify-wf {t1 , n1} wf1 | structify-wf {t2 , n2} wf2
+structify-wf {TArrow t1 t2 , (NArrow n1 n2)} (NTWfArrow wf1 wf2) with structify-wf {t1 , n1} wf1 | structify-wf {t2 , n2} wf2
 ... | wf1' | wf2' = NTSWfArrow wf1' wf2'
+
+structify-cwf : {t : NewType} -> (NTCWf t) -> (NTSWf (structify t))
+structify-cwf wf = structify-wf (CWF-WF wf)
 
 compactify-newness : Newness -> Newness
 compactify-newness Old = Old 
@@ -201,6 +198,21 @@ smerge-lassoc (NTSWfArrow wf1 wf2) (NTSWfArrow wf3 wf4) (NTSWfArrow wf5 wf6) (SM
 ... | t13 , m5 , m6 | t24 , m7 , m8 = _ , SMergeInfoArrow m5 m7 , SMergeInfoArrow m6 m8
 
 
+-- smerge-rassoc : ∀ {t1 t2 t3 t12 t123} ->
+--   NTSWf t1 ->
+--   NTSWf t2 ->
+--   NTSWf t3 ->
+--   t1 S▷ t2 == t12 ->
+--   t12 S▷ t3 == t123 ->
+--   ∃[ t23 ] (t2 S▷ t3 == t23 × t1 S▷ t23 == t123)
+-- smerge-rassoc wf1 wf2 wf3 SMergeInfoNew SMergeInfoNew = {!   !} , {!   !} , {!   !}
+-- smerge-rassoc wf1 wf2 wf3 SMergeInfoOld SMergeInfoNew = {!   !}
+-- smerge-rassoc wf1 wf2 wf3 SMergeInfoOld SMergeInfoOld = {!   !}
+-- smerge-rassoc wf1 wf2 wf3 SMergeInfoOld (SMergeInfoArrow m2 m3) = {!   !}
+-- smerge-rassoc wf1 wf2 wf3 (SMergeInfoArrow m1 m2) (SMergeInfoArrow m3 m4) = {!   !}
+
+
+
 data _▷_==_ : NewType -> NewType -> NewType -> Set where 
   MergeInfoNew : ∀ {t1 t2 n2} -> 
     (t1 , New) ▷ (t2 , n2) == (t1 , New)
@@ -219,8 +231,8 @@ data _▷_==_ : NewType -> NewType -> NewType -> Set where
 --   MergeInfoOld : ∀ {t1 n1} ->    
 --     MergeInfo (t1 , n1) (t1 , Old) (t1 , n1)   
 --   MergeInfoArrow : ∀ {t1 t2 t3 t4 t5 t6 n n1 n2 n3 n4 n5 n6 n7} -> 
---     n ▸NArrow n1 , n2 -> 
+--     n ▸NArrow n1 , n2 ->  
 --     MergeInfo (t1 , n1) (t3 , n3) (t5 , n5) ->  
 --     MergeInfo (t2 , n2) (t4 , n4) (t6 , n6) ->           
---     narrow n5 n6 ≡ n7 ->   
+--     narrow n5 n6 ≡ n7 ->    
 --     MergeInfo (TArrow t1 t2 , n) (TArrow t3 t4 , NArrow n3 n4) (TArrow t5 t6 , n7) 

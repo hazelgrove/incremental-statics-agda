@@ -60,7 +60,7 @@ data SettledLow : ExpLow -> Set where
 
 data PSettled : Program -> Set where 
   PSettledRoot : ∀ {e} ->
-    Settled e -> 
+    SettledExcept e -> 
     PSettled (PRoot e)
 
 -- settled-implies-settled-except : ∀ {e} ->
