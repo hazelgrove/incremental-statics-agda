@@ -46,6 +46,11 @@ mutual
       t ▸TArrow t1 , t2 ->
       Γ ⊢ b2 ~> e2 ⇐ t1 ->
       Γ ⊢ (BareEAp b1 b2) ~> (EUp (⇑ (t2 , Old)) (EAp (ELow ̸⇓ Unmarked e1) Unmarked e2)) ⇒ t2
+    MarkApFail : ∀ {Γ b1 b2 e1 e2 t} ->
+      Γ ⊢ b1 ~> e1 ⇒ t ->
+      t ̸▸TArrow ->
+      Γ ⊢ b2 ~> e2 ⇐ THole ->
+      Γ ⊢ (BareEAp b1 b2) ~> (EUp (⇑ (THole , Old)) (EAp (ELow ̸⇓ Unmarked e1) Marked e2)) ⇒ THole
     MarkVar : ∀ {Γ x t} ->
       x , t ∈ Γ ->
       Γ ⊢ (BareEVar x) ~> (EUp (⇑ (t , Old)) (EVar x Unmarked)) ⇒ t

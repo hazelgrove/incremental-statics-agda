@@ -39,6 +39,17 @@ data AnaConsist : NewType -> AnaData -> Set where
     ana1 ▷ ana2 ->
     AnaConsist ana1 (⇓ ana2)
 
+data MatchArrowMarkConsist : NewType -> MarkData -> Set where 
+  MAMConsistNew : ∀ {t m} ->
+    MatchArrowMarkConsist (t , New) m
+  MAMConsistMatch : ∀ {t t1 t2 n m} ->
+    t ▸TArrow t1 , t2 ->
+    MatchArrowMarkConsist (t , n) Unmarked
+  MAMConsistNoMatch : ∀ {t n m} ->
+    t ̸▸TArrow ->
+    MatchArrowMarkConsist (t , n) Marked
+
+
 mutual 
   data _⊢_⇒ : (Γ : Ctx) (e : ExpUp)→ Set where 
     SynUp : ∀ {Γ info e t syn} ->
@@ -51,7 +62,7 @@ mutual
       Γ ⊢ EConst M⇒ (TBase , Old)
     SynHole : ∀ {Γ} ->
       Γ ⊢ EHole M⇒ (THole , Old)
-    SynFun : ∀ {Γ t1 t2 n1 n2 n3 e} -> TODO
+    -- SynFun : ∀ {Γ t1 t2 n1 n2 n3 e} -> TODO
     SynAp : ∀ {Γ t t1 t2 n n1 n2 e1 e2} ->
       Γ ⊢ e1 ⇒ (t , n) ->
       t ▸TArrow t1 , t2 ->
