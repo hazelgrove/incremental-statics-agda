@@ -84,11 +84,26 @@ module Core.Preservation where
   merge-ana-consist MergeAnaVoid = MergeInfoOld
   merge-ana-consist (MergeAnaMerge (MergeInfoType _)) = MergeInfoOld
 
+  oldify-syn : ∀ {Γ t n e} ->
+    Γ ⊢ EUp (⇑ (t , n)) e ⇒ ->
+    Γ ⊢ EUp (⇑ (t , Old)) e ⇒
+  oldify-syn (SynConst (SynConsistMerge MergeInfoOld)) = SynConst (SynConsistMerge MergeInfoOld)
+  oldify-syn (SynHole (SynConsistMerge MergeInfoOld)) = SynHole (SynConsistMerge MergeInfoOld)
+
   freshen-ana : ∀ {Γ ana m e t n ana'} ->
     Γ ⊢ ELow ana m e ⇐ ->
     MergeAna (t , n) ana ana' ->
     Γ ⊢ ELow (⇓ ana') m e ⇐
   freshen-ana () merge
+
+  oldify-ntmatch : ∀ {t n t1 t2 m n1 n2 n3} ->
+    (t , n) ▸NTArrow (t1 , n1) , (t2 , n2) , (m , n3) ->
+    (t , Old) ▸NTArrow (t1 , Old) , (t2 , Old) , (m , MarkOld)
+  oldify-ntmatch (MNTArrowOldMatch m) = MNTArrowOldMatch m
+  oldify-ntmatch (MNTArrowOldNoMatch m) = MNTArrowOldNoMatch m
+  oldify-ntmatch (MNTArrowNewMatch m) = MNTArrowOldMatch m
+  oldify-ntmatch (MNTArrowNewNoMatch m) = MNTArrowOldNoMatch m
+  oldify-ntmatch MNTArrowArrow = MNTArrowOldMatch MArrowArrow
 
   PreservationStepSyn :  
     ∀ {Γ e e'} ->
@@ -97,8 +112,14 @@ module Core.Preservation where
     (Γ ⊢ e' ⇒)
   PreservationStepSyn (SynConst x) ()
   PreservationStepSyn (SynHole x) ()
-  PreservationStepSyn (SynAp (SynArrowSome x) syncon anacon markcon wtsyn wtana) (StepAp isnew match2 mergesyn mergeana) = {!   !} --SynAp {!   !} {!   !} {!   !} {!   !} {!   !} {!   !}
-  PreservationStepSyn (SynAsc syncon anacon wtana) (StepAsc isnew mergesyn mergeana) = SynAsc (SynConsistMerge (merge-syn-consist mergesyn)) (AnaConsistMerge (merge-ana-consist mergeana)) (freshen-ana wtana mergeana)
+  PreservationStepSyn 
+    (SynAp (SynArrowSome match1) syncon anacon markcon wtsyn wtana) 
+    (StepAp {t1 = (t3 , n3)} {t2 = (t4 , n4)} isnew match2 mergesyn mergeana) 
+    = SynAp (SynArrowSome (oldify-ntmatch match2)) (SynConsistMerge (merge-syn-consist mergesyn)) (AnaConsistMerge (merge-ana-consist mergeana)) MarkConsistOld (oldify-syn wtsyn) (freshen-ana wtana mergeana)
+  PreservationStepSyn 
+    (SynAsc syncon anacon wtana) 
+    (StepAsc isnew mergesyn mergeana) 
+    = SynAsc (SynConsistMerge (merge-syn-consist mergesyn)) (AnaConsistMerge (merge-ana-consist mergeana)) (freshen-ana wtana mergeana)
 
   -- PreservationStepAna :  
   --   ∀ {Γ e e' t} ->
@@ -133,7 +154,7 @@ module Core.Preservation where
   -- PreservationSyn (SynFunVoid syn) (StepLow (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec fill2)))) = SynFunVoid (PreservationSyn syn (StepLow fill1 step fill2))
   -- PreservationSyn (SynAp () x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 FillL⊙)) StepNoAnaFun (FillLEnvUpRec (FillLEnvAp1 FillL⊙)))
   -- PreservationSyn (SynAp syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2)))) = SynAp (PreservationSyn syn (StepLow fill1 step fill2)) x x₁ ana x₃
-  -- PreservationSyn (SynApFail () x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 FillL⊙)) StepNoAnaFun (FillLEnvUpRec (FillLEnvAp1 FillL⊙))) 
+  -- PreservationSyn (SynApFail () x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 FillL⊙)) StepNoAnaFun (FillLEnvUpRec (FillLEnvAp1 FillL⊙)))  
   -- PreservationSyn (SynApFail syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2)))) = SynApFail (PreservationSyn syn (StepLow fill1 step fill2)) x x₁ ana x₃
   -- PreservationSyn (SynAp syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) = SynAp syn x x₁ (PreservationAna ana (StepLow fill1 step fill2)) x₃
   -- PreservationSyn (SynApFail syn x x₁ ana m) (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) = SynApFail syn x x₁ (PreservationAna ana (StepLow fill1 step fill2)) m
