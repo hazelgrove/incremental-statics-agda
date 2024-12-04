@@ -11,6 +11,7 @@ open import Prelude
 open import Core.Core
 open import Core.WellTyped
 open import Core.Update
+open import Core.Merge
 open import Core.Settled
 open import Core.Lemmas-Context
 
@@ -71,6 +72,24 @@ module Core.Preservation where
   -- UEnvUpFillTyping syn-in1 (FillUEnvUpRec (FillUEnvAp2 fill1)) (SynApFail syn mt mn ana m) syn-in2 (FillUEnvUpRec (FillUEnvAp2 fill2)) = SynApFail syn mt mn (UEnvLowFillTyping syn-in1 fill1 ana syn-in2 fill2) m
   -- UEnvUpFillTyping syn-in1 (FillUEnvUpRec (FillUEnvAsc fill1)) (SynAsc ana m) syn-in2 (FillUEnvUpRec (FillUEnvAsc fill2)) = SynAsc (UEnvLowFillTyping syn-in1 fill1 ana syn-in2 fill2) m
 
+  merge-syn-consist : ∀ {t n syn syn'} ->
+    MergeSyn (t , n) syn syn' ->
+    (t , Old) ▷ syn'
+  merge-syn-consist MergeSynVoid = MergeInfoOld
+  merge-syn-consist (MergeSynMerge (MergeInfoType _)) = MergeInfoOld
+
+  merge-ana-consist : ∀ {t n ana ana'} ->
+    MergeAna (t , n) ana ana' ->
+    (t , Old) ▷ ana'
+  merge-ana-consist MergeAnaVoid = MergeInfoOld
+  merge-ana-consist (MergeAnaMerge (MergeInfoType _)) = MergeInfoOld
+
+  freshen-ana : ∀ {Γ ana m e t n ana'} ->
+    Γ ⊢ ELow ana m e ⇐ ->
+    MergeAna (t , n) ana ana' ->
+    Γ ⊢ ELow (⇓ ana') m e ⇐
+  freshen-ana () merge
+
   PreservationStepSyn :  
     ∀ {Γ e e'} ->
     (Γ ⊢ e ⇒) ->
@@ -78,7 +97,8 @@ module Core.Preservation where
     (Γ ⊢ e' ⇒)
   PreservationStepSyn (SynConst x) ()
   PreservationStepSyn (SynHole x) ()
-  PreservationStepSyn (SynAp (SynArrowSome x) syncon anacon markcon wtsyn wtana) (StepAp isnew match2 mergesyn mergeana) = SynAp {!   !} {!   !} {!   !} {!   !} {!   !} {!   !}
+  PreservationStepSyn (SynAp (SynArrowSome x) syncon anacon markcon wtsyn wtana) (StepAp isnew match2 mergesyn mergeana) = {!   !} --SynAp {!   !} {!   !} {!   !} {!   !} {!   !} {!   !}
+  PreservationStepSyn (SynAsc syncon anacon wtana) (StepAsc isnew mergesyn mergeana) = SynAsc (SynConsistMerge (merge-syn-consist mergesyn)) (AnaConsistMerge (merge-ana-consist mergeana)) (freshen-ana wtana mergeana)
 
   -- PreservationStepAna :  
   --   ∀ {Γ e e' t} ->
@@ -87,12 +107,12 @@ module Core.Preservation where
   --   (Γ ⊢ e' ⇐ t)
   -- PreservationStepAna ana step = {!   !}
 
-  PreservationAna :  
-    ∀ {Γ e e'} ->
-    (Γ ⊢ e ⇐) ->
-    (e Low↦ e') ->   
-    (Γ ⊢ e' ⇐)
-  PreservationAna = {!   !}
+  -- PreservationAna :  
+  --   ∀ {Γ e e'} ->
+  --   (Γ ⊢ e ⇐) ->
+  --   (e Low↦ e') ->   
+  --   (Γ ⊢ e' ⇐)
+  -- PreservationAna = {!   !}
 
   -- PreservationSyn :  
   --   ∀ {Γ e e' t} ->
@@ -117,4 +137,4 @@ module Core.Preservation where
   -- PreservationSyn (SynApFail syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2)))) = SynApFail (PreservationSyn syn (StepLow fill1 step fill2)) x x₁ ana x₃
   -- PreservationSyn (SynAp syn x x₁ ana x₃) (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) = SynAp syn x x₁ (PreservationAna ana (StepLow fill1 step fill2)) x₃
   -- PreservationSyn (SynApFail syn x x₁ ana m) (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) = SynApFail syn x x₁ (PreservationAna ana (StepLow fill1 step fill2)) m
-  -- PreservationSyn (SynAsc ana m) (StepLow (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc fill2))) = SynAsc (PreservationAna ana (StepLow fill1 step fill2)) m       
+  -- PreservationSyn (SynAsc ana m) (StepLow (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc fill2))) = SynAsc (PreservationAna ana (StepLow fill1 step fill2)) m        

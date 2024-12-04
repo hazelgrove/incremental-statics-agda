@@ -86,5 +86,10 @@ mutual
       Γ ⊢ (EUp syn2 e1) ⇒ ->
       Γ ⊢ (ELow ana m2 e2) ⇐ ->
       Γ ⊢ (EUp syn1 (EAp (ELow ̸⇓ Unmarked (EUp syn2 e1)) m1 (ELow ana m2 e2))) ⇒
+    SynAsc : ∀ {Γ syn asc ana m e} ->
+      SynConsist asc syn -> 
+      AnaConsist asc ana -> 
+      Γ ⊢ (ELow ana m e) ⇐ ->
+      Γ ⊢ (EUp syn (EAsc asc (ELow ana m e))) ⇒
 
   data _⊢_⇐ : (Γ : Ctx) (e : ExpLow) → Set where 
