@@ -9,6 +9,7 @@ open import Prelude
 
 open import Core.Core
 open import Core.WellTyped
+open import Core.Merge
 
 module Core.Update where
 
@@ -94,7 +95,7 @@ data _U↦_ : ExpUp -> ExpUp -> Set where
     EUp (⇑ (TArrow t1 oldt2 , NArrow n1 oldn2)) (EFun (t1 , Old) Unmarked (ELow ̸⇓ m e'))
   StepNewSynFun : ∀ {t1 n1 m t2 n2 e syn syn'} ->
     IsNew n2 ->
-    MergeSyn syn (TArrow t1 t2 , NArrow Old n2) syn' -> 
+    MergeSyn (TArrow t1 t2 , NArrow Old n2) syn syn' -> 
     EUp syn (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , n2)) e))) U↦
     EUp (⇑ syn') (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , Old)) e)))
   -- StepNewSynFun2 : ∀ {n oldt1 oldt2 oldn1 oldn2 t1 n1 m t2 n2 e} ->
@@ -106,27 +107,18 @@ data _U↦_ : ExpUp -> ExpUp -> Set where
     EUp ̸⇑ (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , n2)) e))) U↦
     EUp (⇑ (TArrow t1 t2 , New)) (EFun (t1 , n1) Unmarked (ELow ̸⇓ m (EUp (⇑ (t2 , Old)) e)))
   -- Ap Steps
-  StepAp : ∀ {t n t1 t2 n1 n2 syn syn' ana ana' e1 e2 m1 m2} ->
+  StepAp : ∀ {t n t1 t2 syn syn' ana ana' e1 e2 m1 m1' mn m2} ->
     IsNew n ->
-    t ▸TArrow t1 , t2 ->
-    n ▸NArrow n1 , n2 ->
-    MergeSyn syn (t2 , n2) syn' -> 
-    MergeAna ana (t1 , n1) ana' -> 
+    (t , n) ▸NTArrow t1 , t2 , (m1' , mn) ->
+    MergeSyn t2 syn syn' -> 
+    MergeAna t1 ana ana' -> 
     EUp syn (EAp (ELow ̸⇓ Unmarked (EUp (⇑ (t , n)) e1)) m1 (ELow ana m2 e2)) U↦
-    EUp (⇑ syn') (EAp (ELow ̸⇓ Unmarked (EUp (⇑ (t , Old)) e1)) Unmarked (ELow (⇓ ana') m2 e2))
-  StepApFail : ∀ {t n n1 n2 syn syn' ana ana' e1 e2 m1 m2} ->
-    IsNew n ->
-    t ̸▸TArrow ->
-    n ▸NArrow n1 , n2 ->
-    MergeSyn syn (THole , n2) syn' -> 
-    MergeAna ana (THole , n1) ana' -> 
-    EUp syn (EAp (ELow ̸⇓ Unmarked (EUp (⇑ (t , n)) e1)) m1 (ELow ana m2 e2)) U↦
-    EUp (⇑ syn') (EAp (ELow ̸⇓ Unmarked (EUp (⇑ (t , Old)) e1)) Marked (ELow (⇓ ana') m2 e2))
+    EUp (⇑ syn') (EAp (ELow ̸⇓ Unmarked (EUp (⇑ (t , Old)) e1)) m1' (ELow (⇓ ana') m2 e2))
   -- Asc Step
   StepAsc : ∀ {syn syn' t n ana ana' m e} ->
     IsNew n ->
-    MergeSyn syn (t , n) syn' -> 
-    MergeAna ana (t , n) ana' -> 
+    MergeSyn (t , n) syn syn' -> 
+    MergeAna (t , n) ana ana' -> 
     EUp syn (EAsc (t , n) (ELow ana m e)) U↦
     EUp (⇑ syn') (EAsc (t , Old) (ELow (⇓ ana') m e))
 

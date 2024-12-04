@@ -83,6 +83,13 @@ data AnaData : Set where
   ̸⇓ : AnaData
   ⇓ : NewType -> AnaData
 
+data MarkNewness : Set where 
+  MarkNew : MarkNewness 
+  MarkOld : MarkNewness
+
+NewMark : Set 
+NewMark = MarkData × MarkNewness
+
 -- data ExpPointer : Set where 
 --   Here : ExpPointer 
 --   PFun : ExpPointer -> ExpPointer

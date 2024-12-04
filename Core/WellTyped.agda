@@ -38,34 +38,33 @@ data AnaConsist : NewType -> AnaData -> Set where
     ana1 ▷ ana2 ->
     AnaConsist ana1 (⇓ ana2)
 
-data MarkConstraint : Set where 
-  MarkNew : MarkConstraint 
-  MarkOld : MarkData -> MarkConstraint
-
-data MarkConsist : (m1 : MarkConstraint) (m2 : MarkData) -> Set where 
-  MarkConsistNew : ∀ {m} ->
-    MarkConsist MarkNew m
+data MarkConsist : (m1 : NewMark) (m2 : MarkData) -> Set where 
+  MarkConsistNew : ∀ {m1 m2} ->
+    MarkConsist (m1 , MarkNew) m2
   MarkConsistOld : ∀ {m} ->
-    MarkConsist (MarkOld m) m
+    MarkConsist (m , MarkOld) m
 
 -- takes a newtype and projects its left and right sides as well as returning 
 -- whether it matches arrow. these are newtypes/constraints, so they can be checked
 -- with directed consistency against the actual annotations
-data _▸NTArrow_,_,_ : NewType -> NewType -> NewType -> MarkConstraint -> Set where 
+data _▸NTArrow_,_,_ : NewType -> NewType -> NewType -> NewMark -> Set where 
   MNTArrowOldMatch : ∀ {t t1 t2} ->
     t ▸TArrow t1 , t2 ->
-    (t , Old) ▸NTArrow (t1 , Old) , (t2 , Old) , (MarkOld Unmarked)
+    (t , Old) ▸NTArrow (t1 , Old) , (t2 , Old) , (Unmarked , MarkOld)
   MNTArrowOldNoMatch : ∀ {t} ->
     t ̸▸TArrow ->
-    (t , Old) ▸NTArrow (THole , Old) , (THole , Old) , (MarkOld Marked)
-  MNTArrowNew : ∀ {t} ->
-    -- the return types are dummy. could have used type constraints
-    (t , New) ▸NTArrow (THole , New) , (THole , New) , MarkNew
+    (t , Old) ▸NTArrow (THole , Old) , (THole , Old) , (Marked , MarkOld)
+  MNTArrowNewMatch : ∀ {t t1 t2} ->
+    t ▸TArrow t1 , t2 ->
+    (t , New) ▸NTArrow (t1 , New) , (t2 , New) , (Unmarked , MarkNew)
+  MNTArrowNewNoMatch : ∀ {t} ->
+    t ̸▸TArrow ->
+    (t , New) ▸NTArrow (THole , New) , (THole , New) , (Marked , MarkNew)
   MNTArrowArrow : ∀ {t1 t2 n1 n2} → 
-    (TArrow t1 t2 , NArrow n1 n2) ▸NTArrow (t1 , n1) , (t2 , n2) , (MarkOld Unmarked)
+    (TArrow t1 t2 , NArrow n1 n2) ▸NTArrow (t1 , n1) , (t2 , n2) , (Unmarked , MarkOld)
 
-data _▸SynArrow_,_,_ : SynData -> NewType -> NewType -> MarkConstraint -> Set where 
-  SynArrowNone : ̸⇑ ▸SynArrow (THole , New) , (THole , New) , MarkNew
+data _▸SynArrow_,_,_ : SynData -> NewType -> NewType -> NewMark -> Set where 
+  SynArrowNone : ̸⇑ ▸SynArrow (THole , New) , (THole , New) , (Unmarked , MarkNew)
   SynArrowSome : ∀ {t t1 t2 m} ->
     t ▸NTArrow t1 , t2 , m -> 
     (⇑ t) ▸SynArrow t1 , t2 , m
