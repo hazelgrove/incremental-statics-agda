@@ -12,88 +12,75 @@ open import Core.Merge
 
 module Core.WellTyped where
 
-data MergeSyn : NewType -> SynData -> NewType -> Set where 
-  MergeSynVoid : ∀ {t n} -> 
-    MergeSyn (t , n) ̸⇑ (t , n)
-  MergeSynMerge : ∀ {syn1 syn2 syn3} -> 
-    syn1 ▷ syn2 == syn3 ->
-    MergeSyn syn1 (⇑ syn2) syn3
+-- directed newtype consistency
+data _▷_ : NewType -> NewType -> Set where 
+  MergeInfoNew : ∀ {t1 t2 n2} -> 
+    (t1 , New) ▷ (t2 , n2)
+  MergeInfoOld : ∀ {t1 n2} -> 
+    (t1 , Old) ▷ (t1 , n2)
+  MergeInfoArrow : ∀ {t1 t2 t3 t4 t5 t6 n n1 n2 n3 n4 n5 n6} -> 
+    n ▸NArrow n3 , n4 ->
+    (t1 , n1) ▷ (t3 , n3) == (t5 , n5) ->
+    (t2 , n2) ▷ (t4 , n4) == (t6 , n6) ->
+    (TArrow t1 t2 , NArrow n1 n2) ▷ (TArrow t3 t4 , n)
 
-data MergeAna : NewType -> AnaData -> NewType -> Set where 
-  MergeAnaVoid : ∀ {t n} -> 
-    MergeAna (t , n) ̸⇓ (t , New)
-  MergeAnaMerge : ∀ {ana1 ana2 ana3} -> 
-    ana1 ▷ ana2 == ana3 ->
-    MergeAna ana1 (⇓ ana2) ana3
+data SynConsist : NewType -> SynData -> Set where 
+  SynConsistVoid : ∀ {t n} -> 
+    SynConsist (t , n) ̸⇑
+  SynConsistMerge : ∀ {syn1 syn2} -> 
+    syn1 ▷ syn2 ->
+    SynConsist syn1 (⇑ syn2)
+
+data AnaConsist : NewType -> AnaData -> Set where 
+  AnaConsistVoid : ∀ {t n} -> 
+    AnaConsist (t , n) ̸⇓
+  AnaConsistMerge : ∀ {ana1 ana2} -> 
+    ana1 ▷ ana2 ->
+    AnaConsist ana1 (⇓ ana2)
+
+data MatchArrowMarkConsist : NewType -> MarkData -> Set where 
+  MAMConsistNew : ∀ {t m} ->
+    MatchArrowMarkConsist (t , New) m
+  MAMConsistMatch : ∀ {t t1 t2 n} ->
+    t ▸TArrow t1 , t2 ->
+    MatchArrowMarkConsist (t , n) Unmarked
+  MAMConsistNoMatch : ∀ {t n} ->
+    t ̸▸TArrow ->
+    MatchArrowMarkConsist (t , n) Marked
+
+-- I think this is correct, but can be expressed better
+data ValidApStuff : (syn1 : SynData) (syn2 : SynData) (m : MarkData) (ana : AnaData) -> Set where 
+  ValidApStuffNone : ∀ {syn1 m ana} ->
+    ValidApStuff syn1 ̸⇑ m ana
+  ValidApStuffNew : ∀ {syn1 m ana t} ->
+    ValidApStuff syn1 (⇑ (t , New)) m ana
+  ValidApStuffNArrow : ∀ {syn1 ana t1 n1 t2 n2} ->
+    SynConsist (t2 , n2) syn1 ->
+    AnaConsist (t1 , n1) ana ->
+    ValidApStuff syn1 (⇑ (TArrow t1 t2 , NArrow n1 n2)) Unmarked ana
+  ValidApStuffOldMatch : ∀ {syn1 ana t t1 t2} ->
+    t ▸TArrow t1 , t2 ->
+    SynConsist (t2 , Old) syn1 -> 
+    AnaConsist (t1 , Old) ana -> 
+    ValidApStuff syn1 (⇑ (t , Old)) Unmarked ana
+  ValidApStuffOldNoMatch : ∀ {syn1 ana t} ->
+    t ̸▸TArrow ->
+    SynConsist (THole , Old) syn1 -> 
+    AnaConsist (THole , Old) ana -> 
+    ValidApStuff syn1 (⇑ (t , Old)) Marked ana
 
 mutual 
-  data _⊢_⇒_ : (Γ : Ctx) (e : ExpUp) (t : NewType) → Set where 
-    SynUp : ∀ {Γ info e t syn} ->
-      Γ ⊢ e M⇒ t ->
-      MergeSyn t info syn -> 
-      Γ ⊢ (EUp info e) ⇒ syn
 
-  data _⊢_M⇒_ : (Γ : Ctx) (e : ExpMid) (t : NewType) → Set where 
-    SynConst : ∀ {Γ} ->
-      Γ ⊢ EConst M⇒ (TBase , Old)
-    SynHole : ∀ {Γ} ->
-      Γ ⊢ EHole M⇒ (THole , Old)
-    SynFun : ∀ {Γ t1 t2 n1 n2 n3 e} ->
-      ((t1 , n1) , Γ) ⊢ e ⇒ (t2 , n2) ->
-      narrow n1 n2 ≡ n3 ->
-      Γ ⊢ (EFun (t1 , n1) Unmarked (ELow ̸⇓ Unmarked e)) M⇒ (TArrow t1 t2 , n3)
-    SynAp : ∀ {Γ t t1 t2 n n1 n2 e1 e2} ->
-      Γ ⊢ e1 ⇒ (t , n) ->
-      t ▸TArrow t1 , t2 ->
-      n ▸NArrow n1 , n2 ->
-      Γ ⊢ e2 ⇐ (t1 , n1) ->
-      Γ ⊢ (EAp (ELow ̸⇓ Unmarked e1) Unmarked e2) M⇒ (t2 , n2)
-    SynApFail : ∀ {Γ t n n1 n2 e1 e2} ->
-      Γ ⊢ e1 ⇒ (t , n) ->
-      t ̸▸TArrow ->
-      n ▸NArrow n1 , n2 ->
-      Γ ⊢ e2 ⇐ (THole , n1) ->
-      Γ ⊢ (EAp (ELow ̸⇓ Unmarked e1) Marked e2) M⇒ (THole , n2)
-    SynVar : ∀ {Γ x t} ->
-      x , t ∈ Γ ->
-      Γ ⊢ (EVar x Unmarked) M⇒ t
-    SynVarFail : ∀ {Γ x} ->
-      x ̸∈ Γ ->
-      Γ ⊢ (EVar x Marked) M⇒ (THole , Old)
-    SynAsc : ∀ {Γ t e} ->
-      Γ ⊢ e ⇐ t ->
-      Γ ⊢ (EAsc t e) M⇒ t
+  data _⊢_⇒ : (Γ : Ctx) (e : ExpUp) → Set where 
+    SynConst : ∀ {Γ syn} ->
+      SynConsist (TBase , Old) syn ->
+      Γ ⊢ (EUp syn EConst) ⇒
+    SynHole : ∀ {Γ syn} ->
+      SynConsist (THole , Old) syn ->
+      Γ ⊢ (EUp syn EHole) ⇒
+    SynAp : ∀ {Γ syn1 syn2 e1 m1 ana m2 e2} ->
+      ValidApStuff syn1 syn2 m1 ana ->
+      Γ ⊢ (EUp syn1 (EAp (ELow ̸⇓ Unmarked (EUp syn2 e1)) m1 (ELow ana m2 e2))) ⇒
 
+  -- note: the analyzed type is actually an OUTPUT of this judgment
   data _⊢_⇐_ : (Γ : Ctx) (e : ExpLow) (t : NewType) → Set where 
-    AnaSubsume : ∀ {Γ info ana t1 t2 n1 n2 e} ->
-      MergeAna ana info (t2 , n2) -> 
-      Γ ⊢ e ⇒ (t1 , n1) ->
-      Subsumable e ->
-      (t1 ~ t2) ->
-      Γ ⊢ (ELow info Unmarked e) ⇐ ana
-    AnaSubsumeFail : ∀ {Γ info ana t1 t2 n1 n2 e} ->
-      MergeAna ana info (t2 , n2) -> 
-      Γ ⊢ e ⇒ (t1 , n1) ->
-      Subsumable e ->
-      ¬(t1 ~ t2) ->
-      Γ ⊢ (ELow info Marked e) ⇐ ana
-    AnaFun : ∀ {Γ info ana t t1 t2 n n1 n2 tasc nasc e} ->
-      MergeAna ana info (t , n) -> 
-      t ▸TArrow t1 , t2 ->
-      n ▸NArrow n1 , n2 ->
-      ((tasc , nasc) , Γ) ⊢ e ⇐ (t2 , n2) ->
-      (tasc ~ t1) ->
-      Γ ⊢ (ELow info Unmarked (EUp ̸⇑ (EFun (tasc , nasc) Unmarked e))) ⇐ ana
-    AnaFunFail1 : ∀ {Γ info ana t t1 t2 n n1 n2 tasc nasc e} ->
-      MergeAna ana info (t , n) -> 
-      t ▸TArrow t1 , t2 ->
-      n ▸NArrow n1 , n2 ->
-      ((tasc , nasc) , Γ) ⊢ e ⇐ (t2 , n2) ->
-      ¬(tasc ~ t1) ->
-      Γ ⊢ (ELow info Unmarked (EUp ̸⇑ (EFun (tasc , nasc) Marked e))) ⇐ ana
-    AnaFunFail2 : ∀ {Γ syn-info ana-info syn-info' ana syn t tasc n nasc e} ->
-      MergeAna ana (⇓ ana-info) (t , n) -> 
-      t ̸▸TArrow ->
-      ((tasc , nasc) , Γ) ⊢ e ⇒ syn ->
-      MergeSyn syn (⇑ syn-info) syn-info' -> 
-      Γ ⊢ (ELow (⇓ ana-info) Marked (EUp (⇑ syn-info) (EFun (tasc , nasc) Unmarked (ELow ̸⇓ Unmarked e)))) ⇐ ana
