@@ -11,23 +11,31 @@ open import Core.Core
 
 module Core.Marking where
 
-data BarrenExp : ExpUp -> BareExp -> Set where 
-  BarrenConst : ∀ {syn} → 
-    BarrenExp (EUp syn EConst) BareEConst
-  BarrenHole : ∀ {syn} → 
-    BarrenExp (EUp syn EHole) BareEHole
-  BarrenFun : ∀ {syn ana asc n m1 m2 e b} → 
-    BarrenExp e b ->
-    BarrenExp (EUp syn (EFun (asc , n) m1 (ELow ana m2 e))) (BareEFun asc b)
-  BarrenAp : ∀ {syn ana1 ana2 m1 m2 m3 e1 e2 b1 b2} → 
-    BarrenExp e1 b1 ->
-    BarrenExp e2 b2 ->
-    BarrenExp (EUp syn (EAp (ELow ana1 m1 e1) m2 (ELow ana2 m3 e2))) (BareEAp b1 b2)
-  BarrenVar : ∀ {syn x m} → 
-    BarrenExp (EUp syn (EVar x m)) (BareEVar x)
-  BarrenAsc : ∀ {syn ana asc n m e b} → 
-    BarrenExp e b ->
-    BarrenExp (EUp syn (EAsc (asc , n) (ELow ana m e))) (BareEAsc asc b)
+
+mutual 
+
+  data BarrenExp : ExpUp -> BareExp -> Set where 
+    BarrenConst : ∀ {syn} → 
+      BarrenExp (EUp syn EConst) BareEConst
+    BarrenHole : ∀ {syn} → 
+      BarrenExp (EUp syn EHole) BareEHole
+    BarrenFun : ∀ {syn asc n m1 e b} → 
+      BarrenExpLow e b ->
+      BarrenExp (EUp syn (EFun (asc , n) m1 e)) (BareEFun asc b)
+    BarrenAp : ∀ {syn ana1 m1 m2 e1 e2 b1 b2} → 
+      BarrenExp e1 b1 ->
+      BarrenExpLow e2 b2 ->
+      BarrenExp (EUp syn (EAp (ELow ana1 m1 e1) m2 e2)) (BareEAp b1 b2)
+    BarrenVar : ∀ {syn x m} → 
+      BarrenExp (EUp syn (EVar x m)) (BareEVar x)
+    BarrenAsc : ∀ {syn asc n e b} → 
+      BarrenExpLow e b ->
+      BarrenExp (EUp syn (EAsc (asc , n) e)) (BareEAsc asc b)
+
+  data BarrenExpLow : ExpLow -> BareExp -> Set where 
+    BarrenLow : ∀ {e b ana m} ->
+      BarrenExp e b ->
+      BarrenExpLow (ELow ana m e) b
 
 BareCtx : Set 
 BareCtx = Context Type

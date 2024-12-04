@@ -21,19 +21,31 @@ module Core.Validity where
       BarrenCtx Γ Γ' ->
       BarrenCtx ((t , n) , Γ) (t , Γ')
 
-  validity-syn : ∀ {Γ Γ' e b} ->
-    Γ ⊢ e ⇒ ->
-    SettledSyn Γ e ->
-    BarrenExp e b ->
-    BarrenCtx Γ Γ' ->
-    ∃[ t ] Γ' ⊢ b ~> e ⇒ t
-  validity-syn (SynConst (SynConsistMerge MergeInfoOld)) SettledSynConst BarrenConst barctx = TBase , MarkConst
-  validity-syn (SynHole (SynConsistMerge MergeInfoOld)) SettledSynHole BarrenHole barctx = THole , MarkHole
+  mutual 
+    validity-syn : ∀ {Γ Γ' e b t n e'} ->
+      Γ ⊢ e ⇒ ->
+      SettledSyn Γ e ->
+      BarrenExp e b ->
+      BarrenCtx Γ Γ' ->
+      e ≡ (EUp (⇑ (t , n)) e') ->
+      Γ' ⊢ b ~> e ⇒ t
+    validity-syn (SynConst (SynConsistMerge MergeInfoOld)) SettledSynConst BarrenConst barctx refl = MarkConst
+    validity-syn (SynHole (SynConsistMerge MergeInfoOld)) SettledSynHole BarrenHole barctx refl = MarkHole
+    validity-syn (SynAp (SynArrowSome match1) (SynConsistMerge MergeInfoOld) (AnaConsistMerge MergeInfoOld) markcon wtsyn wtana) (SettledSynAp setsyn setana) (BarrenAp barexp1 barexp2) barctx refl = {!   !}
+    validity-syn (SynAsc (SynConsistMerge MergeInfoOld) (AnaConsistMerge MergeInfoOld) wtana) (SettledSynAsc set) (BarrenAsc barexp) barctx refl = MarkAsc (validity-ana wtana set barexp barctx refl)
 
+    validity-ana : ∀ {Γ Γ' e b t n m e'} ->
+      Γ ⊢ e ⇐ ->
+      SettledAna Γ e ->
+      BarrenExpLow e b ->
+      BarrenCtx Γ Γ' ->
+      e ≡ (ELow (⇓ (t , n)) m e') ->
+      Γ' ⊢ b ~> e ⇐ t
+    validity-ana = {!   !}
 
-  validity : ∀ {e b t} ->
-    -- e well typed 
-    Settled e ->
-    BarrenExp e b ->
-    ∅ ⊢ b ~> e ⇒ t 
-  validity = {!   !}
+  -- validity : ∀ {e b t} ->
+  --   -- e well typed 
+  --   Settled e ->
+  --   BarrenExp e b ->
+  --   ∅ ⊢ b ~> e ⇒ t  
+  -- validity = {!   !} 
