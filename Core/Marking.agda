@@ -11,7 +11,6 @@ open import Core.Core
 
 module Core.Marking where
 
-
 mutual 
 
   data BarrenExp : ExpUp -> BareExp -> Set where 
@@ -41,15 +40,6 @@ BareCtx : Set
 BareCtx = Context Type
 
 
-data _▸TArrowM_,_,_ : Type -> Type -> Type -> MarkData -> Set where 
-  MArrowMatch : ∀ {t} ->
-    t ̸▸TArrow ->
-    t ▸TArrowM THole , THole , Marked
-  MArrowNoMatch : ∀ {t t1 t2} ->
-    t ▸TArrow t1 , t2 ->
-    t ▸TArrowM t1 , t2 , Unmarked
-
-
 mutual 
   data _⊢_~>_⇒_ : (Γ : BareCtx) (b : BareExp) (e : ExpUp) (t : Type) → Set where 
     MarkConst : ∀ {Γ} →
@@ -75,16 +65,16 @@ mutual
       Γ ⊢ (BareEAsc t b) ~> (EUp (⇑ (t , Old)) (EAsc (t , Old) e)) ⇒ t
 
   data _⊢_~>_⇐_ : (Γ : BareCtx) (b : BareExp) (e : ExpLow) (t : Type) → Set where  
-    MarkSubsume : ∀ {Γ b e t1 t2} ->
+    MarkSubsume : ∀ {Γ b e t1 t2 m} ->
       Γ ⊢ b ~> e ⇒ t1 ->
       BareSubsumable b ->
-      (t1 ~ t2) ->
-      Γ ⊢ b ~> (ELow (⇓ (t2 , Old)) Unmarked e) ⇐ t2
-    MarkSubsumeFail : ∀ {Γ b e t1 t2} ->
-      Γ ⊢ b ~> e ⇒ t1 ->
-      BareSubsumable b ->
-      ¬(t1 ~ t2) ->
-      Γ ⊢ b ~> (ELow (⇓ (t2 , Old)) Marked e) ⇐ t2
+      t1 M~ t2 , m ->
+      Γ ⊢ b ~> (ELow (⇓ (t2 , Old)) m e) ⇐ t2
+    -- MarkSubsumeFail : ∀ {Γ b e t1 t2} ->
+    --   Γ ⊢ b ~> e ⇒ t1 ->
+    --   BareSubsumable b ->
+    --   ¬(t1 ~ t2) ->
+    --   Γ ⊢ b ~> (ELow (⇓ (t2 , Old)) Marked e) ⇐ t2
     MarkAnaFun : ∀ {Γ t t1 t2 tasc b e} ->
       t ▸TArrow t1 , t2 ->
       (tasc , Γ) ⊢ b ~> e ⇐ t2 ->

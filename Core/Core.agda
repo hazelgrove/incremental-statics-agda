@@ -25,9 +25,9 @@ data BareExp : Set where
 data BareSubsumable : BareExp -> Set where 
   BareSubsumableConst : BareSubsumable BareEConst
   BareSubsumableHole : BareSubsumable BareEHole
-  BareSubsumableAp : ∀ {e1 e2} → BareSubsumable (BareEAp e1 e2) 
-  BareSubsumableVar : ∀ {x} → BareSubsumable (BareEVar x) 
-  BareSubsumableAsc : ∀ {t e} → BareSubsumable (BareEAsc t e) 
+  BareSubsumableAp : ∀ {e1 e2} -> BareSubsumable (BareEAp e1 e2) 
+  BareSubsumableVar : ∀ {x} -> BareSubsumable (BareEVar x) 
+  BareSubsumableAsc : ∀ {t e} -> BareSubsumable (BareEAsc t e) 
 
 data Newness : Set where 
   Old : Newness 
@@ -35,28 +35,48 @@ data Newness : Set where
   -- NBase : Newness 
   -- NHole : Newness
   NArrow : Newness -> Newness -> Newness 
+  
+data MarkData : Set where 
+  Marked : MarkData
+  Unmarked : MarkData
 
 data IsNew : Newness -> Set where 
   IsNewNew : IsNew New
-  IsNewArrow : ∀ {n1 n2} → IsNew (NArrow n1 n2)
+  IsNewArrow : ∀ {n1 n2} -> IsNew (NArrow n1 n2)
 
 data _~_ : Type -> Type -> Set where 
   ConsistBase : TBase ~ TBase
-  ConsistHole1 : ∀ {t} → t ~ THole
-  ConsistHole2 : ∀ {t} → THole ~ t
-  ConsistArr : ∀ {t1 t2 t3 t4} → t1 ~ t3 → t2 ~ t4 → (TArrow t1 t2) ~ (TArrow t3 t4)
+  ConsistHole1 : ∀ {t} -> t ~ THole
+  ConsistHole2 : ∀ {t} -> THole ~ t
+  ConsistArr : ∀ {t1 t2 t3 t4} -> t1 ~ t3 -> t2 ~ t4 -> (TArrow t1 t2) ~ (TArrow t3 t4)
+
+data _~M_,_ : Type -> Type -> MarkData -> Set where 
+  ConsistM : ∀ {t1 t2} ->
+    t1 ~ t2 -> 
+    t1 ~M t2 , Unmarked
+  InconsistM : ∀ {t1 t2} ->
+    ¬(t1 ~ t2) -> 
+    t1 ~M t2 , Marked
 
 data _▸TArrow_,_ : Type -> Type -> Type -> Set where 
   MArrowHole : THole ▸TArrow THole , THole
-  MArrowArrow : ∀ {t1 t2} → (TArrow t1 t2) ▸TArrow t1 , t2
+  MArrowArrow : ∀ {t1 t2} -> (TArrow t1 t2) ▸TArrow t1 , t2
 
 data _̸▸TArrow : Type -> Set where 
   MArrowBase : TBase ̸▸TArrow
 
+data _▸TArrowM_,_,_ : Type -> Type -> Type -> MarkData -> Set where 
+  MArrowMatch : ∀ {t} ->
+    t ̸▸TArrow ->
+    t ▸TArrowM THole , THole , Marked
+  MArrowNoMatch : ∀ {t t1 t2} ->
+    t ▸TArrow t1 , t2 ->
+    t ▸TArrowM t1 , t2 , Unmarked
+
 data _▸NArrow_,_ : Newness -> Newness -> Newness -> Set where 
   MNArrowOld : Old ▸NArrow Old , Old
   MNArrowNew : New ▸NArrow New , New
-  MNArrowArrow : ∀ {n1 n2} → (NArrow n1 n2) ▸NArrow n1 , n2
+  MNArrowArrow : ∀ {n1 n2} -> (NArrow n1 n2) ▸NArrow n1 , n2
 
 dec▸NArrow : (n : Newness) -> (Newness × Newness)
 dec▸NArrow Old = Old , Old
@@ -70,10 +90,6 @@ narrow n1 n2 = NArrow n1 n2
 
 NewType : Set 
 NewType = (Type × Newness) 
-
-data MarkData : Set where 
-  Marked : MarkData
-  Unmarked : MarkData
 
 data SynData : Set where 
   ̸⇑ : SynData
@@ -123,9 +139,9 @@ data Program : Set where
 data SubsumableMid : ExpMid -> Set where 
   SubsumableConst : SubsumableMid EConst
   SubsumableHole : SubsumableMid EHole
-  SubsumableAp : ∀ {e1 m e2} → SubsumableMid (EAp e1 m e2) 
-  SubsumableVar : ∀ {x m} → SubsumableMid (EVar x m) 
-  SubsumableAsc : ∀ {t e} → SubsumableMid (EAsc t e) 
+  SubsumableAp : ∀ {e1 m e2} -> SubsumableMid (EAp e1 m e2) 
+  SubsumableVar : ∀ {x m} -> SubsumableMid (EVar x m) 
+  SubsumableAsc : ∀ {t e} -> SubsumableMid (EAsc t e) 
 
 Subsumable : ExpUp -> Set 
 Subsumable (EUp _ mid) = SubsumableMid mid
@@ -134,11 +150,11 @@ data Context (A : Set) : Set where
   ∅ : Context A
   _,_ : A -> Context A -> Context A
   
-data _,_∈_ {A : Set} : ℕ → A → (Context A) → Set where 
+data _,_∈_ {A : Set} : ℕ -> A -> (Context A) -> Set where 
   InCtx0 : ∀ {Γ t} -> 0 , t ∈ (t , Γ)
   InCtxSuc : ∀ {Γ t t' n} -> (n , t ∈ Γ) -> (suc n , t ∈ (t' , Γ))
 
-_̸∈_ : ∀ {A} -> ℕ → (Context A) → Set
+_̸∈_ : ∀ {A} -> ℕ -> (Context A) -> Set
 x ̸∈ Γ = ∀ {t} -> ¬(x , t ∈ Γ)
 
 Ctx : Set 

@@ -48,19 +48,13 @@ data MarkConsist : (m1 : NewMark) (m2 : MarkData) -> Set where
 -- whether it matches arrow. these are newtypes/constraints, so they can be checked
 -- with directed consistency against the actual annotations
 data _▸NTArrow_,_,_ : NewType -> NewType -> NewType -> NewMark -> Set where 
-  MNTArrowOldMatch : ∀ {t t1 t2} ->
-    t ▸TArrow t1 , t2 ->
-    (t , Old) ▸NTArrow (t1 , Old) , (t2 , Old) , (Unmarked , MarkOld)
-  MNTArrowOldNoMatch : ∀ {t} ->
-    t ̸▸TArrow ->
-    (t , Old) ▸NTArrow (THole , Old) , (THole , Old) , (Marked , MarkOld)
-  MNTArrowNewMatch : ∀ {t t1 t2} ->
-    t ▸TArrow t1 , t2 ->
-    (t , New) ▸NTArrow (t1 , New) , (t2 , New) , (Unmarked , MarkNew)
-  MNTArrowNewNoMatch : ∀ {t} ->
-    t ̸▸TArrow ->
-    (t , New) ▸NTArrow (THole , New) , (THole , New) , (Marked , MarkNew)
-  MNTArrowArrow : ∀ {t1 t2 n1 n2} → 
+  MNTArrowOld : ∀ {t t1 t2 m} ->
+    t ▸TArrowM t1 , t2 , m ->
+    (t , Old) ▸NTArrow (t1 , Old) , (t2 , Old) , (m , MarkOld)
+  MNTArrowNew : ∀ {t t1 t2 m} ->
+    t ▸TArrowM t1 , t2 , m ->
+    (t , New) ▸NTArrow (t1 , New) , (t2 , New) , (m , MarkNew)
+  MNTArrowArrow : ∀ {t1 t2 n1 n2} -> 
     (TArrow t1 t2 , NArrow n1 n2) ▸NTArrow (t1 , n1) , (t2 , n2) , (Unmarked , MarkOld)
 
 data _▸SynArrow_,_,_ : SynData -> NewType -> NewType -> NewMark -> Set where 
@@ -69,9 +63,39 @@ data _▸SynArrow_,_,_ : SynData -> NewType -> NewType -> NewMark -> Set where
     t ▸NTArrow t1 , t2 , m -> 
     (⇑ t) ▸SynArrow t1 , t2 , m
 
+data _NT~M_,_ : NewType -> NewType -> NewMark -> Set where 
+  LNewConsist :  
+    t1 ~M t2 , m -> 
+    (t1 , New) NT~M (t2 , n2) , (m , New) 
+  OldNArrowConsist 
+    t1 ~M t2 , m -> 
+    (t1 , Old) NT~M (TArrow t1 t2 , NArrow n1 n2) , (Unmarked , Old) 
+  OldOldConsist 
+    t1 ~M t2 , m -> 
+    (t1 , Old) NT~M (t2 , Old) , (Unmarked , Old) 
+
+
+data _AnaSyn~M_,_ : AnaData -> SynData -> NewMark -> Set where 
+  NoneSynConsist : ∀ {syn} ->
+     ̸⇓ AnaSyn~M syn , (Unmarked , MarkNew)
+  AnaNoneConsist : ∀ {ana} ->
+    ana AnaSyn~M ̸⇑ , (Unmarked , MarkNew)
+  AnaSynConsist : ∀ {ana syn m} ->
+    ana NT~M syn , m ->
+    (⇓ ana) AnaSyn~M (⇑ syn) , m
+  
+-- data _,_,_M∈_ : ℕ -> NewType -> MarkData -> (Context A) -> Set where 
+--   InCtxSome :   
+--     x , t ∈ Γ ->
+--     x , t , Unmarked M∈ Γ
+--   InCtxSome :   
+--     x ̸∈ Γ ->
+--     x , THole , Marked M∈ Γ
+  
+
 mutual 
 
-  data _⊢_⇒ : (Γ : Ctx) (e : ExpUp) → Set where 
+  data _⊢_⇒ : (Γ : Ctx) (e : ExpUp) -> Set where 
     SynConst : ∀ {Γ syn} ->
       SynConsist (TBase , Old) syn ->
       Γ ⊢ (EUp syn EConst) ⇒
@@ -92,4 +116,10 @@ mutual
       Γ ⊢ (ELow ana m e) ⇐ ->
       Γ ⊢ (EUp syn (EAsc asc (ELow ana m e))) ⇒
 
-  data _⊢_⇐ : (Γ : Ctx) (e : ExpLow) → Set where 
+  data _⊢_⇐ : (Γ : Ctx) (e : ExpLow) -> Set where 
+    AnaSubsume : ∀ {Γ ana m1 syn e m} ->
+      SubsumableMid e ->
+      ana AnaSyn~M syn , m ->
+      MarkConsist m m1 ->
+      Γ ⊢ (EUp syn e) ⇒ ->
+      Γ ⊢ (ELow ana m1 (EUp syn e)) ⇐
