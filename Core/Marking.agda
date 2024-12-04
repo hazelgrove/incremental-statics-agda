@@ -40,6 +40,16 @@ mutual
 BareCtx : Set 
 BareCtx = Context Type
 
+
+data _▸TArrowM_,_,_ : Type -> Type -> Type -> MarkData -> Set where 
+  MArrowMatch : ∀ {t} ->
+    t ̸▸TArrow ->
+    t ▸TArrowM THole , THole , Marked
+  MArrowNoMatch : ∀ {t t1 t2} ->
+    t ▸TArrow t1 , t2 ->
+    t ▸TArrowM t1 , t2 , Unmarked
+
+
 mutual 
   data _⊢_~>_⇒_ : (Γ : BareCtx) (b : BareExp) (e : ExpUp) (t : Type) → Set where 
     MarkConst : ∀ {Γ} →
@@ -49,16 +59,11 @@ mutual
     MarkSynFun : ∀ {Γ t1 t2 b e} ->
       (t1 , Γ) ⊢ b ~> e ⇒ t2 ->
       Γ ⊢ (BareEFun t1 b) ~> (EUp (⇑ (TArrow t1 t2 , Old)) (EFun (t1 , Old) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ (TArrow t1 t2)
-    MarkAp : ∀ {Γ  b1 b2 e1 e2 t t1 t2} ->
+    MarkAp : ∀ {Γ b1 b2 e1 e2 t t1 t2 m} ->
       Γ ⊢ b1 ~> e1 ⇒ t ->
-      t ▸TArrow t1 , t2 ->
+      t ▸TArrowM t1 , t2 , m ->
       Γ ⊢ b2 ~> e2 ⇐ t1 ->
-      Γ ⊢ (BareEAp b1 b2) ~> (EUp (⇑ (t2 , Old)) (EAp (ELow ̸⇓ Unmarked e1) Unmarked e2)) ⇒ t2
-    MarkApFail : ∀ {Γ b1 b2 e1 e2 t} ->
-      Γ ⊢ b1 ~> e1 ⇒ t ->
-      t ̸▸TArrow ->
-      Γ ⊢ b2 ~> e2 ⇐ THole ->
-      Γ ⊢ (BareEAp b1 b2) ~> (EUp (⇑ (THole , Old)) (EAp (ELow ̸⇓ Unmarked e1) Marked e2)) ⇒ THole
+      Γ ⊢ (BareEAp b1 b2) ~> (EUp (⇑ (t2 , Old)) (EAp (ELow ̸⇓ Unmarked e1) m e2)) ⇒ t2
     MarkVar : ∀ {Γ x t} ->
       x , t ∈ Γ ->
       Γ ⊢ (BareEVar x) ~> (EUp (⇑ (t , Old)) (EVar x Unmarked)) ⇒ t
