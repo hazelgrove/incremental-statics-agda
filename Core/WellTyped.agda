@@ -69,6 +69,46 @@ data ValidApStuff : (syn1 : SynData) (syn2 : SynData) (m : MarkData) (ana : AnaD
     AnaConsist (THole , Old) ana -> 
     ValidApStuff syn1 (⇑ (t , Old)) Marked ana
 
+data MarkConstraint : Set where 
+  MarkNew : MarkConstraint 
+  MarkOld : MarkData -> MarkConstraint
+
+data MarkConsist : (m1 : MarkConstraint) (m2 : MarkData) -> Set where 
+  MarkConsistNew : ∀ {m} ->
+    MarkConsist MarkNew m
+  MarkConsistOld : ∀ {m} ->
+    MarkConsist (MarkOld m) m
+
+-- takes a newtype and projects its left and right sides as well as returning 
+-- whether it matches arrow. these are newtypes/constraints, so they can be check
+-- with directed consistency against the actual annotations
+data _▸NTArrow_,_,_ : NewType -> NewType -> NewType -> MarkConstraint -> Set where 
+  MNTArrowOldMatch : ∀ {t t1 t2} ->
+    t ▸TArrow t1 , t2 ->
+    (t , Old) ▸NTArrow (t1 , Old) , (t2 , Old) , (MarkOld Unmarked)
+  MNTArrowOldNoMatch : ∀ {t} ->
+    t ̸▸TArrow ->
+    (t , Old) ▸NTArrow (THole , Old) , (THole , Old) , (MarkOld Marked)
+  MNTArrowNew : ∀ {t} ->
+    -- the return types are dummy. since they are new, they will be 
+    -- consistent with anything. there could have been a "constraint" type 
+    -- analogous to the mark constraint about - the left input to directed 
+    -- consistency, which is like a newness type but with no data accompanying 
+    -- the New case. but this would require a function to turn types into constraints
+    (t , New) ▸NTArrow (THole , New) , (THole , New) , MarkNew
+  MNTArrowArrow : ∀ {t1 t2 n1 n2} → 
+    (TArrow t1 t2 , NArrow n1 n2) ▸NTArrow (t1 , n1) , (t2 , n2) , (MarkOld Unmarked)
+
+data CoolerValidApStuff : (syn1 : SynData) (syn2 : SynData) (m : MarkData) (ana : AnaData) -> Set where 
+  CoolerValidApStuffNone : ∀ {syn m ana} ->
+    CoolerValidApStuff syn ̸⇑ m ana
+  CoolerValidApStuffSome : ∀ {syn t m ana t1 t2 m'} ->
+    t ▸NTArrow t1 , t2 , m' -> 
+    SynConsist t2 syn -> 
+    AnaConsist t1 ana -> 
+    MarkConsist m' m -> 
+    CoolerValidApStuff syn (⇑ t) m ana
+
 mutual 
 
   data _⊢_⇒ : (Γ : Ctx) (e : ExpUp) → Set where 
