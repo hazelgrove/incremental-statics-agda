@@ -15,7 +15,7 @@ data BarrenExp : ExpUp -> BareExp -> Set where
   BarrenConst : ∀ {syn} → 
     BarrenExp (EUp syn EConst) BareEConst
   BarrenHole : ∀ {syn} → 
-    BarrenExp (EUp syn EConst) BareEHole
+    BarrenExp (EUp syn EHole) BareEHole
   BarrenFun : ∀ {syn ana asc n m1 m2 e b} → 
     BarrenExp e b ->
     BarrenExp (EUp syn (EFun (asc , n) m1 (ELow ana m2 e))) (BareEFun asc b)
