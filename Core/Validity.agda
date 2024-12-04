@@ -21,6 +21,14 @@ module Core.Validity where
       BarrenCtx Γ Γ' ->
       BarrenCtx ((t , n) , Γ) (t , Γ')
 
+  tarrow-of-ntarrow : ∀ {t t1 t2 m n m'} ->
+    (t , n) ▸NTArrow (t1 , Old) , (t2 , Old) , m ->
+    MarkConsist m m' ->
+    t ▸TArrowM t1 , t2 , m'
+  tarrow-of-ntarrow (MNTArrowOldMatch x) MarkConsistOld = MArrowNoMatch x
+  tarrow-of-ntarrow (MNTArrowOldNoMatch x) MarkConsistOld = MArrowMatch x
+  tarrow-of-ntarrow MNTArrowArrow MarkConsistOld = MArrowNoMatch MArrowArrow
+
   mutual 
     validity-syn : ∀ {Γ Γ' e b t n e'} ->
       Γ ⊢ e ⇒ ->
@@ -31,7 +39,8 @@ module Core.Validity where
       Γ' ⊢ b ~> e ⇒ t
     validity-syn (SynConst (SynConsistMerge MergeInfoOld)) SettledSynConst BarrenConst barctx refl = MarkConst
     validity-syn (SynHole (SynConsistMerge MergeInfoOld)) SettledSynHole BarrenHole barctx refl = MarkHole
-    validity-syn (SynAp (SynArrowSome match1) (SynConsistMerge MergeInfoOld) (AnaConsistMerge MergeInfoOld) markcon wtsyn wtana) (SettledSynAp setsyn setana) (BarrenAp barexp1 barexp2) barctx refl = {!   !}
+    validity-syn (SynAp (SynArrowSome {t = (t , n)} match1) (SynConsistMerge MergeInfoOld) (AnaConsistMerge MergeInfoOld) markcon wtsyn wtana) (SettledSynAp setsyn setana) (BarrenAp barexp1 barexp2) barctx refl 
+      = MarkAp (validity-syn wtsyn setsyn barexp1 barctx refl) (tarrow-of-ntarrow match1 markcon) (validity-ana wtana setana barexp2 barctx refl)
     validity-syn (SynAsc (SynConsistMerge MergeInfoOld) (AnaConsistMerge MergeInfoOld) wtana) (SettledSynAsc set) (BarrenAsc barexp) barctx refl = MarkAsc (validity-ana wtana set barexp barctx refl)
 
     validity-ana : ∀ {Γ Γ' e b t n m e'} ->
@@ -44,8 +53,8 @@ module Core.Validity where
     validity-ana = {!   !}
 
   -- validity : ∀ {e b t} ->
-  --   -- e well typed 
+  --   -- e well typed  
   --   Settled e ->
   --   BarrenExp e b ->
   --   ∅ ⊢ b ~> e ⇒ t  
-  -- validity = {!   !} 
+  -- validity = {!   !}  
