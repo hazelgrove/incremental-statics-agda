@@ -39,8 +39,8 @@ Old ⊓ New = New
 New ⊓ n = New
   
 data MarkData : Set where 
-  Marked : MarkData
-  Unmarked : MarkData
+  ✖ : MarkData
+  ✔ : MarkData
 
 data _~_ : Type -> Type -> Set where 
   ConsistBase : TBase ~ TBase
@@ -51,10 +51,10 @@ data _~_ : Type -> Type -> Set where
 data _~M_,_ : Type -> Type -> MarkData -> Set where 
   ConsistM : ∀ {t1 t2} ->
     t1 ~ t2 -> 
-    t1 ~M t2 , Unmarked
+    t1 ~M t2 , ✔
   InconsistM : ∀ {t1 t2} ->
     ¬(t1 ~ t2) -> 
-    t1 ~M t2 , Marked
+    t1 ~M t2 , ✖
 
 data _▸TArrow_,_ : Type -> Type -> Type -> Set where 
   MArrowHole : THole ▸TArrow THole , THole
@@ -66,21 +66,17 @@ data _̸▸TArrow : Type -> Set where
 data _▸TArrowM_,_,_ : Type -> Type -> Type -> MarkData -> Set where 
   MArrowMatch : ∀ {t} ->
     t ̸▸TArrow ->
-    t ▸TArrowM THole , THole , Marked
+    t ▸TArrowM THole , THole , ✖
   MArrowNoMatch : ∀ {t t1 t2} ->
     t ▸TArrow t1 , t2 ->
-    t ▸TArrowM t1 , t2 , Unmarked
+    t ▸TArrowM t1 , t2 , ✔
 
 NewType : Set 
 NewType = (Type × Newness) 
 
-data SynData : Set where 
-  ̸⇑ : SynData
-  ⇑ : NewType -> SynData
-
-data AnaData : Set where 
-  ̸⇓ : AnaData
-  ⇓ : NewType -> AnaData
+data TypeData : Set where 
+  □ : TypeData 
+  ■ : NewType -> TypeData
 
 NewMark : Set 
 NewMark = MarkData × Newness
@@ -98,8 +94,8 @@ NewMark = MarkData × Newness
 
 mutual 
 
-  data ExpUp : Set where 
-    EUp : SynData -> ExpMid -> ExpUp
+  data ExpUp : Set where  
+    _⇐_ : TypeData -> ExpMid -> ExpUp
 
   data ExpMid : Set where 
     EConst : ExpMid 
@@ -110,7 +106,7 @@ mutual
     EAsc : NewType -> ExpLow -> ExpMid 
 
   data ExpLow : Set where 
-    ELow : AnaData -> MarkData -> ExpUp -> ExpLow
+    _⇒[_]_ : TypeData -> MarkData -> ExpUp -> ExpLow
 
 data Program : Set where 
     PRoot : ExpUp -> Program
@@ -123,7 +119,7 @@ data SubsumableMid : ExpMid -> Set where
   SubsumableAsc : ∀ {t e} -> SubsumableMid (EAsc t e) 
 
 Subsumable : ExpUp -> Set 
-Subsumable (EUp _ mid) = SubsumableMid mid
+Subsumable (_ ⇐ mid) = SubsumableMid mid
 
 data Context (A : Set) : Set where 
   ∅ : Context A

@@ -16,7 +16,7 @@ mutual
   data BarrenExpUp : ExpUp -> BareExp -> Set where 
     BarrenUp : ∀ {e b syn} ->
       BarrenExpMid e b ->
-      BarrenExpUp (EUp syn e) b
+      BarrenExpUp (syn ⇐ e) b
 
   data BarrenExpMid : ExpMid -> BareExp -> Set where 
     BarrenConst : 
@@ -39,16 +39,16 @@ mutual
   data BarrenExpLow : ExpLow -> BareExp -> Set where 
     BarrenLow : ∀ {e b ana m} ->
       BarrenExpUp e b ->
-      BarrenExpLow (ELow ana m e) b
+      BarrenExpLow (ana ⇒[ m ] e) b
 
 BareCtx : Set 
 BareCtx = Context Type
 
 data _,_∈M_,_ : ℕ -> Type -> BareCtx -> MarkData -> Set where 
   MInCtxBound : ∀ {x t Γ} -> 
-    x , t ∈ Γ -> x , t ∈M Γ , Unmarked
+    x , t ∈ Γ -> x , t ∈M Γ , ✔
   MInCtxFree : ∀ {x Γ} -> 
-    x ̸∈ Γ -> x , THole ∈M Γ , Marked
+    x ̸∈ Γ -> x , THole ∈M Γ , ✖
 
 -- This version of marking uses side conditions (matched arrow, consistency, or 
 -- variable lookup in the context) that are total functions which also return a
@@ -58,32 +58,32 @@ data _,_∈M_,_ : ℕ -> Type -> BareCtx -> MarkData -> Set where
 mutual 
   data _⊢_~>_⇒_ : (Γ : BareCtx) (b : BareExp) (e : ExpUp) (t : Type) → Set where 
     MarkConst : ∀ {Γ} →
-      Γ ⊢ BareEConst ~> (EUp (⇑ (TBase , Old)) EConst) ⇒ TBase
+      Γ ⊢ BareEConst ~> ((■ (TBase , Old)) ⇐ EConst) ⇒ TBase
     MarkHole : ∀ {Γ} →
-      Γ ⊢ BareEHole ~> (EUp (⇑ (THole , Old)) EHole) ⇒ THole
+      Γ ⊢ BareEHole ~> ((■ (THole , Old)) ⇐ EHole) ⇒ THole
     MarkSynFun : ∀ {Γ b-body e-body t-asc t-body} ->
       (t-asc , Γ) ⊢ b-body ~> e-body ⇒ t-body ->
-      Γ ⊢ (BareEFun t-asc b-body) ~> (EUp (⇑ (TArrow t-asc t-body , Old)) (EFun (t-asc , Old) Unmarked Unmarked (ELow ̸⇓ Unmarked e-body))) ⇒ (TArrow t-asc t-body)
+      Γ ⊢ (BareEFun t-asc b-body) ~> ((■ (TArrow t-asc t-body , Old)) ⇐ (EFun (t-asc , Old) ✔ ✔ (□ ⇒[ ✔ ] e-body))) ⇒ (TArrow t-asc t-body)
     MarkAp : ∀ {Γ b-fun b-arg e-fun e-arg t-fun t-in-fun t-out-fun m-fun} ->
       Γ ⊢ b-fun ~> e-fun ⇒ t-fun ->
       t-fun ▸TArrowM t-in-fun , t-out-fun , m-fun ->
       Γ ⊢ b-arg ~> e-arg ⇐ t-in-fun ->
-      Γ ⊢ (BareEAp b-fun b-arg) ~> (EUp (⇑ (t-out-fun , Old)) (EAp (ELow ̸⇓ Unmarked e-fun) m-fun e-arg)) ⇒ t-out-fun
+      Γ ⊢ (BareEAp b-fun b-arg) ~> ((■ (t-out-fun , Old)) ⇐ (EAp (□ ⇒[ ✔ ] e-fun) m-fun e-arg)) ⇒ t-out-fun
     MarkVar : ∀ {Γ x t-var m-var} ->
       x , t-var ∈M Γ , m-var ->
-      Γ ⊢ (BareEVar x) ~> (EUp (⇑ (t-var , Old)) (EVar x Unmarked)) ⇒ t-var
+      Γ ⊢ (BareEVar x) ~> ((■ (t-var , Old)) ⇐ (EVar x m-var)) ⇒ t-var
     MarkAsc : ∀ {Γ b-body e-body t-asc} ->
       Γ ⊢ b-body ~> e-body ⇐ t-asc ->
-      Γ ⊢ (BareEAsc t-asc b-body) ~> (EUp (⇑ (t-asc , Old)) (EAsc (t-asc , Old) e-body)) ⇒ t-asc
+      Γ ⊢ (BareEAsc t-asc b-body) ~> ((■ (t-asc , Old)) ⇐ (EAsc (t-asc , Old) e-body)) ⇒ t-asc
 
   data _⊢_~>_⇐_ : (Γ : BareCtx) (b : BareExp) (e : ExpLow) (t : Type) → Set where  
     MarkSubsume : ∀ {Γ b-all e-all t-syn t-ana m-all} ->
       Γ ⊢ b-all ~> e-all ⇒ t-syn ->
       BareSubsumable b-all ->
       t-syn ~M t-ana , m-all ->
-      Γ ⊢ b-all ~> (ELow (⇓ (t-ana , Old)) m-all e-all) ⇐ t-ana
+      Γ ⊢ b-all ~> ((■ (t-ana , Old)) ⇒[ m-all ] e-all) ⇐ t-ana
     MarkAnaFun : ∀ {Γ b-body e-body t-asc t-ana t-in-ana t-out-ana m-ana m-asc} ->
       t-ana ▸TArrowM t-in-ana , t-out-ana , m-ana ->
       (t-asc , Γ) ⊢ b-body ~> e-body ⇐ t-out-ana ->
       t-asc ~M t-in-ana , m-asc ->
-      Γ ⊢ (BareEFun t-asc b-body) ~> (ELow (⇓ (t-ana , Old)) Unmarked (EUp ̸⇑ (EFun (t-asc , Old) m-ana m-asc e-body))) ⇐ t-ana
+      Γ ⊢ (BareEFun t-asc b-body) ~> ((■ (t-ana , Old)) ⇒[ ✔ ] (□ ⇐ (EFun (t-asc , Old) m-ana m-asc e-body))) ⇐ t-ana
