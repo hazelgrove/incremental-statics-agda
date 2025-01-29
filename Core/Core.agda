@@ -99,7 +99,7 @@ mutual
   data ExpMid : Set where 
     EConst : ExpMid 
     EHole : ExpMid
-    EFun : NewType -> MarkData -> ExpLow -> ExpMid 
+    EFun : NewType -> MarkData -> MarkData -> ExpLow -> ExpMid 
     EAp : ExpLow -> MarkData -> ExpLow -> ExpMid 
     EVar : ℕ -> MarkData -> ExpMid 
     EAsc : NewType -> ExpLow -> ExpMid 

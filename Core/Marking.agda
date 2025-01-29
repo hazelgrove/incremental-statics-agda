@@ -18,9 +18,9 @@ mutual
       BarrenExp (EUp syn EConst) BareEConst
     BarrenHole : ∀ {syn} → 
       BarrenExp (EUp syn EHole) BareEHole
-    BarrenFun : ∀ {syn asc n m1 e b} → 
+    BarrenFun : ∀ {syn asc n m1 m2 e b} → 
       BarrenExpLow e b ->
-      BarrenExp (EUp syn (EFun (asc , n) m1 e)) (BareEFun asc b)
+      BarrenExp (EUp syn (EFun (asc , n) m1 m2 e)) (BareEFun asc b)
     BarrenAp : ∀ {syn ana1 m1 m2 e1 e2 b1 b2} → 
       BarrenExp e1 b1 ->
       BarrenExpLow e2 b2 ->
@@ -53,7 +53,7 @@ mutual
       Γ ⊢ BareEHole ~> (EUp (⇑ (THole , Old)) EHole) ⇒ THole
     MarkSynFun : ∀ {Γ t1 t2 b e} ->
       (t1 , Γ) ⊢ b ~> e ⇒ t2 ->
-      Γ ⊢ (BareEFun t1 b) ~> (EUp (⇑ (TArrow t1 t2 , Old)) (EFun (t1 , Old) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ (TArrow t1 t2)
+      Γ ⊢ (BareEFun t1 b) ~> (EUp (⇑ (TArrow t1 t2 , Old)) (EFun (t1 , Old) Unmarked Unmarked (ELow ̸⇓ Unmarked e))) ⇒ (TArrow t1 t2)
     MarkAp : ∀ {Γ b-fun b-arg e-fun e-arg t-fun t-in-fun t-out-fun m-fun} ->
       Γ ⊢ b-fun ~> e-fun ⇒ t-fun ->
       t-fun ▸TArrowM t-in-fun , t-out-fun , m-fun ->
@@ -72,19 +72,8 @@ mutual
       BareSubsumable b-all ->
       t-syn ~M t-ana , m-all ->
       Γ ⊢ b-all ~> (ELow (⇓ (t-ana , Old)) m-all e-all) ⇐ t-ana
-    MarkAnaFun : ∀ {Γ t t1 t2 tasc b e} ->
-      t ▸TArrow t1 , t2 ->
-      (tasc , Γ) ⊢ b ~> e ⇐ t2 ->
-      (tasc ~ t1) ->
-      Γ ⊢ (BareEFun tasc b) ~> (ELow (⇓ (t , Old)) Unmarked (EUp ̸⇑ (EFun (tasc , Old) Unmarked e))) ⇐ t
-    MarkAnaFunFail1 : ∀ {Γ t t1 t2 tasc b e} ->
-      t ▸TArrow t1 , t2 ->
-      (tasc , Γ) ⊢ b ~> e ⇐ t2 ->
-      ¬(tasc ~ t1) ->
-      Γ ⊢ (BareEFun tasc b) ~> (ELow (⇓ (t , Old)) Unmarked (EUp ̸⇑ (EFun (tasc , Old) Marked e))) ⇐ t
-    -- Paper version: analyzes the body against ? if the lambda analyzed against non-arrow
-    -- My version:
-    MarkAnaFunFail2 : ∀ {Γ t t1 t2 b e} ->
-      t ̸▸TArrow ->
-      (t1 , Γ) ⊢ b ~> e ⇒ t2 ->
-      Γ ⊢ (BareEFun t1 b) ~> (ELow (⇓ (t , Old)) Marked (EUp (⇑ (TArrow t1 t2 , Old)) (EFun (t1 , Old) Unmarked (ELow ̸⇓ Unmarked e)))) ⇐ t
+    MarkAnaFun : ∀ {Γ b-body e-body t-asc t-ana t-in-ana t-out-ana m-ana m-asc} ->
+      t-ana ▸TArrowM t-in-ana , t-out-ana , m-ana ->
+      (t-asc , Γ) ⊢ b-body ~> e-body ⇐ t-out-ana ->
+      t-asc ~M t-in-ana , m-asc ->
+      Γ ⊢ (BareEFun t-asc b-body) ~> (ELow (⇓ (t-ana , Old)) Unmarked (EUp ̸⇑ (EFun (t-asc , Old) m-ana m-asc e-body))) ⇐ t-ana
