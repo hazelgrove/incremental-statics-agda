@@ -39,6 +39,11 @@ mutual
 BareCtx : Set 
 BareCtx = Context Type
 
+data _,_∈M_,_ : ℕ -> Type -> BareCtx -> MarkData -> Set where 
+  MInCtxBound : ∀ {x t Γ} -> 
+    x , t ∈ Γ -> x , t ∈M Γ , Unmarked
+  MInCtxFree : ∀ {x Γ} -> 
+    x ̸∈ Γ -> x , THole ∈M Γ , Marked
 
 mutual 
   data _⊢_~>_⇒_ : (Γ : BareCtx) (b : BareExp) (e : ExpUp) (t : Type) → Set where 
@@ -49,32 +54,24 @@ mutual
     MarkSynFun : ∀ {Γ t1 t2 b e} ->
       (t1 , Γ) ⊢ b ~> e ⇒ t2 ->
       Γ ⊢ (BareEFun t1 b) ~> (EUp (⇑ (TArrow t1 t2 , Old)) (EFun (t1 , Old) Unmarked (ELow ̸⇓ Unmarked e))) ⇒ (TArrow t1 t2)
-    MarkAp : ∀ {Γ b1 b2 e1 e2 t t1 t2 m} ->
-      Γ ⊢ b1 ~> e1 ⇒ t ->
-      t ▸TArrowM t1 , t2 , m ->
-      Γ ⊢ b2 ~> e2 ⇐ t1 ->
-      Γ ⊢ (BareEAp b1 b2) ~> (EUp (⇑ (t2 , Old)) (EAp (ELow ̸⇓ Unmarked e1) m e2)) ⇒ t2
-    MarkVar : ∀ {Γ x t} ->
-      x , t ∈ Γ ->
-      Γ ⊢ (BareEVar x) ~> (EUp (⇑ (t , Old)) (EVar x Unmarked)) ⇒ t
-    MarkVarFail : ∀ {Γ x} ->
-      x ̸∈ Γ ->
-      Γ ⊢ (BareEVar x) ~> (EUp (⇑ (THole , Old)) (EVar x Marked)) ⇒ THole
-    MarkAsc : ∀ {Γ b t e} ->
-      Γ ⊢ b ~> e ⇐ t ->
-      Γ ⊢ (BareEAsc t b) ~> (EUp (⇑ (t , Old)) (EAsc (t , Old) e)) ⇒ t
+    MarkAp : ∀ {Γ b-fun b-arg e-fun e-arg t-fun t-in-fun t-out-fun m-fun} ->
+      Γ ⊢ b-fun ~> e-fun ⇒ t-fun ->
+      t-fun ▸TArrowM t-in-fun , t-out-fun , m-fun ->
+      Γ ⊢ b-arg ~> e-arg ⇐ t-in-fun ->
+      Γ ⊢ (BareEAp b-fun b-arg) ~> (EUp (⇑ (t-out-fun , Old)) (EAp (ELow ̸⇓ Unmarked e-fun) m-fun e-arg)) ⇒ t-out-fun
+    MarkVar : ∀ {Γ x t-var m-var} ->
+      x , t-var ∈M Γ , m-var ->
+      Γ ⊢ (BareEVar x) ~> (EUp (⇑ (t-var , Old)) (EVar x Unmarked)) ⇒ t-var
+    MarkAsc : ∀ {Γ b-body e-body t-asc} ->
+      Γ ⊢ b-body ~> e-body ⇐ t-asc ->
+      Γ ⊢ (BareEAsc t-asc b-body) ~> (EUp (⇑ (t-asc , Old)) (EAsc (t-asc , Old) e-body)) ⇒ t-asc
 
   data _⊢_~>_⇐_ : (Γ : BareCtx) (b : BareExp) (e : ExpLow) (t : Type) → Set where  
-    MarkSubsume : ∀ {Γ b e t1 t2 m} ->
-      Γ ⊢ b ~> e ⇒ t1 ->
-      BareSubsumable b ->
-      t1 M~ t2 , m ->
-      Γ ⊢ b ~> (ELow (⇓ (t2 , Old)) m e) ⇐ t2
-    -- MarkSubsumeFail : ∀ {Γ b e t1 t2} ->
-    --   Γ ⊢ b ~> e ⇒ t1 ->
-    --   BareSubsumable b ->
-    --   ¬(t1 ~ t2) ->
-    --   Γ ⊢ b ~> (ELow (⇓ (t2 , Old)) Marked e) ⇐ t2
+    MarkSubsume : ∀ {Γ b-all e-all t-syn t-ana m-all} ->
+      Γ ⊢ b-all ~> e-all ⇒ t-syn ->
+      BareSubsumable b-all ->
+      t-syn ~M t-ana , m-all ->
+      Γ ⊢ b-all ~> (ELow (⇓ (t-ana , Old)) m-all e-all) ⇐ t-ana
     MarkAnaFun : ∀ {Γ t t1 t2 tasc b e} ->
       t ▸TArrow t1 , t2 ->
       (tasc , Γ) ⊢ b ~> e ⇐ t2 ->

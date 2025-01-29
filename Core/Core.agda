@@ -32,17 +32,10 @@ data BareSubsumable : BareExp -> Set where
 data Newness : Set where 
   Old : Newness 
   New : Newness 
-  -- NBase : Newness 
-  -- NHole : Newness
-  NArrow : Newness -> Newness -> Newness 
   
 data MarkData : Set where 
   Marked : MarkData
   Unmarked : MarkData
-
-data IsNew : Newness -> Set where 
-  IsNewNew : IsNew New
-  IsNewArrow : ∀ {n1 n2} -> IsNew (NArrow n1 n2)
 
 data _~_ : Type -> Type -> Set where 
   ConsistBase : TBase ~ TBase
@@ -73,21 +66,6 @@ data _▸TArrowM_,_,_ : Type -> Type -> Type -> MarkData -> Set where
     t ▸TArrow t1 , t2 ->
     t ▸TArrowM t1 , t2 , Unmarked
 
-data _▸NArrow_,_ : Newness -> Newness -> Newness -> Set where 
-  MNArrowOld : Old ▸NArrow Old , Old
-  MNArrowNew : New ▸NArrow New , New
-  MNArrowArrow : ∀ {n1 n2} -> (NArrow n1 n2) ▸NArrow n1 , n2
-
-dec▸NArrow : (n : Newness) -> (Newness × Newness)
-dec▸NArrow Old = Old , Old
-dec▸NArrow New = New , New
-dec▸NArrow (NArrow n1 n2) = n1 , n2
-
-narrow : Newness -> Newness -> Newness 
-narrow Old Old = Old 
-narrow New New = New 
-narrow n1 n2 = NArrow n1 n2
-
 NewType : Set 
 NewType = (Type × Newness) 
 
@@ -99,12 +77,8 @@ data AnaData : Set where
   ̸⇓ : AnaData
   ⇓ : NewType -> AnaData
 
-data MarkNewness : Set where 
-  MarkNew : MarkNewness 
-  MarkOld : MarkNewness
-
 NewMark : Set 
-NewMark = MarkData × MarkNewness
+NewMark = MarkData × Newness
 
 -- data ExpPointer : Set where 
 --   Here : ExpPointer 
