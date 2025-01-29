@@ -13,27 +13,32 @@ module Core.Marking where
 
 mutual 
 
-  data BarrenExp : ExpUp -> BareExp -> Set where 
-    BarrenConst : ∀ {syn} → 
-      BarrenExp (EUp syn EConst) BareEConst
-    BarrenHole : ∀ {syn} → 
-      BarrenExp (EUp syn EHole) BareEHole
-    BarrenFun : ∀ {syn asc n m1 m2 e b} → 
+  data BarrenExpUp : ExpUp -> BareExp -> Set where 
+    BarrenUp : ∀ {e b syn} ->
+      BarrenExpMid e b ->
+      BarrenExpUp (EUp syn e) b
+
+  data BarrenExpMid : ExpMid -> BareExp -> Set where 
+    BarrenConst : 
+      BarrenExpMid EConst BareEConst
+    BarrenHole :
+      BarrenExpMid EHole BareEHole
+    BarrenFun : ∀ {asc n m1 m2 e b} -> 
       BarrenExpLow e b ->
-      BarrenExp (EUp syn (EFun (asc , n) m1 m2 e)) (BareEFun asc b)
-    BarrenAp : ∀ {syn ana1 m1 m2 e1 e2 b1 b2} → 
-      BarrenExp e1 b1 ->
+      BarrenExpMid (EFun (asc , n) m1 m2 e) (BareEFun asc b)
+    BarrenAp : ∀ {m2 e1 e2 b1 b2} -> 
+      BarrenExpLow e1 b1 ->
       BarrenExpLow e2 b2 ->
-      BarrenExp (EUp syn (EAp (ELow ana1 m1 e1) m2 e2)) (BareEAp b1 b2)
-    BarrenVar : ∀ {syn x m} → 
-      BarrenExp (EUp syn (EVar x m)) (BareEVar x)
-    BarrenAsc : ∀ {syn asc n e b} → 
+      BarrenExpMid (EAp e1 m2 e2) (BareEAp b1 b2)
+    BarrenVar : ∀ {x m} -> 
+      BarrenExpMid (EVar x m) (BareEVar x)
+    BarrenAsc : ∀ {asc n e b} -> 
       BarrenExpLow e b ->
-      BarrenExp (EUp syn (EAsc (asc , n) e)) (BareEAsc asc b)
+      BarrenExpMid (EAsc (asc , n) e) (BareEAsc asc b)
 
   data BarrenExpLow : ExpLow -> BareExp -> Set where 
     BarrenLow : ∀ {e b ana m} ->
-      BarrenExp e b ->
+      BarrenExpUp e b ->
       BarrenExpLow (ELow ana m e) b
 
 BareCtx : Set 
@@ -45,15 +50,20 @@ data _,_∈M_,_ : ℕ -> Type -> BareCtx -> MarkData -> Set where
   MInCtxFree : ∀ {x Γ} -> 
     x ̸∈ Γ -> x , THole ∈M Γ , Marked
 
+-- This version of marking uses side conditions (matched arrow, consistency, or 
+-- variable lookup in the context) that are total functions which also return a
+-- mark bit. This allows a single rule to be used per syntactic form, rather 
+-- than having multiple cases. See the variable lookup above for example.
+
 mutual 
   data _⊢_~>_⇒_ : (Γ : BareCtx) (b : BareExp) (e : ExpUp) (t : Type) → Set where 
     MarkConst : ∀ {Γ} →
       Γ ⊢ BareEConst ~> (EUp (⇑ (TBase , Old)) EConst) ⇒ TBase
     MarkHole : ∀ {Γ} →
       Γ ⊢ BareEHole ~> (EUp (⇑ (THole , Old)) EHole) ⇒ THole
-    MarkSynFun : ∀ {Γ t1 t2 b e} ->
-      (t1 , Γ) ⊢ b ~> e ⇒ t2 ->
-      Γ ⊢ (BareEFun t1 b) ~> (EUp (⇑ (TArrow t1 t2 , Old)) (EFun (t1 , Old) Unmarked Unmarked (ELow ̸⇓ Unmarked e))) ⇒ (TArrow t1 t2)
+    MarkSynFun : ∀ {Γ b-body e-body t-asc t-body} ->
+      (t-asc , Γ) ⊢ b-body ~> e-body ⇒ t-body ->
+      Γ ⊢ (BareEFun t-asc b-body) ~> (EUp (⇑ (TArrow t-asc t-body , Old)) (EFun (t-asc , Old) Unmarked Unmarked (ELow ̸⇓ Unmarked e-body))) ⇒ (TArrow t-asc t-body)
     MarkAp : ∀ {Γ b-fun b-arg e-fun e-arg t-fun t-in-fun t-out-fun m-fun} ->
       Γ ⊢ b-fun ~> e-fun ⇒ t-fun ->
       t-fun ▸TArrowM t-in-fun , t-out-fun , m-fun ->

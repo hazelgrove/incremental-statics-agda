@@ -1,4 +1,4 @@
-open import Data.Nat hiding (_+_)
+open import Data.Nat hiding (_+_; _⊓_)
 open import Data.Unit 
 open import Data.Bool hiding (_<_; _≟_)
 open import Data.Sum renaming (_⊎_ to _+_; inj₁ to Inl ; inj₂ to Inr) hiding (map)
@@ -32,6 +32,11 @@ data BareSubsumable : BareExp -> Set where
 data Newness : Set where 
   Old : Newness 
   New : Newness 
+
+_⊓_ : Newness -> Newness -> Newness 
+Old ⊓ Old = Old
+Old ⊓ New = New
+New ⊓ n = New
   
 data MarkData : Set where 
   Marked : MarkData
