@@ -123,11 +123,11 @@ Subsumable (_ ⇐ mid) = SubsumableMid mid
 
 data Context (A : Set) : Set where 
   ∅ : Context A
-  _,_ : A -> Context A -> Context A
+  _∷_ : A -> Context A -> Context A
   
 data _,_∈_ {A : Set} : ℕ -> A -> (Context A) -> Set where 
-  InCtx0 : ∀ {Γ t} -> 0 , t ∈ (t , Γ)
-  InCtxSuc : ∀ {Γ t t' n} -> (n , t ∈ Γ) -> (suc n , t ∈ (t' , Γ))
+  InCtx0 : ∀ {Γ t} -> 0 , t ∈ (t ∷ Γ)
+  InCtxSuc : ∀ {Γ t t' n} -> (n , t ∈ Γ) -> (suc n , t ∈ (t' ∷ Γ))
 
 _̸∈_ : ∀ {A} -> ℕ -> (Context A) -> Set
 x ̸∈ Γ = ∀ {t} -> ¬(x , t ∈ Γ)

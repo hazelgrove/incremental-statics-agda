@@ -62,7 +62,7 @@ mutual
     MarkHole : ∀ {Γ} →
       Γ ⊢ BareEHole ~> ((■ (THole , Old)) ⇐ EHole) ⇒ THole
     MarkSynFun : ∀ {Γ b-body e-body t-asc t-body} ->
-      (t-asc , Γ) ⊢ b-body ~> e-body ⇒ t-body ->
+      (t-asc ∷ Γ) ⊢ b-body ~> e-body ⇒ t-body ->
       Γ ⊢ (BareEFun t-asc b-body) ~> ((■ (TArrow t-asc t-body , Old)) ⇐ (EFun (t-asc , Old) ✔ ✔ (□ ⇒[ ✔ ] e-body))) ⇒ (TArrow t-asc t-body)
     MarkAp : ∀ {Γ b-fun b-arg e-fun e-arg t-fun t-in-fun t-out-fun m-fun} ->
       Γ ⊢ b-fun ~> e-fun ⇒ t-fun ->
@@ -84,6 +84,6 @@ mutual
       Γ ⊢ b-all ~> ((■ (t-ana , Old)) ⇒[ m-all ] e-all) ⇐ t-ana
     MarkAnaFun : ∀ {Γ b-body e-body t-asc t-ana t-in-ana t-out-ana m-ana m-asc} ->
       t-ana ▸TArrowM t-in-ana , t-out-ana , m-ana ->
-      (t-asc , Γ) ⊢ b-body ~> e-body ⇐ t-out-ana ->
+      (t-asc ∷ Γ) ⊢ b-body ~> e-body ⇐ t-out-ana ->
       t-asc ~M t-in-ana , m-asc ->
       Γ ⊢ (BareEFun t-asc b-body) ~> ((■ (t-ana , Old)) ⇒[ ✔ ] (□ ⇐ (EFun (t-asc , Old) m-ana m-asc e-body))) ⇐ t-ana

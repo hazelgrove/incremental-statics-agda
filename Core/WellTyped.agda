@@ -98,7 +98,7 @@ mutual
       Γ ⊢ (syn-all ⇐ EHole) ⇒
     SynFun : ∀ {Γ e-body syn-all syn-body t-asc} ->
       ▷D (SynArrow t-asc syn-body) syn-all ->
-      (t-asc , Γ) ⊢ (syn-body ⇐ e-body) ⇒ ->
+      (t-asc ∷ Γ) ⊢ (syn-body ⇐ e-body) ⇒ ->
       Γ ⊢ (syn-all ⇐ (EFun t-asc ✔ ✔ (□ ⇒[ ✔ ] (syn-body ⇐ e-body)))) ⇒
     SynAp : ∀ {Γ e-fun e-arg syn-all syn-fun ana-arg t-in-fun t-out-fun m-all m-fun m-arg} ->
       syn-fun ▸DTArrowNM t-in-fun , t-out-fun , m-fun -> 
@@ -126,6 +126,14 @@ mutual
       ▷NM m-consist m-all ->
       Γ ⊢ (syn-all ⇐ e-all) ⇒ -> 
       Γ ⊢ (ana-all ⇒[ m-all ] (syn-all ⇐ e-all)) ⇐ 
-    -- AnaFun : 
-      -- ana-all ▸DTArrowNM
-      -- Γ ⊢ (ana-all ⇒[ ✔ ] (□ ⇐ (EFun t-asc m-ana m-asc e-body))) ⇐ 
+    AnaFun : ∀ {Γ e-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-body m-ana-ana m-asc-ana} ->
+      -- steps from marking
+      ana-all ▸DTArrowNM t-in-ana , t-out-ana , m-ana-ana -> 
+      (t-asc ∷ Γ) ⊢ (ana-body ⇒[ m-body ] e-body) ⇐ ->
+      t-asc ~NM t-in-ana , m-asc-ana ->
+      -- checks on each output (including those given to recursive calls) of the 
+      -- marking judgment (but which are inputs to this judgment)
+      ▷NM m-ana-ana m-ana -> 
+      ▷NM m-asc-ana m-asc -> 
+      ▷D (■ t-out-ana) ana-body ->
+      Γ ⊢ (ana-all ⇒[ ✔ ] (□ ⇐ (EFun t-asc m-ana m-asc (ana-body ⇒[ m-body ] e-body)))) ⇐ 
