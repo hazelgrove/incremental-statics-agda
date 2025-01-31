@@ -17,7 +17,7 @@ mutual
   -- I'm not sure we actually need the context. 
 
   data SettledSyn : Ctx -> ExpUp -> Set where 
-    SettledSynConst : ∀ {Γ e t} ->
+    SettledSynSyn : ∀ {Γ e t} ->
       SettledSynMid Γ e -> 
       SettledSyn Γ (e ⇒ (■ (t , Old)))
 
@@ -41,12 +41,17 @@ mutual
       SettledSynMid Γ ((EAsc (t , Old) e))
 
   data SettledAna : Ctx -> ExpLow -> Set where 
-    SettledAnaFun : ∀ {Γ t1 t2 m1 m2 m3 e} ->
-      SettledAna Γ e ->
-      SettledAna Γ (((EFun (t2 , Old) m2 m3 e) ⇒ □) [ m1 ]⇐ (■ (t1 , Old)))
-    SettledAnaSubsume : ∀ {Γ e t m} ->
-      SettledSyn Γ e ->
+    SettledAnaAna : ∀ {Γ t e m} ->
+      SettledAnaUp Γ e ->
       SettledAna Γ (e [ m ]⇐ (■ (t , Old)))
+  
+  data SettledAnaUp : Ctx -> ExpUp -> Set where 
+    SettledAnaFun : ∀ {Γ t m1 m2 e} ->
+      SettledAna Γ e ->
+      SettledAnaUp Γ ((EFun (t , Old) m1 m2 e) ⇒ □)
+    SettledAnaSubsume : ∀ {Γ e} ->
+      SettledSyn Γ e ->
+      SettledAnaUp Γ e
 
 
 data SettledSynExcept : Ctx -> ExpUp -> Set where 

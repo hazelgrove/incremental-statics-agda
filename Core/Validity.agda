@@ -40,8 +40,8 @@ module Core.Validity where
       BarrenCtx Γ Γ' ->
       e ≡ (e' ⇒ (■ (t , n))) ->
       Γ' ⊢ b ~> e ⇒ t
-    validity-syn (SynConst (▷DSome (MergeInfoOld refl))) SettledSynConst (BarrenUp BarrenConst) bare-ctx refl = MarkConst
-    validity-syn (SynHole (▷DSome (MergeInfoOld refl))) SettledSynHole (BarrenUp BarrenHole) bare-ctx refl = MarkHole
+    validity-syn (SynConst (▷DSome (MergeInfoOld refl))) sett (BarrenUp BarrenConst) bare-ctx refl = ? --MarkConst
+    validity-syn (SynHole (▷DSome (MergeInfoOld refl))) SettledMid (BarrenUp BarrenHole) bare-ctx refl = ? --MarkHole
     validity-syn (SynFun x syn) (SettledSynFun sett) (BarrenUp (BarrenFun x₁)) bare-ctx eq = {! x  !}
     
     validity-syn (SynAp x x₁ ana-con mark-con wt-syn wt-ana) (SettledSynAp set-syn x₅) (BarrenUp (BarrenAp (BarrenLow bare1) (BarrenLow bare2))) bare-ctx refl --= {!   !}
