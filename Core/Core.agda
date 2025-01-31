@@ -95,7 +95,7 @@ NewMark = MarkData × Newness
 mutual 
 
   data ExpUp : Set where  
-    _⇐_ : TypeData -> ExpMid -> ExpUp
+    _⇒_ : ExpMid -> TypeData -> ExpUp
 
   data ExpMid : Set where 
     EConst : ExpMid 
@@ -106,7 +106,7 @@ mutual
     EAsc : NewType -> ExpLow -> ExpMid 
 
   data ExpLow : Set where 
-    _⇒[_]_ : TypeData -> MarkData -> ExpUp -> ExpLow
+    _[_]⇐_ : ExpUp -> MarkData -> TypeData -> ExpLow
 
 data Program : Set where 
     PRoot : ExpUp -> Program
@@ -119,7 +119,7 @@ data SubsumableMid : ExpMid -> Set where
   SubsumableAsc : ∀ {t e} -> SubsumableMid (EAsc t e) 
 
 Subsumable : ExpUp -> Set 
-Subsumable (_ ⇐ mid) = SubsumableMid mid
+Subsumable (mid ⇒ _) = SubsumableMid mid
 
 data Context (A : Set) : Set where 
   ∅ : Context A

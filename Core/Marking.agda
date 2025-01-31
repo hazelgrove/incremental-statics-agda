@@ -16,7 +16,7 @@ mutual
   data BarrenExpUp : ExpUp -> BareExp -> Set where 
     BarrenUp : ∀ {e b syn} ->
       BarrenExpMid e b ->
-      BarrenExpUp (syn ⇐ e) b
+      BarrenExpUp (e ⇒ syn) b
 
   data BarrenExpMid : ExpMid -> BareExp -> Set where 
     BarrenConst : 
@@ -39,7 +39,7 @@ mutual
   data BarrenExpLow : ExpLow -> BareExp -> Set where 
     BarrenLow : ∀ {e b ana m} ->
       BarrenExpUp e b ->
-      BarrenExpLow (ana ⇒[ m ] e) b
+      BarrenExpLow (e [ m ]⇐ ana) b
 
 BareCtx : Set 
 BareCtx = Context Type
@@ -58,32 +58,32 @@ data _,_∈M_,_ : ℕ -> Type -> BareCtx -> MarkData -> Set where
 mutual 
   data _⊢_~>_⇒_ : (Γ : BareCtx) (b : BareExp) (e : ExpUp) (t : Type) → Set where 
     MarkConst : ∀ {Γ} →
-      Γ ⊢ BareEConst ~> ((■ (TBase , Old)) ⇐ EConst) ⇒ TBase
+      Γ ⊢ BareEConst ~> (EConst ⇒ (■ (TBase , Old))) ⇒ TBase
     MarkHole : ∀ {Γ} →
-      Γ ⊢ BareEHole ~> ((■ (THole , Old)) ⇐ EHole) ⇒ THole
+      Γ ⊢ BareEHole ~> (EHole ⇒ (■ (THole , Old))) ⇒ THole
     MarkSynFun : ∀ {Γ b-body e-body t-asc t-body} ->
       (t-asc ∷ Γ) ⊢ b-body ~> e-body ⇒ t-body ->
-      Γ ⊢ (BareEFun t-asc b-body) ~> ((■ (TArrow t-asc t-body , Old)) ⇐ (EFun (t-asc , Old) ✔ ✔ (□ ⇒[ ✔ ] e-body))) ⇒ (TArrow t-asc t-body)
+      Γ ⊢ (BareEFun t-asc b-body) ~> ((EFun (t-asc , Old) ✔ ✔ (e-body [ ✔ ]⇐ □)) ⇒ (■ (TArrow t-asc t-body , Old))) ⇒ (TArrow t-asc t-body)
     MarkAp : ∀ {Γ b-fun b-arg e-fun e-arg t-fun t-in-fun t-out-fun m-fun} ->
       Γ ⊢ b-fun ~> e-fun ⇒ t-fun ->
       t-fun ▸TArrowM t-in-fun , t-out-fun , m-fun ->
       Γ ⊢ b-arg ~> e-arg ⇐ t-in-fun ->
-      Γ ⊢ (BareEAp b-fun b-arg) ~> ((■ (t-out-fun , Old)) ⇐ (EAp (□ ⇒[ ✔ ] e-fun) m-fun e-arg)) ⇒ t-out-fun
+      Γ ⊢ (BareEAp b-fun b-arg) ~> ((EAp (e-fun [ ✔ ]⇐ □) m-fun e-arg) ⇒ (■ (t-out-fun , Old))) ⇒ t-out-fun
     MarkVar : ∀ {Γ x t-var m-var} ->
       x , t-var ∈M Γ , m-var ->
-      Γ ⊢ (BareEVar x) ~> ((■ (t-var , Old)) ⇐ (EVar x m-var)) ⇒ t-var
+      Γ ⊢ (BareEVar x) ~> ((EVar x m-var) ⇒ (■ (t-var , Old))) ⇒ t-var
     MarkAsc : ∀ {Γ b-body e-body t-asc} ->
       Γ ⊢ b-body ~> e-body ⇐ t-asc ->
-      Γ ⊢ (BareEAsc t-asc b-body) ~> ((■ (t-asc , Old)) ⇐ (EAsc (t-asc , Old) e-body)) ⇒ t-asc
+      Γ ⊢ (BareEAsc t-asc b-body) ~> ((EAsc (t-asc , Old) e-body) ⇒ (■ (t-asc , Old))) ⇒ t-asc
 
   data _⊢_~>_⇐_ : (Γ : BareCtx) (b : BareExp) (e : ExpLow) (t : Type) → Set where  
     MarkSubsume : ∀ {Γ b-all e-all t-syn t-ana m-all} ->
       Γ ⊢ b-all ~> e-all ⇒ t-syn ->
       BareSubsumable b-all ->
       t-syn ~M t-ana , m-all ->
-      Γ ⊢ b-all ~> ((■ (t-ana , Old)) ⇒[ m-all ] e-all) ⇐ t-ana
+      Γ ⊢ b-all ~> (e-all [ m-all ]⇐ (■ (t-ana , Old))) ⇐ t-ana
     MarkAnaFun : ∀ {Γ b-body e-body t-asc t-ana t-in-ana t-out-ana m-ana m-asc} ->
       t-ana ▸TArrowM t-in-ana , t-out-ana , m-ana ->
       (t-asc ∷ Γ) ⊢ b-body ~> e-body ⇐ t-out-ana ->
       t-asc ~M t-in-ana , m-asc ->
-      Γ ⊢ (BareEFun t-asc b-body) ~> ((■ (t-ana , Old)) ⇒[ ✔ ] (□ ⇐ (EFun (t-asc , Old) m-ana m-asc e-body))) ⇐ t-ana
+      Γ ⊢ (BareEFun t-asc b-body) ~> (((EFun (t-asc , Old) m-ana m-asc e-body) ⇒ □) [ ✔ ]⇐ (■ (t-ana , Old))) ⇐ t-ana

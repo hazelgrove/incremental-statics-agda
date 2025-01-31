@@ -92,48 +92,48 @@ mutual
   data _⊢_⇒ : (Γ : Ctx) (e : ExpUp) -> Set where 
     SynConst : ∀ {Γ syn-all} ->
       ▷D (■ (TBase , Old)) syn-all ->
-      Γ ⊢ (syn-all ⇐ EConst) ⇒
+      Γ ⊢ (EConst ⇒ syn-all) ⇒
     SynHole : ∀ {Γ syn-all} ->
       ▷D (■ (THole , Old)) syn-all ->
-      Γ ⊢ (syn-all ⇐ EHole) ⇒
+      Γ ⊢ (EHole ⇒ syn-all) ⇒
     SynFun : ∀ {Γ e-body syn-all syn-body t-asc} ->
       ▷D (SynArrow t-asc syn-body) syn-all ->
-      (t-asc ∷ Γ) ⊢ (syn-body ⇐ e-body) ⇒ ->
-      Γ ⊢ (syn-all ⇐ (EFun t-asc ✔ ✔ (□ ⇒[ ✔ ] (syn-body ⇐ e-body)))) ⇒
+      (t-asc ∷ Γ) ⊢ (e-body ⇒ syn-body) ⇒ ->
+      Γ ⊢ ((EFun t-asc ✔ ✔ ((e-body ⇒ syn-body) [ ✔ ]⇐ □)) ⇒ syn-all) ⇒
     SynAp : ∀ {Γ e-fun e-arg syn-all syn-fun ana-arg t-in-fun t-out-fun m-all m-fun m-arg} ->
       syn-fun ▸DTArrowNM t-in-fun , t-out-fun , m-fun -> 
       ▷D (■ t-out-fun) syn-all -> 
       ▷D (■ t-in-fun) ana-arg -> 
       ▷NM m-fun m-all -> 
-      Γ ⊢ (syn-fun ⇐ e-fun) ⇒ ->
-      Γ ⊢ (ana-arg ⇒[ m-arg ] e-arg) ⇐ ->
-      Γ ⊢ (syn-all ⇐ (EAp (□ ⇒[ ✔ ] (syn-fun ⇐ e-fun)) m-all (ana-arg ⇒[ m-arg ] e-arg))) ⇒
+      Γ ⊢ (e-fun ⇒ syn-fun) ⇒ ->
+      Γ ⊢ (e-arg [ m-arg ]⇐ ana-arg) ⇐ ->
+      Γ ⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ □) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all) ⇒
     SynVar : ∀ {Γ x syn-all t-var m-all m-var} ->
       x , t-var ∈NM Γ , m-var ->
       ▷D (■ t-var) syn-all ->
       ▷NM m-var m-all -> 
-      Γ ⊢ (syn-all ⇐ (EVar x m-all)) ⇒
+      Γ ⊢ ((EVar x m-all) ⇒ syn-all) ⇒
     SynAsc : ∀ {Γ e-body syn-all ana-body t-asc m-body} ->
       ▷D (■ t-asc) syn-all -> 
       ▷D (■ t-asc) ana-body -> 
-      Γ ⊢ (ana-body ⇒[ m-body ] e-body) ⇐ ->
-      Γ ⊢ (syn-all ⇐ (EAsc t-asc (ana-body ⇒[ m-body ] e-body))) ⇒
+      Γ ⊢ (e-body [ m-body ]⇐ ana-body) ⇐ ->
+      Γ ⊢ ((EAsc t-asc (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all) ⇒
 
   data _⊢_⇐ : (Γ : Ctx) (e : ExpLow) -> Set where 
     AnaSubsume : ∀ {Γ e-all syn-all ana-all m-all m-consist} ->
       SubsumableMid e-all ->
       ana-all ~D syn-all , m-consist ->
       ▷NM m-consist m-all ->
-      Γ ⊢ (syn-all ⇐ e-all) ⇒ -> 
-      Γ ⊢ (ana-all ⇒[ m-all ] (syn-all ⇐ e-all)) ⇐ 
+      Γ ⊢ (e-all ⇒ syn-all) ⇒ -> 
+      Γ ⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐ 
     AnaFun : ∀ {Γ e-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-body m-ana-ana m-asc-ana} ->
       -- steps from marking
       ana-all ▸DTArrowNM t-in-ana , t-out-ana , m-ana-ana -> 
-      (t-asc ∷ Γ) ⊢ (ana-body ⇒[ m-body ] e-body) ⇐ ->
+      (t-asc ∷ Γ) ⊢ (e-body [ m-body ]⇐ ana-body) ⇐ ->
       t-asc ~NM t-in-ana , m-asc-ana ->
       -- checks on each output (including those given to recursive calls) of the 
       -- marking judgment (but which are inputs to this judgment)
       ▷NM m-ana-ana m-ana -> 
       ▷NM m-asc-ana m-asc -> 
       ▷D (■ t-out-ana) ana-body ->
-      Γ ⊢ (ana-all ⇒[ ✔ ] (□ ⇐ (EFun t-asc m-ana m-asc (ana-body ⇒[ m-body ] e-body)))) ⇐ 
+      Γ ⊢ (((EFun t-asc m-ana m-asc (e-body [ m-body ]⇐ ana-body)) ⇒ □) [ ✔ ]⇐ ana-all) ⇐ 

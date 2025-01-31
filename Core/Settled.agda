@@ -11,120 +11,60 @@ open import Core.Core
 
 module Core.Settled where
 
-data Settled : ExpUp -> Set where 
-  SettledConst : ∀ {t} ->
-    Settled (EUp (⇑ (t , Old)) EConst)
-  SettledHole : ∀ {t} ->
-    Settled (EUp (⇑ (t , Old)) EHole)
-  SettledFunSyn : ∀ {t1 t2 m1 m2 e} ->
-    Settled e ->
-    Settled (EUp (⇑ (t1 , Old)) (EFun (t2 , Old) m1 (ELow ̸⇓ m2 e)))
-  SettledFunAna : ∀ {t1 t2 m1 m2 e} ->
-    Settled e ->
-    Settled (EUp ̸⇑ (EFun (t1 , Old) m1 (ELow (⇓ (t2 , Old)) m2 e)))
-  SettledAp : ∀ {t1 t2 m1 m2 m3 e1 e2} ->
-    Settled e1 -> 
-    Settled e2 -> 
-    Settled (EUp (⇑ (t1 , Old)) (EAp (ELow ̸⇓ m1 e1) m2 (ELow (⇓ (t2 , Old)) m3 e2)))
-  SettledVar : ∀ {t x m} ->
-    Settled (EUp (⇑ (t , Old)) (EVar x m))
-  SettledAsc : ∀ {t1 t2 t3 m e} ->
-    Settled e -> 
-    Settled (EUp (⇑ (t1 , Old)) (EAsc (t2 , Old) (ELow (⇓ (t3 , Old)) m e)))
-
-data SettledExcept : ExpUp -> Set where 
-  SettledExceptConst : ∀ {t n} ->
-    SettledExcept (EUp (⇑ (t , n)) EConst)
-  SettledExceptHole : ∀ {t n} ->
-    SettledExcept (EUp (⇑ (t , n)) EHole)
-  SettledExceptFunSyn : ∀ {t1 t2 m1 m2 e n} ->
-    Settled e ->
-    SettledExcept (EUp (⇑ (t1 , n)) (EFun (t2 , Old) m1 (ELow ̸⇓ m2 e)))
-  SettledExceptFunAna : ∀ {t1 t2 m1 m2 e n} ->
-    Settled e ->
-    SettledExcept (EUp ̸⇑ (EFun (t1 , n) m1 (ELow (⇓ (t2 , Old)) m2 e)))
-  SettledExceptAp : ∀ {t1 t2 m1 m2 m3 e1 e2 n} ->
-    Settled e1 -> 
-    Settled e2 -> 
-    SettledExcept (EUp (⇑ (t1 , n)) (EAp (ELow ̸⇓ m1 e1) m2 (ELow (⇓ (t2 , Old)) m3 e2)))
-  SettledExceptVar : ∀ {t x m n} ->
-    SettledExcept (EUp (⇑ (t , n)) (EVar x m))
-  SettledExceptAsc : ∀ {t1 t2 t3 m e n} ->
-    Settled e -> 
-    SettledExcept (EUp (⇑ (t1 , n)) (EAsc (t2 , Old) (ELow (⇓ (t3 , Old)) m e)))
-
-data SettledLow : ExpLow -> Set where 
-  SettledLowAna : ∀ {e t m} ->
-    Settled e ->
-    SettledLow (ELow (⇓ (t , Old)) m e)
-
-data PSettled : Program -> Set where 
-  PSettledRoot : ∀ {e} ->
-    SettledExcept e -> 
-    PSettled (PRoot e)
-
--- settled-implies-settled-except : ∀ {e} ->
---   (Settled e) -> (SettledExcept e)
--- settled-implies-settled-except SettledConst = SettledExceptConst
--- settled-implies-settled-except SettledHole = SettledExceptHole
--- settled-implies-settled-except SettledFunSyn = SettledExceptFunSyn
--- settled-implies-settled-except SettledFunAna = SettledExceptFunAna
--- settled-implies-settled-except (SettledAp s s₁) = SettledExceptAp s s₁
--- settled-implies-settled-except SettledVar = SettledExceptVar
--- settled-implies-settled-except (SettledAsc s) = SettledExceptAsc s
-
 
 mutual 
 
+  -- I'm not sure we actually need the context. 
+
   data SettledSyn : Ctx -> ExpUp -> Set where 
     SettledSynConst : ∀ {Γ t} ->
-      SettledSyn Γ (EUp (⇑ (t , Old)) EConst)
+      SettledSyn Γ (EConst ⇒ (■ (t , Old)))
     SettledSynHole : ∀ {Γ t} ->
-      SettledSyn Γ (EUp (⇑ (t , Old)) EHole)
-    SettledSynFun : ∀ {Γ t1 t2 m1 m2 e} ->
-      SettledSyn ((t2 , Old) , Γ) e ->
-      SettledSyn Γ (EUp (⇑ (t1 , Old)) (EFun (t2 , Old) m1 (ELow ̸⇓ m2 e)))
+      SettledSyn Γ (EHole ⇒ (■ (t , Old)))
+    SettledSynFun : ∀ {Γ t1 t2 m1 m2 m3 e} ->
+      SettledSyn ((t2 , Old) ∷ Γ) e ->
+      SettledSyn Γ ((EFun (t2 , Old) m1 m2 (e [ m3 ]⇐ □)) ⇒ (■ (t1 , Old)))
     SettledSynAp : ∀ {Γ t m1 m2 e1 e2} ->
       SettledSyn Γ e1 -> 
       SettledAna Γ e2 -> 
-      SettledSyn Γ (EUp (⇑ (t , Old)) (EAp (ELow ̸⇓ m1 e1) m2 e2))
+      SettledSyn Γ ((EAp (e1 [ m1 ]⇐ □) m2 e2) ⇒ (■ (t , Old)))
     SettledSynVar : ∀ {Γ t1 t2 x m} ->
       ((x , (t1 , Old) ∈ Γ) + (x ̸∈ Γ)) ->
-      SettledSyn Γ (EUp (⇑ (t2 , Old)) (EVar x m))
-    -- SettledSynVarFail : ∀ {Γ t x m} ->
-    --   x ̸∈ Γ ->
-    --   SettledSyn Γ (EUp (⇑ (t , Old)) (EVar x m))
+      SettledSyn Γ ((EVar x m) ⇒ (■ (t2 , Old)))
     SettledSynAsc : ∀ {Γ t1 t2 e} ->
       SettledAna Γ e -> 
-      SettledSyn Γ (EUp (⇑ (t1 , Old)) (EAsc (t2 , Old) e))
+      SettledSyn Γ ((EAsc (t2 , Old) e) ⇒ (■ (t1 , Old)))
 
   data SettledAna : Ctx -> ExpLow -> Set where 
-    SettledAnaFun : ∀ {Γ t1 t2 m1 m2 e} ->
+    SettledAnaFun : ∀ {Γ t1 t2 m1 m2 m3 e} ->
       SettledAna Γ e ->
-      SettledAna Γ (ELow (⇓ (t1 , Old)) m1 (EUp ̸⇑ (EFun (t2 , Old) m2 e)))
+      SettledAna Γ (((EFun (t2 , Old) m2 m3 e) ⇒ □) [ m1 ]⇐ (■ (t1 , Old)))
     SettledAnaSubsume : ∀ {Γ e t m} ->
       SettledSyn Γ e ->
-      SettledAna Γ (ELow (⇓ (t , Old)) m e)
+      SettledAna Γ (e [ m ]⇐ (■ (t , Old)))
 
 
 data SettledSynExcept : Ctx -> ExpUp -> Set where 
   SettledSynExceptConst : ∀ {Γ t n} ->
-    SettledSynExcept Γ (EUp (⇑ (t , n)) EConst)
+    SettledSynExcept Γ (EConst ⇒ (■ (t , n)))
   SettledSynExceptHole : ∀ {Γ t n} ->
-    SettledSynExcept Γ (EUp (⇑ (t , n)) EHole)
-  SettledSynExceptFun : ∀ {Γ t1 t2 m1 m2 e n} ->
-    SettledSyn ((t2 , Old) , Γ) e ->
-    SettledSynExcept Γ (EUp (⇑ (t1 , n)) (EFun (t2 , Old) m1 (ELow ̸⇓ m2 e)))
+    SettledSynExcept Γ (EHole ⇒ (■ (t , n)))
+  SettledSynExceptFun : ∀ {Γ t1 t2 m1 m2 m3 e n} ->
+    SettledSyn ((t2 , Old) ∷ Γ) e ->
+    SettledSynExcept Γ ((EFun (t2 , Old) m1 m2 (e [ m3 ]⇐ □)) ⇒ (■ (t1 , n)))
   SettledSynExceptAp : ∀ {Γ t m1 m2 e1 e2 n} ->
     SettledSyn Γ e1 -> 
     SettledAna Γ e2 -> 
-    SettledSynExcept Γ (EUp (⇑ (t , n)) (EAp (ELow ̸⇓ m1 e1) m2 e2))
+    SettledSynExcept Γ ((EAp (e1 [ m1 ]⇐ □) m2 e2) ⇒ (■ (t , n)))
   SettledSynExceptVar : ∀ {Γ t1 t2 x m n} ->
     ((x , (t1 , Old) ∈ Γ) + (x ̸∈ Γ)) ->
-    SettledSynExcept Γ (EUp (⇑ (t2 , n)) (EVar x m))
-  -- SettledSynExceptVarFail : ∀ {Γ t x m} ->
-  --   x ̸∈ Γ ->
-  --   SettledSynExcept Γ (EUp (⇑ (t , Old)) (EVar x m))
+    SettledSynExcept Γ ((EVar x m) ⇒ (■ (t2 , n)))
   SettledSynExceptAsc : ∀ {Γ t1 t2 e n} ->
     SettledAna Γ e -> 
-    SettledSynExcept Γ (EUp (⇑ (t1 , n)) (EAsc (t2 , Old) e))
+    SettledSynExcept Γ ((EAsc (t2 , Old) e) ⇒ (■ (t1 , n)))
+
+
+data PSettled : Program -> Set where 
+  PSettledRoot : ∀ {e} ->
+    SettledSynExcept ∅ e -> 
+    PSettled (PRoot e)
