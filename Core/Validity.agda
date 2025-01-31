@@ -21,10 +21,11 @@ module Core.Validity where
       BarrenCtx Γ Γ' ->
       BarrenCtx ((t , n) ∷ Γ) (t ∷ Γ')
 
-  -- tarrow-of-ntarrow : ∀ {t t1 t2 m n m'} ->
-  --   (t , n) ▸NTArrow (t1 , Old) , (t2 , Old) , m ->
-  --   MarkConsist m m' ->
-  --   t ▸TArrowM t1 , t2 , m'
+  TArrowM-of-TArrowNM : ∀ {t t1 t2 m n m'} ->
+    (t , n) ▸TArrowNM (t1 , Old) , (t2 , Old) , m ->
+    -- ▷NM m m' ->
+    t ▸TArrowM t1 , t2 , m'
+  TArrowM-of-TArrowNM (MNTArrowOld x) = {!   !}
   -- tarrow-of-ntarrow (MNTArrowOldMatch x) MarkConsistOld = MArrowNoMatch x
   -- tarrow-of-ntarrow (MNTArrowOldNoMatch x) MarkConsistOld = MArrowMatch x
   -- tarrow-of-ntarrow MNTArrowArrow MarkConsistOld = MArrowNoMatch MArrowArrow
@@ -40,14 +41,14 @@ module Core.Validity where
       BarrenCtx Γ Γ' ->
       e ≡ (e' ⇒ (■ (t , n))) ->
       Γ' ⊢ b ~> e ⇒ t
-    validity-syn (SynConst (▷DSome (MergeInfoOld refl))) sett (BarrenUp BarrenConst) bare-ctx refl = ? --MarkConst
-    validity-syn (SynHole (▷DSome (MergeInfoOld refl))) SettledMid (BarrenUp BarrenHole) bare-ctx refl = ? --MarkHole
-    validity-syn (SynFun x syn) (SettledSynFun sett) (BarrenUp (BarrenFun x₁)) bare-ctx eq = {! x  !}
+    validity-syn (SynConst (▷DSome (MergeInfoOld refl))) (SettledSynSyn _) (BarrenUp BarrenConst) bare-ctx refl = MarkConst
+    validity-syn (SynHole (▷DSome (MergeInfoOld refl))) (SettledSynSyn _) (BarrenUp BarrenHole) bare-ctx refl = MarkHole
+    validity-syn (SynFun x syn) (SettledSynSyn (SettledSynFun sett)) (BarrenUp (BarrenFun x₁)) bare-ctx eq = {! x  !}
     
-    validity-syn (SynAp x x₁ ana-con mark-con wt-syn wt-ana) (SettledSynAp set-syn x₅) (BarrenUp (BarrenAp (BarrenLow bare1) (BarrenLow bare2))) bare-ctx refl --= {!   !}
-      = MarkAp (validity-syn wt-syn set-syn bare1 bare-ctx {! refl  !}) {!   !} {!   !}
-    validity-syn (SynVar x x₁ x₂) (SettledSynVar x₃) (BarrenUp BarrenVar) bare-ctx eq = {!   !}
-    validity-syn (SynAsc x x₁ x₂) (SettledSynAsc x₃) (BarrenUp (BarrenAsc x₄)) bare-ctx eq = {!   !}
+    validity-syn (SynAp (SynArrowSome (MNTArrowOld tarrow)) (▷DSome (MergeInfoOld refl)) (▷DSome (MergeInfoOld refl)) (▷NMOld refl) wt-syn wt-ana) (SettledSynSyn (SettledSynAp (SettledSynSyn set-syn) (SettledAnaAna set-ana))) (BarrenUp (BarrenAp (BarrenLow bare1) (BarrenLow bare2))) bare-ctx refl --= {!   !}
+      = MarkAp (validity-syn wt-syn (SettledSynSyn set-syn) bare1 bare-ctx refl) tarrow (validity-ana wt-ana (SettledAnaAna set-ana) (BarrenLow bare2) bare-ctx refl)
+    validity-syn (SynVar x x₁ x₂) (SettledSynSyn (SettledSynVar x₃)) (BarrenUp BarrenVar) bare-ctx eq = {!   !}
+    validity-syn (SynAsc x x₁ x₂) (SettledSynSyn (SettledSynAsc x₃)) (BarrenUp (BarrenAsc x₄)) bare-ctx eq = {!   !}
 
     -- (SynConst (SynConsistMerge MergeInfoOld)) SettledSynConst BarrenConst bare-ctx refl = MarkConst
     -- validity-syn (SynHole (SynConsistMerge MergeInfoOld)) SettledSynHole BarrenHole bare-ctx refl = MarkHole
