@@ -17,23 +17,28 @@ mutual
   -- I'm not sure we actually need the context. 
 
   data SettledSyn : Ctx -> ExpUp -> Set where 
-    SettledSynConst : ∀ {Γ t} ->
-      SettledSyn Γ (EConst ⇒ (■ (t , Old)))
-    SettledSynHole : ∀ {Γ t} ->
-      SettledSyn Γ (EHole ⇒ (■ (t , Old)))
-    SettledSynFun : ∀ {Γ t1 t2 m1 m2 m3 e} ->
-      SettledSyn ((t2 , Old) ∷ Γ) e ->
-      SettledSyn Γ ((EFun (t2 , Old) m1 m2 (e [ m3 ]⇐ □)) ⇒ (■ (t1 , Old)))
-    SettledSynAp : ∀ {Γ t m1 m2 e1 e2} ->
+    SettledSynConst : ∀ {Γ e t} ->
+      SettledSynMid Γ e -> 
+      SettledSyn Γ (e ⇒ (■ (t , Old)))
+
+  data SettledSynMid : Ctx -> ExpMid -> Set where 
+    SettledSynConst : ∀ {Γ} ->
+      SettledSynMid Γ EConst
+    SettledSynHole : ∀ {Γ} ->
+      SettledSynMid Γ (EHole)
+    SettledSynFun : ∀ {Γ t m1 m2 m3 e} ->
+      SettledSyn ((t , Old) ∷ Γ) e ->
+      SettledSynMid Γ ((EFun (t , Old) m1 m2 (e [ m3 ]⇐ □)))
+    SettledSynAp : ∀ {Γ m1 m2 e1 e2} ->
       SettledSyn Γ e1 -> 
       SettledAna Γ e2 -> 
-      SettledSyn Γ ((EAp (e1 [ m1 ]⇐ □) m2 e2) ⇒ (■ (t , Old)))
-    SettledSynVar : ∀ {Γ t1 t2 x m} ->
-      ((x , (t1 , Old) ∈ Γ) + (x ̸∈ Γ)) ->
-      SettledSyn Γ ((EVar x m) ⇒ (■ (t2 , Old)))
-    SettledSynAsc : ∀ {Γ t1 t2 e} ->
+      SettledSynMid Γ ((EAp (e1 [ m1 ]⇐ □) m2 e2))
+    SettledSynVar : ∀ {Γ t x m} ->
+      ((x , (t , Old) ∈ Γ) + (x ̸∈ Γ)) ->
+      SettledSynMid Γ ((EVar x m))
+    SettledSynAsc : ∀ {Γ t e} ->
       SettledAna Γ e -> 
-      SettledSyn Γ ((EAsc (t2 , Old) e) ⇒ (■ (t1 , Old)))
+      SettledSynMid Γ ((EAsc (t , Old) e))
 
   data SettledAna : Ctx -> ExpLow -> Set where 
     SettledAnaFun : ∀ {Γ t1 t2 m1 m2 m3 e} ->

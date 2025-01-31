@@ -38,27 +38,29 @@ module Core.Validity where
       SettledSyn Γ e ->
       BarrenExpUp e b ->
       BarrenCtx Γ Γ' ->
-      e ≡ ((■ (t , n)) ⇐ e') ->
+      e ≡ (e' ⇒ (■ (t , n))) ->
       Γ' ⊢ b ~> e ⇒ t
-    validity-syn (SynConst (▷DSome (MergeInfoOld refl))) SettledSynConst (BarrenUp BarrenConst) barctx refl = MarkConst
-    validity-syn (SynHole (▷DSome (MergeInfoOld refl))) SettledSynHole (BarrenUp BarrenHole) barctx refl = MarkHole
-    validity-syn (SynFun x syn) (SettledSynFun sett) (BarrenUp (BarrenFun x₁)) barctx eq = {! x  !}
-    validity-syn (SynAp x x₁ x₂ x₃ syn x₄) (SettledSynAp sett x₅) (BarrenUp (BarrenAp x₆ x₇)) barctx eq = {!   !}
-    validity-syn (SynVar x x₁ x₂) (SettledSynVar x₃) (BarrenUp BarrenVar) barctx eq = {!   !}
-    validity-syn (SynAsc x x₁ x₂) (SettledSynAsc x₃) (BarrenUp (BarrenAsc x₄)) barctx eq = {!   !}
+    validity-syn (SynConst (▷DSome (MergeInfoOld refl))) SettledSynConst (BarrenUp BarrenConst) bare-ctx refl = MarkConst
+    validity-syn (SynHole (▷DSome (MergeInfoOld refl))) SettledSynHole (BarrenUp BarrenHole) bare-ctx refl = MarkHole
+    validity-syn (SynFun x syn) (SettledSynFun sett) (BarrenUp (BarrenFun x₁)) bare-ctx eq = {! x  !}
+    
+    validity-syn (SynAp x x₁ ana-con mark-con wt-syn wt-ana) (SettledSynAp set-syn x₅) (BarrenUp (BarrenAp (BarrenLow bare1) (BarrenLow bare2))) bare-ctx refl --= {!   !}
+      = MarkAp (validity-syn wt-syn set-syn bare1 bare-ctx {! refl  !}) {!   !} {!   !}
+    validity-syn (SynVar x x₁ x₂) (SettledSynVar x₃) (BarrenUp BarrenVar) bare-ctx eq = {!   !}
+    validity-syn (SynAsc x x₁ x₂) (SettledSynAsc x₃) (BarrenUp (BarrenAsc x₄)) bare-ctx eq = {!   !}
 
-    -- (SynConst (SynConsistMerge MergeInfoOld)) SettledSynConst BarrenConst barctx refl = MarkConst
-    -- validity-syn (SynHole (SynConsistMerge MergeInfoOld)) SettledSynHole BarrenHole barctx refl = MarkHole
-    -- validity-syn (SynAp (SynArrowSome {t = (t , n)} match1) (SynConsistMerge MergeInfoOld) (AnaConsistMerge MergeInfoOld) markcon wtsyn wtana) (SettledSynAp setsyn setana) (BarrenAp barexp1 barexp2) barctx refl 
-    --   = MarkAp (validity-syn wtsyn setsyn barexp1 barctx refl) (tarrow-of-ntarrow match1 markcon) (validity-ana wtana setana barexp2 barctx refl)
-    -- validity-syn (SynAsc (SynConsistMerge MergeInfoOld) (AnaConsistMerge MergeInfoOld) wtana) (SettledSynAsc set) (BarrenAsc barexp) barctx refl = MarkAsc (validity-ana wtana set barexp barctx refl)
+    -- (SynConst (SynConsistMerge MergeInfoOld)) SettledSynConst BarrenConst bare-ctx refl = MarkConst
+    -- validity-syn (SynHole (SynConsistMerge MergeInfoOld)) SettledSynHole BarrenHole bare-ctx refl = MarkHole
+    -- validity-syn (SynAp (SynArrowSome {t = (t , n)} match1) (SynConsistMerge MergeInfoOld) (AnaConsistMerge MergeInfoOld) markcon wt-syn wt-ana) (SettledSynAp setsyn setana) (BarrenAp barexp1 barexp2) bare-ctx refl 
+    --   = MarkAp (validity-syn wt-syn setsyn barexp1 bare-ctx refl) (tarrow-of-ntarrow match1 markcon) (validity-ana wt-ana setana barexp2 bare-ctx refl)
+    -- validity-syn (SynAsc (SynConsistMerge MergeInfoOld) (AnaConsistMerge MergeInfoOld) wt-ana) (SettledSynAsc set) (BarrenAsc barexp) bare-ctx refl = MarkAsc (validity-ana wt-ana set barexp bare-ctx refl)
 
     validity-ana : ∀ {Γ Γ' e b t n m e'} ->
       Γ ⊢ e ⇐ ->
       SettledAna Γ e ->
       BarrenExpLow e b ->
       BarrenCtx Γ Γ' ->
-      e ≡ ((■ (t , n)) ⇒[ m ] e') ->
+      e ≡ (e' [ m ]⇐ (■ (t , n))) ->
       Γ' ⊢ b ~> e ⇐ t
     validity-ana = {!   !}
 
