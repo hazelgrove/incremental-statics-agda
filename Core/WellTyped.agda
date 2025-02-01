@@ -55,9 +55,9 @@ data _▸DTArrowNM_,_,_ : TypeData -> NewType -> NewType -> NewMark -> Set where
     (■ t) ▸DTArrowNM t1 , t2 , m
 
 data _,_∈NM_,_ : ℕ -> NewType -> Ctx -> NewMark -> Set where 
-  MInCtxBound : ∀ {x t Γ} -> 
+  NMInCtxBound : ∀ {x t Γ} -> 
     x , t ∈ Γ -> x , t ∈NM Γ , (✔ , Old)
-  MInCtxFree : ∀ {x Γ} -> 
+  NMInCtxFree : ∀ {x Γ} -> 
     x ̸∈ Γ -> x , (THole , Old) ∈NM Γ , (✖ , Old)
 
 data _~NM_,_ : NewType -> NewType -> NewMark -> Set where 
