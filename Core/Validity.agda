@@ -73,9 +73,13 @@ module Core.Validity where
     -- if e is well typed in Γ, then erasing the annotations and marking from
     -- scratch results in e again (the type it will synthesize is the type 
     -- on the top annotation of e).
+
+    -- Issue: maybe this should really provide the annotation rather than assume it 
+    -- (the conclusion is that there exists an e' t and n such that e ≡ (e' ⇒ (■ (t , n))) and Γ' ⊢ b ~> e ⇒ t)
+    -- this will make things less nice, and require tightening the invariant
     validity-syn : ∀ {Γ Γ' e b t n e'} ->
       Γ ⊢ e ⇒ ->
-      SettledSyn Γ e ->
+      SettledSyn e ->
       BarrenExpUp e b ->
       BarrenCtx Γ Γ' ->
       CtxAllOld Γ -> 
@@ -87,14 +91,14 @@ module Core.Validity where
       = MarkSynFun (validity-syn syn (SettledSynSyn sett) (BarrenUp bare) (BarrenCtxCons bare-ctx) (ConsAllOld ctx-old) refl)
     validity-syn (SynAp (SynArrowSome (MNTArrowOld tarrow)) (▷DSome (MergeInfoOld refl)) (▷DSome (MergeInfoOld refl)) (▷NMOld refl) wt-syn wt-ana) (SettledSynSyn (SettledSynAp (SettledSynSyn set-syn) (SettledAnaAna set-ana))) (BarrenUp (BarrenAp (BarrenLow bare1) (BarrenLow bare2))) bare-ctx ctx-old refl
       = MarkAp (validity-syn wt-syn (SettledSynSyn set-syn) bare1 bare-ctx ctx-old refl) tarrow (validity-ana wt-ana (SettledAnaAna set-ana) (BarrenLow bare2) bare-ctx ctx-old refl)
-    validity-syn (SynVar in-ctx (▷DSome x) (▷NMOld refl)) (SettledSynSyn (SettledSynVar _)) (BarrenUp BarrenVar) bare-ctx ctx-old refl with all-old-lookup in-ctx ctx-old | x
+    validity-syn (SynVar in-ctx (▷DSome x) (▷NMOld refl)) (SettledSynSyn SettledSynVar) (BarrenUp BarrenVar) bare-ctx ctx-old refl with all-old-lookup in-ctx ctx-old | x
     ... | t , refl | MergeInfoOld refl = MarkVar (∈M-of-∈NM in-ctx bare-ctx)
     validity-syn (SynAsc (▷DSome (MergeInfoOld refl)) (▷DSome (MergeInfoOld refl)) wt-ana) (SettledSynSyn (SettledSynAsc (SettledAnaAna set-ana))) (BarrenUp (BarrenAsc bare)) bare-ctx ctx-old refl 
       = MarkAsc (validity-ana wt-ana (SettledAnaAna set-ana) bare bare-ctx ctx-old refl)
 
     validity-ana : ∀ {Γ Γ' e b t n m e'} ->
       Γ ⊢ e ⇐ ->
-      SettledAna Γ e ->
+      SettledAna e ->
       BarrenExpLow e b ->
       BarrenCtx Γ Γ' ->
       CtxAllOld Γ -> 
