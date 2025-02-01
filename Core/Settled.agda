@@ -53,28 +53,12 @@ mutual
       SettledSyn Γ e ->
       SettledAnaUp Γ e
 
+-- data SettledSynExcept : Ctx -> ExpUp -> Set where 
+--   SettledSynExceptSyn : ∀ {Γ e t n} ->
+--     SettledSynMid Γ e -> 
+--     SettledSynExcept Γ (e ⇒ (■ (t , n)))
 
-data SettledSynExcept : Ctx -> ExpUp -> Set where 
-  SettledSynExceptConst : ∀ {Γ t n} ->
-    SettledSynExcept Γ (EConst ⇒ (■ (t , n)))
-  SettledSynExceptHole : ∀ {Γ t n} ->
-    SettledSynExcept Γ (EHole ⇒ (■ (t , n)))
-  SettledSynExceptFun : ∀ {Γ t1 t2 m1 m2 m3 e n} ->
-    SettledSyn ((t2 , Old) ∷ Γ) e ->
-    SettledSynExcept Γ ((EFun (t2 , Old) m1 m2 (e [ m3 ]⇐ □)) ⇒ (■ (t1 , n)))
-  SettledSynExceptAp : ∀ {Γ t m1 m2 e1 e2 n} ->
-    SettledSyn Γ e1 -> 
-    SettledAna Γ e2 -> 
-    SettledSynExcept Γ ((EAp (e1 [ m1 ]⇐ □) m2 e2) ⇒ (■ (t , n)))
-  SettledSynExceptVar : ∀ {Γ t1 t2 x m n} ->
-    ((x , (t1 , Old) ∈ Γ) + (x ̸∈ Γ)) ->
-    SettledSynExcept Γ ((EVar x m) ⇒ (■ (t2 , n)))
-  SettledSynExceptAsc : ∀ {Γ t1 t2 e n} ->
-    SettledAna Γ e -> 
-    SettledSynExcept Γ ((EAsc (t2 , Old) e) ⇒ (■ (t1 , n)))
-
-
-data PSettled : Program -> Set where 
-  PSettledRoot : ∀ {e} ->
-    SettledSynExcept ∅ e -> 
-    PSettled (PRoot e)
+data SettledProgram : Program -> Set where 
+  SettledRoot : ∀ {e} ->
+    SettledSyn ∅ e -> 
+    SettledProgram (Root e)

@@ -22,6 +22,9 @@ data BareExp : Set where
   BareEVar : ℕ -> BareExp 
   BareEAsc : Type -> BareExp -> BareExp 
 
+data BareProgram : Set where 
+  BareRoot : BareExp -> BareProgram
+
 data BareSubsumable : BareExp -> Set where 
   BareSubsumableConst : BareSubsumable BareEConst
   BareSubsumableHole : BareSubsumable BareEHole
@@ -109,7 +112,7 @@ mutual
     _[_]⇐_ : ExpUp -> MarkData -> TypeData -> ExpLow
 
 data Program : Set where 
-    PRoot : ExpUp -> Program
+    Root : ExpUp -> Program
 
 data SubsumableMid : ExpMid -> Set where 
   SubsumableConst : SubsumableMid EConst

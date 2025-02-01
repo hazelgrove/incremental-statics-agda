@@ -41,6 +41,11 @@ mutual
       BarrenExpUp e b ->
       BarrenExpLow (e [ m ]⇐ ana) b
 
+data BarrenProgram : Program -> BareProgram -> Set where 
+  BarrenP : ∀ {e b} ->
+    BarrenExpUp e b -> 
+    BarrenProgram (Root e) (BareRoot b)
+
 BareCtx : Set 
 BareCtx = Context Type
 
@@ -87,3 +92,8 @@ mutual
       (t-asc ∷ Γ) ⊢ b-body ~> e-body ⇐ t-out-ana ->
       t-asc ~M t-in-ana , m-asc ->
       Γ ⊢ (BareEFun t-asc b-body) ~> (((EFun (t-asc , Old) m-ana m-asc e-body) ⇒ □) [ ✔ ]⇐ (■ (t-ana , Old))) ⇐ t-ana
+  
+data _~>_⇒_ : BareProgram -> Program -> Type -> Set where 
+  MarkProgram : ∀ {b e t} ->
+    ∅ ⊢ b ~> e ⇒ t -> 
+    (BareRoot b) ~> (Root e) ⇒ t 

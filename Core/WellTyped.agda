@@ -66,7 +66,7 @@ data _~NM_,_ : NewType -> NewType -> NewMark -> Set where
     (t1 , New) ~NM (t2 , n2) , (m , New) 
   RNewConsist : ∀ {t1 t2 n1 m} ->
     t1 ~M t2 , m -> 
-    (t1 , n1) ~NM (t2 , Old) , (m , New) 
+    (t1 , n1) ~NM (t2 , New) , (m , New) 
   OldOldConsist : ∀ {t1 t2 m} ->
     t1 ~M t2 , m -> 
     (t1 , Old) ~NM (t2 , Old) , (✔ , Old) 
@@ -122,7 +122,7 @@ mutual
   data _⊢_⇐ : (Γ : Ctx) (e : ExpLow) -> Set where 
     AnaSubsume : ∀ {Γ e-all syn-all ana-all m-all m-consist} ->
       SubsumableMid e-all ->
-      ana-all ~D syn-all , m-consist ->
+      syn-all ~D ana-all , m-consist ->
       ▷NM m-consist m-all ->
       Γ ⊢ (e-all ⇒ syn-all) ⇒ -> 
       Γ ⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐ 
@@ -137,3 +137,8 @@ mutual
       ▷NM m-asc-ana m-asc -> 
       ▷D (■ t-out-ana) ana-body ->
       Γ ⊢ (((EFun t-asc m-ana m-asc (e-body [ m-body ]⇐ ana-body)) ⇒ □) [ ✔ ]⇐ ana-all) ⇐ 
+    
+data _⇒ : Program -> Set where 
+  SynProg : ∀ {e} ->
+    ∅ ⊢ e ⇒ ->
+    (Root e) ⇒
