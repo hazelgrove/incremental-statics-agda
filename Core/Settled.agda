@@ -47,7 +47,7 @@ mutual
   
   data SettledAnaUp : Ctx -> ExpUp -> Set where 
     SettledAnaFun : ∀ {Γ t m1 m2 e} ->
-      SettledAna Γ e ->
+      SettledAna ((t , Old) ∷ Γ) e ->
       SettledAnaUp Γ ((EFun (t , Old) m1 m2 e) ⇒ □)
     SettledAnaSubsume : ∀ {Γ e} ->
       SettledSyn Γ e ->

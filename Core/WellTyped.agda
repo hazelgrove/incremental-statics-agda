@@ -69,7 +69,7 @@ data _~NM_,_ : NewType -> NewType -> NewMark -> Set where
     (t1 , n1) ~NM (t2 , New) , (m , New) 
   OldOldConsist : ∀ {t1 t2 m} ->
     t1 ~M t2 , m -> 
-    (t1 , Old) ~NM (t2 , Old) , (✔ , Old) 
+    (t1 , Old) ~NM (t2 , Old) , (m , Old) 
 
 data _~D_,_ : TypeData -> TypeData -> NewMark -> Set where 
   ~DVoidL : ∀ {d} ->

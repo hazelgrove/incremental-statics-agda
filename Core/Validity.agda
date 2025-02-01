@@ -101,7 +101,8 @@ module Core.Validity where
       e ≡ (e' [ m ]⇐ (■ (t , n))) ->
       Γ' ⊢ b ~> e ⇐ t
     validity-ana (AnaSubsume subsumable (~DSome (OldOldConsist x)) (▷NMOld refl) syn) (SettledAnaAna (SettledAnaSubsume (SettledSynSyn settled))) (BarrenLow (BarrenUp bare)) bare-ctx ctx-old refl = MarkSubsume {!   !} (barren-subsumable subsumable bare) {!   !} -- MarkSubsume {!  syn !} {!   !} {!   !}
-    validity-ana (AnaFun x ana x₁ x₂ x₃ x₄) settled bare bare-ctx ctx-old refl = {!   !}
+    validity-ana (AnaFun (SynArrowSome (MNTArrowOld tarrow)) ana (OldOldConsist mark-consist) (▷NMOld refl) (▷NMOld refl) (▷DSome (MergeInfoOld refl))) (SettledAnaAna (SettledAnaFun (SettledAnaAna settled))) (BarrenLow (BarrenUp (BarrenFun (BarrenLow (BarrenUp bare))))) bare-ctx ctx-old refl 
+      = MarkAnaFun tarrow (validity-ana ana (SettledAnaAna settled) (BarrenLow (BarrenUp bare)) (BarrenCtxCons bare-ctx) (ConsAllOld ctx-old) refl) mark-consist
 
   validity : ∀ {e e' b t n} ->
     e ⇒ ->
