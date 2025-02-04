@@ -1,4 +1,4 @@
-open import Data.Nat hiding (_+_)
+open import Data.Nat hiding (_+_; _⊓_)
 open import Data.Unit 
 open import Data.Empty 
 open import Data.Bool hiding (_<_; _≟_)
@@ -129,11 +129,116 @@ module Core.UpdatePreservation where
   --   (Γ ⊢ e' ⇐ t)
   -- PreservationStepAna ana step = {!   !}
 
-  -- it's not quite this, because syn cannot be some while syn' is none.
-  step-syn-consist : ∀ {e e' syn syn'} -> 
+  data =▷M : NewMark -> NewMark -> Set where 
+    =▷MNew : ∀ {s m} -> 
+      =▷M s (m , New)
+    ▷MRefl : ∀ {s} -> 
+      =▷M s s
+
+  data =▷T : NewType -> NewType -> Set where 
+    =▷TNew : ∀ {s t} -> 
+      =▷T s (t , New)
+    =▷TRefl : ∀ {s} -> 
+      =▷T s s
+
+  -- the "beyondness" relation - the latter is the unchanged or [New]
+  data =▷D : TypeData -> TypeData -> Set where 
+    =▷DNew : ∀ {s t} -> 
+      =▷D s (■ (t , New))
+    =▷DRefl : ∀ {s} -> 
+      =▷D s s
+
+  new-max-r : (n : Newness) -> n ⊓ New ≡ New 
+  new-max-r Old = refl
+  new-max-r New = refl
+  
+  ▷D-new : ∀ {t syn} -> ▷D (■ (t , New)) syn
+  ▷D-new {syn = □} = ▷DVoidR
+  ▷D-new {syn = ■ (t , n)} = ▷DSome MergeInfoNew
+
+  ▸TArrowM-dec : 
+    (t : Type) -> 
+    ∃[ t-in ] ∃[ t-out ] ∃[ m ] t ▸TArrowM t-in , t-out , m
+  ▸TArrowM-dec TBase = THole , THole , ✖ , MArrowBase
+  ▸TArrowM-dec THole = THole , THole , ✔ , MArrowHole
+  ▸TArrowM-dec (TArrow t1 t2) = t1 , t2 , ✔ , MArrowArrow
+
+  ▸TArrowNM-dec : 
+    (t : NewType) -> 
+    ∃[ t-in ] ∃[ t-out ] ∃[ m ] t ▸TArrowNM t-in , t-out , m
+  ▸TArrowNM-dec (t , Old) with ▸TArrowM-dec t 
+  ... | t-in , t-out , m , match = (t-in , Old) , (t-out , Old) , (m , Old) , MNTArrowOld match
+  ▸TArrowNM-dec (t , New) with ▸TArrowM-dec t 
+  ... | t-in , t-out , m , match = (t-in , New) , (t-out , New) , (m , New) , MNTArrowNew match
+
+  ▸DTArrowNM-dec : 
+    (syn : TypeData) -> 
+    ∃[ t-in ] ∃[ t-out ] ∃[ m ] syn ▸DTArrowNM t-in , t-out , m
+  ▸DTArrowNM-dec □ = (THole , New) , (THole , New) , (✔ , New) , SynArrowNone
+  ▸DTArrowNM-dec (■ t) with ▸TArrowNM-dec t 
+  ... | t-in , t-out , m , match = t-in , t-out , m , SynArrowSome match
+
+  ▸TArrowM-unicity : ∀ {t t-in t-in' t-out t-out' m m'} ->
+    t ▸TArrowM t-in , t-out , m -> 
+    t ▸TArrowM t-in' , t-out' , m' -> 
+    (t-in ≡ t-in' × t-out ≡ t-out' × m ≡ m')
+  ▸TArrowM-unicity MArrowBase MArrowBase = refl , refl , refl
+  ▸TArrowM-unicity MArrowHole MArrowHole = refl , refl , refl
+  ▸TArrowM-unicity MArrowArrow MArrowArrow = refl , refl , refl
+
+  ▸TArrowNM-unicity : ∀ {t t-in t-in' t-out t-out' m m'} ->
+    t ▸TArrowNM t-in , t-out , m -> 
+    t ▸TArrowNM t-in' , t-out' , m' -> 
+    (t-in ≡ t-in' × t-out ≡ t-out' × m ≡ m')
+  ▸TArrowNM-unicity (MNTArrowOld match1) (MNTArrowOld match2) with ▸TArrowM-unicity match1 match2
+  ... | refl , refl , refl = refl , refl , refl
+  ▸TArrowNM-unicity (MNTArrowNew match1) (MNTArrowNew match2) with ▸TArrowM-unicity match1 match2
+  ... | refl , refl , refl = refl , refl , refl
+
+  ▸DTArrowNM-unicity : ∀ {syn t-in t-in' t-out t-out' m m'} ->
+    syn ▸DTArrowNM t-in , t-out , m -> 
+    syn ▸DTArrowNM t-in' , t-out' , m' -> 
+    (t-in ≡ t-in' × t-out ≡ t-out' × m ≡ m')
+  ▸DTArrowNM-unicity SynArrowNone SynArrowNone = refl , refl , refl
+  ▸DTArrowNM-unicity (SynArrowSome match1) (SynArrowSome match2) = ▸TArrowNM-unicity match1 match2
+
+  ▸DTArrowNM-=▷ : ∀ {syn syn' t-in t-in' t-out t-out' m m'} ->
+    =▷D syn syn' ->
+    syn ▸DTArrowNM t-in , t-out , m -> 
+    syn' ▸DTArrowNM t-in' , t-out' , m' -> 
+    (=▷T t-in t-in' × =▷T t-out t-out' × =▷M m m')
+  ▸DTArrowNM-=▷ =▷DNew match1 (SynArrowSome (MNTArrowNew match2)) = =▷TNew , =▷TNew , =▷MNew
+  ▸DTArrowNM-=▷ =▷DRefl match1 match2 with ▸DTArrowNM-unicity match1 match2 
+  ... | refl , refl , refl = =▷TRefl , =▷TRefl , ▷MRefl
+
+  beyond-consist-m : ∀ {m1 m1' m2} ->
+    =▷M m1 m1' ->
+    ▷NM m1 m2 ->
+    ▷NM m1' m2 
+  beyond-consist-m =▷MNew consist = ▷NMNew
+  beyond-consist-m ▷MRefl consist = consist
+
+  beyond-consist-t : ∀ {t t' syn} ->
+    =▷T t t' ->
+    ▷D (■ t) syn ->
+    ▷D (■ t') syn
+  beyond-consist-t =▷TNew consist = ▷D-new
+  beyond-consist-t =▷TRefl consist = consist
+
+  preservation-lambda-lemma : ∀ {t syn1 syn1' syn2} ->
+    =▷D syn1 syn1' ->
+    ▷D (SynArrow t syn1) syn2 ->
+    ▷D (SynArrow t syn1') syn2
+  preservation-lambda-lemma {t = t , n} =▷DNew match rewrite new-max-r n = ▷D-new
+  preservation-lambda-lemma =▷DRefl match = match
+
+
+  
+  step-syn-beyond : ∀ {e e' syn syn'} -> 
     (e ⇒ syn) U↦ (e' ⇒ syn') -> 
-    ▷D syn' syn 
-  step-syn-consist = {!   !}
+    =▷D syn syn' 
+  step-syn-beyond step = {!   !}
+    
 
   PreservationAna :  
     ∀ {Γ e e'} ->
@@ -152,16 +257,13 @@ module Core.UpdatePreservation where
   PreservationSyn (SynConst _) (StepUp (FillUEnvUpRec ()) step (FillUEnvUpRec fill2))
   PreservationSyn (SynHole _) (StepUp (FillUEnvUpRec ()) step (FillUEnvUpRec fill2))
   PreservationSyn (SynFun consist syn) (StepUp (FillUEnvUpRec (FillUEnvFun (FillUEnvLowRec FillU⊙))) step (FillUEnvUpRec (FillUEnvFun (FillUEnvLowRec {e' = e' ⇒ syn'} FillU⊙)))) 
-    = SynFun {!   !} (PreservationSyn syn (StepUp FillU⊙ step FillU⊙))
-
+    = SynFun (preservation-lambda-lemma (step-syn-beyond step) consist) (PreservationSyn syn (StepUp FillU⊙ step FillU⊙))
   PreservationSyn (SynFun consist syn) (StepUp (FillUEnvUpRec (FillUEnvFun (FillUEnvLowRec (FillUEnvUpRec fill1)))) step (FillUEnvUpRec (FillUEnvFun (FillUEnvLowRec {e' = e' ⇒ syn'} (FillUEnvUpRec fill2))))) = SynFun consist (PreservationSyn syn (StepUp (FillUEnvUpRec fill1) step (FillUEnvUpRec fill2)))
-  PreservationSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (StepUp {e-in' = e-fun' ⇒ syn-fun'} (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec FillU⊙))) step (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec FillU⊙)))) 
-    = SynAp {!   !} consist-syn consist-ana consist-mark (PreservationSyn syn (StepUp FillU⊙ step FillU⊙)) ana
-
+  PreservationSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (StepUp {e-in' = e-fun' ⇒ syn-fun'} (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec FillU⊙))) step (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec FillU⊙)))) with ▸DTArrowNM-dec syn-fun' 
+  ... | t-in-fun' , t-out-fun' , m-fun' , marrow' with ▸DTArrowNM-=▷ (step-syn-beyond step) marrow marrow' 
+  ... | t-in-beyond , t-out-beyond , m-beyond = SynAp marrow' (beyond-consist-t t-out-beyond consist-syn) (beyond-consist-t t-in-beyond consist-ana) (beyond-consist-m m-beyond consist-mark) (PreservationSyn syn (StepUp FillU⊙ step FillU⊙)) ana
   PreservationSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (StepUp {e-in' = e-fun' ⇒ syn-fun'} (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec (FillUEnvUpRec fill1)))) step (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec (FillUEnvUpRec fill2))))) = SynAp marrow consist-syn consist-ana consist-mark (PreservationSyn syn (StepUp (FillUEnvUpRec fill1) step (FillUEnvUpRec fill2))) ana
-  PreservationSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (StepUp (FillUEnvUpRec (FillUEnvAp2 (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvAp2 (FillUEnvLowRec fill2)))) 
-    = {!   !}
-
+  PreservationSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (StepUp (FillUEnvUpRec (FillUEnvAp2 (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvAp2 (FillUEnvLowRec fill2)))) = SynAp marrow consist-syn consist-ana consist-mark syn (PreservationAna ana (StepUp (FillUEnvLowRec fill1) step (FillUEnvLowRec fill2)))
   PreservationSyn (SynVar _ _ _) (StepUp (FillUEnvUpRec ()) step (FillUEnvUpRec fill2))
   PreservationSyn (SynAsc consist-syn consist-ana ana) (StepUp (FillUEnvUpRec (FillUEnvAsc (FillUEnvLowRec FillU⊙))) step (FillUEnvUpRec (FillUEnvAsc (FillUEnvLowRec FillU⊙)))) = SynAsc consist-syn consist-ana (PreservationAna ana (StepUp (FillUEnvLowRec FillU⊙) step (FillUEnvLowRec FillU⊙)))
   PreservationSyn (SynAsc consist-syn consist-ana ana) (StepUp (FillUEnvUpRec (FillUEnvAsc (FillUEnvLowRec (FillUEnvUpRec fill1)))) step (FillUEnvUpRec (FillUEnvAsc (FillUEnvLowRec (FillUEnvUpRec fill2))))) = SynAsc consist-syn consist-ana (PreservationAna ana (StepUp (FillUEnvLowRec (FillUEnvUpRec fill1)) step (FillUEnvLowRec (FillUEnvUpRec fill2))))

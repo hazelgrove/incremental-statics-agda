@@ -59,20 +59,14 @@ data _~M_,_ : Type -> Type -> MarkData -> Set where
     ¬(t1 ~ t2) -> 
     t1 ~M t2 , ✖
 
-data _▸TArrow_,_ : Type -> Type -> Type -> Set where 
-  MArrowHole : THole ▸TArrow THole , THole
-  MArrowArrow : ∀ {t1 t2} -> (TArrow t1 t2) ▸TArrow t1 , t2
-
-data _̸▸TArrow : Type -> Set where 
-  MArrowBase : TBase ̸▸TArrow
-
+-- If we had other types, then there would sometimes be a mark
 data _▸TArrowM_,_,_ : Type -> Type -> Type -> MarkData -> Set where 
-  MArrowMatch : ∀ {t} ->
-    t ̸▸TArrow ->
-    t ▸TArrowM THole , THole , ✖
-  MArrowNoMatch : ∀ {t t1 t2} ->
-    t ▸TArrow t1 , t2 ->
-    t ▸TArrowM t1 , t2 , ✔
+  MArrowBase :
+    TBase ▸TArrowM THole , THole , ✖
+  MArrowHole :
+    THole ▸TArrowM THole , THole , ✔
+  MArrowArrow : ∀ {t1 t2} -> 
+    (TArrow t1 t2) ▸TArrowM t1 , t2 , ✔
 
 NewType : Set 
 NewType = (Type × Newness) 
