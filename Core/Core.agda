@@ -37,27 +37,29 @@ data Newness : Set where
   New : Newness 
 
 _⊓_ : Newness -> Newness -> Newness 
-Old ⊓ Old = Old
-Old ⊓ New = New
+Old ⊓ n = n
 New ⊓ n = New
   
 data MarkData : Set where 
   ✖ : MarkData
   ✔ : MarkData
-
-data _~_ : Type -> Type -> Set where 
-  ConsistBase : TBase ~ TBase
-  ConsistHole1 : ∀ {t} -> t ~ THole
-  ConsistHole2 : ∀ {t} -> THole ~ t
-  ConsistArr : ∀ {t1 t2 t3 t4} -> t1 ~ t3 -> t2 ~ t4 -> (TArrow t1 t2) ~ (TArrow t3 t4)
+  
+_⊓M_ : MarkData -> MarkData -> MarkData 
+✔ ⊓M m = m
+✖ ⊓M m = ✖
 
 data _~M_,_ : Type -> Type -> MarkData -> Set where 
-  ConsistM : ∀ {t1 t2} ->
-    t1 ~ t2 -> 
-    t1 ~M t2 , ✔
-  InconsistM : ∀ {t1 t2} ->
-    ¬(t1 ~ t2) -> 
-    t1 ~M t2 , ✖
+  ConsistBase : TBase ~M TBase , ✔
+  ConsistHoleL : ∀ {t} -> THole ~M t , ✔
+  ConsistHoleR : ∀ {t} -> t ~M THole , ✔
+  ConsistArr : ∀ {t1 t2 t3 t4 m1 m2} -> 
+    t1 ~M t3 , m1 -> 
+    t2 ~M t4 , m2 -> 
+    ((TArrow t1 t2) ~M (TArrow t3 t4) , (m1 ⊓M m2))
+  InconsistBaseArr : ∀ {t1 t2} ->
+    TBase ~M (TArrow t1 t2) , ✖
+  InconsistArrBase : ∀ {t1 t2} ->
+    (TArrow t1 t2) ~M TBase , ✖
 
 -- If we had other types, then there would sometimes be a mark
 data _▸TArrowM_,_,_ : Type -> Type -> Type -> MarkData -> Set where 

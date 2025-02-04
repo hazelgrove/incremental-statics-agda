@@ -105,30 +105,6 @@ module Core.UpdatePreservation where
   -- oldify-ntmatch (MNTArrowNewNoMatch m) = MNTArrowOldNoMatch m
   -- oldify-ntmatch MNTArrowArrow = MNTArrowOldMatch MArrowArrow
 
-  PreservationStepSyn :  
-    ∀ {Γ e e'} ->
-    (Γ ⊢ e ⇒) ->
-    (e U↦ e') ->   
-    (Γ ⊢ e' ⇒)
-  PreservationStepSyn = {!   !}
-  -- PreservationStepSyn (SynConst x) ()
-  -- PreservationStepSyn (SynHole x) ()
-  -- PreservationStepSyn 
-  --   (SynAp (SynArrowSome match1) syncon anacon markcon wtsyn wtana) 
-  --   (StepAp {t1 = (t3 , n3)} {t2 = (t4 , n4)} isnew match2 mergesyn mergeana) 
-  --   = SynAp (SynArrowSome (oldify-ntmatch match2)) (SynConsistMerge (merge-syn-consist mergesyn)) (AnaConsistMerge (merge-ana-consist mergeana)) MarkConsistOld (oldify-syn wtsyn) (freshen-ana wtana mergeana)
-  -- PreservationStepSyn 
-  --   (SynAsc syncon anacon wtana) 
-  --   (StepAsc isnew mergesyn mergeana) 
-  --   = SynAsc (SynConsistMerge (merge-syn-consist mergesyn)) (AnaConsistMerge (merge-ana-consist mergeana)) (freshen-ana wtana mergeana)
-
-  -- PreservationStepAna :  
-  --   ∀ {Γ e e' t} ->
-  --   (Γ ⊢ e ⇐ t) ->
-  --   (e L↦ e') ->   
-  --   (Γ ⊢ e' ⇐ t)
-  -- PreservationStepAna ana step = {!   !}
-
   data =▷M : NewMark -> NewMark -> Set where 
     =▷MNew : ∀ {s m} -> 
       =▷M s (m , New)
@@ -156,6 +132,22 @@ module Core.UpdatePreservation where
   ▷D-new {syn = □} = ▷DVoidR
   ▷D-new {syn = ■ (t , n)} = ▷DSome MergeInfoNew
 
+  new-through-▸DTArrowNM : ∀ {t t-in t-out m} ->
+    ■ (t , New) ▸DTArrowNM t-in , t-out , m -> 
+    ∃[ t-in' ] ∃[ t-out' ] ∃[ m' ] (t-in ≡ (t-in' , New) × t-out ≡ (t-out' , New) × m ≡ (m' , New))
+  new-through-▸DTArrowNM (SynArrowSome (MNTArrowNew x)) = _ , _ , _ , refl , refl , refl
+
+  new-through-~NM : ∀ {t1 t2 m} ->
+    t1 ~NM (t2 , New) , m -> 
+    ∃[ m' ] m ≡ (m' , New)
+  new-through-~NM (NMConsist {n1 = n1} x) rewrite new-max-r n1 = _ , refl
+
+  new-through-~D : ∀ {d t m} ->
+    d ~D ■ (t , New) , m -> 
+    ∃[ m' ] m ≡ (m' , New)
+  new-through-~D ~DVoidL = ✔ , refl
+  new-through-~D (~DSome (NMConsist {n1 = n1} x)) rewrite new-max-r n1 = _ , refl
+
   ▸TArrowM-dec : 
     (t : Type) -> 
     ∃[ t-in ] ∃[ t-out ] ∃[ m ] t ▸TArrowM t-in , t-out , m
@@ -177,6 +169,35 @@ module Core.UpdatePreservation where
   ▸DTArrowNM-dec □ = (THole , New) , (THole , New) , (✔ , New) , SynArrowNone
   ▸DTArrowNM-dec (■ t) with ▸TArrowNM-dec t 
   ... | t-in , t-out , m , match = t-in , t-out , m , SynArrowSome match
+
+
+  ~M-dec : 
+    (syn ana : Type) -> 
+    ∃[ m ] syn ~M ana , m 
+  ~M-dec TBase TBase = ✔ , ConsistBase
+  ~M-dec TBase THole = ✔ , ConsistHoleR
+  ~M-dec TBase (TArrow _ _) = ✖ , InconsistBaseArr
+  ~M-dec THole TBase = ✔ , ConsistHoleL
+  ~M-dec THole THole = ✔ , ConsistHoleR
+  ~M-dec THole (TArrow _ _) = ✔ , ConsistHoleL
+  ~M-dec (TArrow _ _) TBase = ✖ , InconsistArrBase
+  ~M-dec (TArrow _ _) THole = ✔ , ConsistHoleR
+  ~M-dec (TArrow syn1 syn2) (TArrow ana1 ana2) with ~M-dec syn1 ana1 | ~M-dec syn2 ana2 
+  ... | m1 , consist1 | m2 , consist2 = (m1 ⊓M m2) , ConsistArr consist1 consist2
+
+  ~NM-dec : 
+    (syn ana : NewType) -> 
+    ∃[ m ] syn ~NM ana , m 
+  ~NM-dec (syn-t , syn-n) (ana-t , ana-n) with ~M-dec syn-t ana-t
+  ... | m , consist = (m , (syn-n ⊓ ana-n)) , NMConsist consist
+
+  ~D-dec : 
+    (syn ana : TypeData) -> 
+    ∃[ m ] syn ~D ana , m 
+  ~D-dec □ _ = (✔ , New) , ~DVoidL
+  ~D-dec (■ syn) □ = (✔ , New) , ~DVoidR
+  ~D-dec (■ syn) (■ ana) with ~NM-dec syn ana 
+  ... | m , consist = m , (~DSome consist)
 
   ▸TArrowM-unicity : ∀ {t t-in t-in' t-out t-out' m m'} ->
     t ▸TArrowM t-in , t-out , m -> 
@@ -232,6 +253,26 @@ module Core.UpdatePreservation where
   preservation-lambda-lemma {t = t , n} =▷DNew match rewrite new-max-r n = ▷D-new
   preservation-lambda-lemma =▷DRefl match = match
 
+  direct-arrow-consist-lemma : 
+    (t1 t2 : Type) -> 
+    (n1 n2 : Newness) ->
+    ▷D (■ (NTArrow (t1 , n1) (t2 , n2))) (■ (TArrow t1 t2 , New))
+  direct-arrow-consist-lemma t1 t2 Old Old = ▷DSome (MergeInfoOld refl)
+  direct-arrow-consist-lemma t1 t2 Old New = ▷DSome MergeInfoNew
+  direct-arrow-consist-lemma t1 t2 New Old = ▷DSome MergeInfoNew
+  direct-arrow-consist-lemma t1 t2 New New = ▷DSome MergeInfoNew
+
+  preservation-lambda-lemma-2 : ∀ {t1 t2 n syn} ->
+    =▷D (■ (t2 , n)) syn -> 
+    ▷D (SynArrow (t1 , Old) syn) (■ (TArrow t1 t2 , New))
+  preservation-lambda-lemma-2 =▷DNew = ▷DSome MergeInfoNew
+  preservation-lambda-lemma-2 {t1} {t2} {n} =▷DRefl = direct-arrow-consist-lemma t1 t2 Old n
+
+  vars-syn-beyond : ∀ {x t e syn e' syn'} ->
+    VarsSynthesize x t (e ⇒ syn) (e' ⇒ syn') -> 
+    =▷D syn syn' 
+  vars-syn-beyond syn = {!   !}
+
   -- this is imprecise : the =▷D relation is bigger than required. oh well. 
   step-syn-beyond : ∀ {e e' syn syn'} -> 
     (e ⇒ syn) U↦ (e' ⇒ syn') -> 
@@ -273,6 +314,93 @@ module Core.UpdatePreservation where
     ◁=D ana ana' 
   step-ana-env-beyond step FillL⊙ FillL⊙ = step-ana-beyond step
   step-ana-env-beyond step (FillLEnvLowRec x) (FillLEnvLowRec x₁) = ◁=DRefl
+
+  oldify-▷D : ∀ {d t n} ->
+    ▷D d (■ (t , n)) -> 
+    ▷D d (■ (t , Old))
+  oldify-▷D ▷DVoidL = ▷DVoidL
+  oldify-▷D (▷DSome MergeInfoNew) = ▷DSome MergeInfoNew
+  oldify-▷D (▷DSome (MergeInfoOld refl)) = ▷DSome (MergeInfoOld refl)
+
+  oldify-syn : ∀ {Γ e t n} ->
+    Γ ⊢ e ⇒ ■ (t , n) ⇒ ->
+    Γ ⊢ e ⇒ ■ (t , Old) ⇒
+  oldify-syn (SynConst consist) = SynConst (oldify-▷D consist)
+  oldify-syn (SynHole consist) = SynHole (oldify-▷D consist)
+  oldify-syn (SynFun consist syn) = SynFun (oldify-▷D consist) syn 
+  oldify-syn (SynAp marrow consist-syn consist-ana consist-mark syn ana) = SynAp marrow (oldify-▷D consist-syn) consist-ana consist-mark syn ana
+  oldify-syn (SynVar in-ctx consist consist-m) = SynVar in-ctx (oldify-▷D consist) consist-m
+  oldify-syn (SynAsc consist-syn consist-ana ana) = SynAsc (oldify-▷D consist-syn) consist-ana ana
+
+  newify-ana : ∀ {Γ e m ana t} ->
+    Γ ⊢ e [ m ]⇐ ana ⇐ -> 
+    Γ ⊢ e [ m ]⇐ ■ (t , New) ⇐
+  newify-ana {t = t} (AnaSubsume {syn-all = syn-all} subsumable consist-t consist-m syn) with ~D-dec syn-all (■ (t , New)) 
+  ... | _ , consist-m' with new-through-~D consist-m' 
+  ... | _ , refl = AnaSubsume subsumable consist-m' ▷NMNew syn
+  newify-ana {t = t-ana'} (AnaFun {t-asc = t-asc} marrow ana consist consist-ana consist-asc consist-body) with ▸DTArrowNM-dec (■ (t-ana' , New)) 
+  ... | t-in-ana' , t-out-ana' , m-ana-ana' , marrow' with ~NM-dec t-asc t-in-ana' | new-through-▸DTArrowNM marrow' 
+  ... | _ , consist' | a , b , c , refl , refl , refl with new-through-~NM consist'
+  ... | _ , refl = AnaFun marrow' ana consist' ▷NMNew ▷NMNew ▷D-new
+
+  oldify-ctx : Ctx -> ℕ -> Ctx 
+  oldify-ctx ∅ x = ∅
+  oldify-ctx ((t , n) ∷ Γ) zero = ((t , Old) ∷ Γ)
+  oldify-ctx ((t , n) ∷ Γ) (suc x) = ((t , n) ∷ (oldify-ctx Γ x))
+
+  PreservationVarsAna :
+    ∀ {Γ Γ' x t e e' m ana} ->
+    (Γ ⊢ (e [ m ]⇐ ana) ⇐) ->
+    VarsSynthesize x t e e' ->
+    oldify-ctx Γ x ≡ Γ' ->
+    (Γ' ⊢ (e' [ m ]⇐ ana) ⇐)
+  PreservationVarsAna = {!   !}
+
+  PreservationVarsSyn :
+    ∀ {Γ Γ' x t e e'} ->
+    (Γ ⊢ e ⇒) ->
+    VarsSynthesize x t e e' ->
+    oldify-ctx Γ x ≡ Γ' ->
+    (Γ' ⊢ e' ⇒)
+  PreservationVarsSyn (SynConst consist) VSConst refl = SynConst consist
+  PreservationVarsSyn (SynHole consist) VSHole refl = SynHole consist
+  PreservationVarsSyn (SynFun consist syn) (VSFun var-syn) refl = {!   !}
+  PreservationVarsSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (VSAp {e1' = e-fun' ⇒ syn-fun'} var-syn-fun var-syn-arg) refl = SynAp {!   !} {!   !} {!   !} {!   !} (PreservationVarsSyn syn var-syn-fun refl) (PreservationVarsAna ana var-syn-arg refl)
+  PreservationVarsSyn (SynVar in-ctx consist consist-m) VSVar refl = SynVar {!   !} {!  !} {!   !}
+  PreservationVarsSyn (SynVar in-ctx consist consist-m) (VSOtherVar x₃) refl = {!   !}
+  PreservationVarsSyn (SynAsc consist-syn consist-ana ana) (VSAsc var-syn) refl = SynAsc consist-syn consist-ana (PreservationVarsAna ana var-syn refl)
+  
+  PreservationStepSyn :  
+    ∀ {Γ e e'} ->
+    (Γ ⊢ e ⇒) ->
+    (e U↦ e') ->   
+    (Γ ⊢ e' ⇒)
+  PreservationStepSyn (SynConst _) ()
+  PreservationStepSyn (SynHole _) ()
+  PreservationStepSyn (SynFun consist syn) (StepNewAnnFun {e-body' = e-body' ⇒ syn-body'} vars-syn) = SynFun (preservation-lambda-lemma-2 (vars-syn-beyond vars-syn)) (PreservationVarsSyn syn vars-syn refl)
+  PreservationStepSyn (SynFun consist syn) (StepNewSynFun {t-asc = t-asc} {t-body} {n-asc}) = SynFun (direct-arrow-consist-lemma t-asc t-body n-asc Old) (oldify-syn syn)
+  PreservationStepSyn (SynFun consist syn) (StepVoidSynFun {t-asc = t-asc} {t-body} {n-asc}) = SynFun (direct-arrow-consist-lemma t-asc t-body n-asc Old) (oldify-syn syn)
+  PreservationStepSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (StepAp marrow') = SynAp (SynArrowSome (MNTArrowOld marrow')) (▷DSome (MergeInfoOld refl)) (▷DSome (MergeInfoOld refl)) (▷NMOld refl) (oldify-syn syn) (newify-ana ana)
+  PreservationStepSyn (SynVar _ _ _) ()
+  PreservationStepSyn (SynAsc consist-syn consist-ana ana) StepAsc = SynAsc (▷DSome (MergeInfoOld refl)) (▷DSome (MergeInfoOld refl)) (newify-ana ana)
+  
+  -- PreservationStepSyn (SynConst x) ()
+  -- PreservationStepSyn (SynHole x) ()
+  -- PreservationStepSyn 
+  --   (SynAp (SynArrowSome match1) syncon anacon markcon wtsyn wtana) 
+  --   (StepAp {t1 = (t3 , n3)} {t2 = (t4 , n4)} isnew match2 mergesyn mergeana) 
+  --   = SynAp (SynArrowSome (oldify-ntmatch match2)) (SynConsistMerge (merge-syn-consist mergesyn)) (AnaConsistMerge (merge-ana-consist mergeana)) MarkConsistOld (oldify-syn wtsyn) (freshen-ana wtana mergeana)
+  -- PreservationStepSyn 
+  --   (SynAsc syncon anacon wtana) 
+  --   (StepAsc isnew mergesyn mergeana) 
+  --   = SynAsc (SynConsistMerge (merge-syn-consist mergesyn)) (AnaConsistMerge (merge-ana-consist mergeana)) (freshen-ana wtana mergeana)
+
+  -- PreservationStepAna :  
+  --   ∀ {Γ e e' t} ->
+  --   (Γ ⊢ e ⇐ t) ->
+  --   (e L↦ e') ->   
+  --   (Γ ⊢ e' ⇐ t)
+  -- PreservationStepAna ana step = {!   !}
     
 
   PreservationAna :  

@@ -61,15 +61,9 @@ data _,_∈NM_,_ : ℕ -> NewType -> Ctx -> NewMark -> Set where
     x ̸∈ Γ -> x , (THole , Old) ∈NM Γ , (✖ , Old)
 
 data _~NM_,_ : NewType -> NewType -> NewMark -> Set where 
-  LNewConsist : ∀ {t1 t2 n2 m} ->
+  NMConsist : ∀ {t1 t2 n1 n2 m} ->
     t1 ~M t2 , m -> 
-    (t1 , New) ~NM (t2 , n2) , (m , New) 
-  RNewConsist : ∀ {t1 t2 n1 m} ->
-    t1 ~M t2 , m -> 
-    (t1 , n1) ~NM (t2 , New) , (m , New) 
-  OldOldConsist : ∀ {t1 t2 m} ->
-    t1 ~M t2 , m -> 
-    (t1 , Old) ~NM (t2 , Old) , (m , Old) 
+    (t1 , n1) ~NM (t2 , n2) , (m , n1 ⊓ n2) 
 
 data _~D_,_ : TypeData -> TypeData -> NewMark -> Set where 
   ~DVoidL : ∀ {d} ->
@@ -77,8 +71,8 @@ data _~D_,_ : TypeData -> TypeData -> NewMark -> Set where
   ~DVoidR : ∀ {d} ->
     d ~D □ , (✔ , New)
   ~DSome : ∀ {d1 d2 m} ->
-    d1 ~NM d2 , m ->
-    (■ d1) ~D (■ d2) , m  
+    d1 ~NM d2 , m -> 
+    (■ d1) ~D (■ d2) , m
 
 NTArrow : NewType -> NewType -> NewType
 NTArrow (t1 , n1) (t2 , n2) = ( TArrow t1 t2 , n1 ⊓ n2 )
