@@ -54,17 +54,18 @@ data _L↦_ : ExpLow -> ExpLow -> Set where
     ((EFun asc m-ana m-asc (e-body [ m-body ]⇐ (■ ana-body))) ⇒ □) [ m-all ]⇐ □ L↦
     ((EFun asc m-ana m-asc (e-body [ ✔ ]⇐ □)) ⇒ □) [ ✔ ]⇐ □
 
-data _U↦_ : ExpUp -> ExpUp -> Set where 
-  StepNewAnnFun : ∀ {e-body e-body' t-asc t-body n-body m-body} ->
+  StepNewAnnFun : ∀ {e-body e-body' t-asc t-body n-body m-body syn-all} ->
     VarsSynthesize 0 t-asc (e-body ⇒ (■ (t-body , n-body))) e-body' ->
-    (EFun (t-asc , New) ✔ ✔ ((e-body ⇒ (■ (t-body , n-body))) [ m-body ]⇐ □)) ⇒ □ U↦
-    (EFun (t-asc , Old) ✔ ✔ (e-body' [ m-body ]⇐ □)) ⇒ (■ (TArrow t-asc t-body , New))
+    (((EFun (t-asc , New) ✔ ✔ ((e-body ⇒ (■ (t-body , n-body))) [ m-body ]⇐ □)) ⇒ syn-all) [ ✔ ]⇐ □) L↦
+    (((EFun (t-asc , Old) ✔ ✔ (e-body' [ m-body ]⇐ □)) ⇒ (■ (TArrow t-asc t-body , New))) [ ✔ ]⇐ □)
   StepNewSynFun : ∀ {e-body t-asc t-body n-asc m-body syn-all} ->
-    (EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (■ (t-body , New))) [ m-body ]⇐ □)) ⇒ syn-all U↦
-    (EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (■ (t-body , Old))) [ m-body ]⇐ □ )) ⇒ (■ (TArrow t-asc t-body , New))
-  StepVoidSynFun : ∀ {e-body t-asc t-body n-asc n-body m-body} ->
-    (EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (■ (t-body , n-body))) [ m-body ]⇐ □)) ⇒ □ U↦
-    (EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (■ (t-body , Old))) [ m-body ]⇐ □)) ⇒ (■ (TArrow t-asc t-body , New))
+    (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (■ (t-body , New))) [ m-body ]⇐ □)) ⇒ syn-all) [ ✔ ]⇐ □) L↦
+    (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (■ (t-body , Old))) [ m-body ]⇐ □ )) ⇒ (■ (TArrow t-asc t-body , New))) [ ✔ ]⇐ □)
+  StepVoidSynFun : ∀ {e-body t-asc t-body n-asc n-body m-body syn-all} ->
+    (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (■ (t-body , n-body))) [ m-body ]⇐ □)) ⇒ syn-all) [ ✔ ]⇐ □) L↦
+    (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (■ (t-body , Old))) [ m-body ]⇐ □)) ⇒ (■ (TArrow t-asc t-body , New))) [ ✔ ]⇐ □)
+
+data _U↦_ : ExpUp -> ExpUp -> Set where 
   StepAp : ∀ {e-fun e-arg t-fun t-in-fun t-out-fun m-all m-arg m-fun syn-all ana-arg} ->
     t-fun ▸TArrowM t-in-fun , t-out-fun , m-fun -> 
     (EAp ((e-fun ⇒ (■ (t-fun , New))) [ ✔ ]⇐ □) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all U↦
