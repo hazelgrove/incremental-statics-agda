@@ -42,6 +42,7 @@ data _▸DTArrow_,_,_ : Data -> Data -> Data -> Mark -> Set where
 
 data _▸NTArrow_,_,_ : NewData -> NewData -> NewData -> NewMark -> Set where 
   NTArrowC : ∀ {d n t1 t2 m} ->
+    d ▸DTArrow t1 , t2 , m ->
     (d , n) ▸NTArrow (t1 , n) , (t2 , n) , (m , n)
 
   -- SynArrowNone : □ ▸DTArrowNM (THole , New) , (THole , New) , Any
@@ -66,6 +67,11 @@ data _~D_,_ : Data -> Data -> Mark -> Set where
   ~DSome : ∀ {d1 d2 m} ->
     d1 ~ d2 , m -> 
     (■ d1) ~D (■ d2) , m
+
+data _■~D_,_ : Type -> Data -> Mark -> Set where 
+  ■~D-pair : ∀ {t d m} ->
+    (■ t) ~D d , m ->
+    t ■~D d , m
 
 data _~N_,_ : NewData -> NewData -> NewMark -> Set where 
   NConsist : ∀ {d1 d2 n1 n2 m} ->

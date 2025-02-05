@@ -8,6 +8,7 @@ open import Relation.Binary.PropositionalEquality hiding (inspect)
 open import Prelude
 
 open import Core.Core
+open import Core.WellTyped
 
 module Core.Update where
 
@@ -24,7 +25,7 @@ data VarsSynthesize : ℕ -> Type -> ExpUp -> ExpUp -> Set where
     VarsSynthesize x t e2 e2' ->
     VarsSynthesize x t ((EAp (e1 [ m1 ]⇐ ana1) m2 (e2 [ m3 ]⇐ ana2)) ⇒ syn) ((EAp (e1' [ m1 ]⇐ ana1) m2 (e2' [ m3 ]⇐ ana2)) ⇒ syn)
   VSVar : ∀ {x t syn} ->
-    VarsSynthesize x t ((EVar x ✔) ⇒ syn) ((EVar x ✔) ⇒ (■ (t , New)))
+    VarsSynthesize x t ((EVar x ✔) ⇒ syn) ((EVar x ✔) ⇒ ((■ t , New)))
   VSOtherVar : ∀ {x y t syn} ->
     ¬(x ≡ y) -> 
     VarsSynthesize y t ((EVar x ✔) ⇒ syn) ((EVar x ✔) ⇒ syn)
@@ -37,72 +38,69 @@ infix 10 _U↦_
 
 data _L↦_ : ExpLow -> ExpLow -> Set where 
   StepNewSynConsist : ∀ {e-all t-syn t-ana m-all m-all'} ->
-    t-syn ~M t-ana , m-all' ->
-    (e-all ⇒ (■ (t-syn , New))) [ m-all ]⇐ (■ (t-ana , Old)) L↦
-    (e-all ⇒ (■ (t-syn , Old))) [ m-all' ]⇐ (■ (t-ana , Old)) 
+    t-syn ~ t-ana , m-all' ->
+    (e-all ⇒ ((■ t-syn , New))) [ m-all ]⇐ (■ t-ana , Old) L↦
+    (e-all ⇒ ((■ t-syn , Old))) [ m-all' ]⇐ (■ t-ana , Old)
   StepNewAnaConsist : ∀ {e-all t-syn t-ana n-syn m-all m-all'} ->
     SubsumableMid e-all -> 
-    t-syn ~M t-ana , m-all' ->
-    (e-all ⇒ (■ (t-syn , n-syn))) [ m-all ]⇐ (■ (t-ana , New)) L↦
-    (e-all ⇒ (■ (t-syn , Old))) [ m-all' ]⇐ (■ (t-ana , Old)) 
+    t-syn ~ t-ana , m-all' ->
+    (e-all ⇒ ((■ t-syn , n-syn))) [ m-all ]⇐ ((■ t-ana , New)) L↦
+    (e-all ⇒ ((■ t-syn , Old))) [ m-all' ]⇐ ((■ t-ana , Old)) 
   StepAnaFun : ∀ {e-body n-asc syn-all ana-body t-ana t-asc t-in-ana t-out-ana m-ana m-asc m-body m-all m-ana' m-asc'} ->
-    t-ana ▸TArrowM t-in-ana , t-out-ana , m-ana' ->
-    t-asc ~M t-in-ana , m-asc' ->
-    ((EFun (t-asc , n-asc) m-ana m-asc (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (■ (t-ana , New)) L↦
-    ((EFun (t-asc , n-asc) m-ana' m-asc' (e-body [ m-body ]⇐ (■ (t-out-ana , New)))) ⇒ □) [ ✔ ]⇐ (■ (t-ana , Old))
-  StepNoAnaFun : ∀ {asc m-ana m-asc e-body m-body ana-body m-all} ->
-    ((EFun asc m-ana m-asc (e-body [ m-body ]⇐ (■ ana-body))) ⇒ □) [ m-all ]⇐ □ L↦
-    ((EFun asc m-ana m-asc (e-body [ ✔ ]⇐ □)) ⇒ □) [ ✔ ]⇐ □
-
+    t-ana ▸DTArrow t-in-ana , t-out-ana , m-ana' ->
+    t-asc ■~D t-in-ana , m-asc' ->
+    ((EFun (t-asc , n-asc) m-ana m-asc (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (t-ana , New) L↦
+    ((EFun (t-asc , n-asc) m-ana' m-asc' (e-body [ m-body ]⇐ (t-out-ana , New))) ⇒ (□ , Old)) [ ✔ ]⇐ (t-ana , Old)
   StepNewAnnFun : ∀ {e-body e-body' t-asc t-body n-body m-body syn-all} ->
-    VarsSynthesize 0 t-asc (e-body ⇒ (■ (t-body , n-body))) e-body' ->
-    (((EFun (t-asc , New) ✔ ✔ ((e-body ⇒ (■ (t-body , n-body))) [ m-body ]⇐ □)) ⇒ syn-all) [ ✔ ]⇐ □) L↦
-    (((EFun (t-asc , Old) ✔ ✔ (e-body' [ m-body ]⇐ □)) ⇒ (■ (TArrow t-asc t-body , New))) [ ✔ ]⇐ □)
-  StepNewSynFun : ∀ {e-body t-asc t-body n-asc m-body syn-all} ->
-    (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (■ (t-body , New))) [ m-body ]⇐ □)) ⇒ syn-all) [ ✔ ]⇐ □) L↦
-    (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (■ (t-body , Old))) [ m-body ]⇐ □ )) ⇒ (■ (TArrow t-asc t-body , New))) [ ✔ ]⇐ □)
-  StepVoidSynFun : ∀ {e-body t-asc t-body n-asc n-body m-body syn-all} ->
-    (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (■ (t-body , n-body))) [ m-body ]⇐ □)) ⇒ syn-all) [ ✔ ]⇐ □) L↦
-    (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (■ (t-body , Old))) [ m-body ]⇐ □)) ⇒ (■ (TArrow t-asc t-body , New))) [ ✔ ]⇐ □)
+    VarsSynthesize 0 t-asc (e-body ⇒ ((■ t-body , n-body))) e-body' ->
+    (((EFun (t-asc , New) ✔ ✔ ((e-body ⇒ ((■ t-body , n-body))) [ m-body ]⇐ (□ , Old))) ⇒ syn-all) [ ✔ ]⇐ (□ , Old)) L↦
+    (((EFun (t-asc , Old) ✔ ✔ (e-body' [ m-body ]⇐ (□ , Old))) ⇒ ((■ (TArrow t-asc t-body) , New))) [ ✔ ]⇐ (□ , Old))
+  StepSynFun : ∀ {e-body t-asc t-body n-asc m-body syn-all} ->
+    (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (t-body , New)) [ m-body ]⇐ (□ , Old))) ⇒ syn-all) [ ✔ ]⇐ (□ , Old)) L↦
+    (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (t-body , Old)) [ m-body ]⇐ (□ , Old) )) ⇒ (DArrow t-asc t-body , New)) [ ✔ ]⇐ (□ , Old))
+  
+  -- StepVoidSynFun : ∀ {e-body t-asc t-body n-asc n-body m-body syn-all} ->
+  --   (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ ((■ t-body , n-body))) [ m-body ]⇐ (□ , {!   !}))) ⇒ syn-all) [ ✔ ]⇐ (□ , {!   !})) L↦
+  --   (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ ((■ t-body , Old))) [ m-body ]⇐ (□ , {!   !}))) ⇒ ((■ (TArrow t-asc t-body) , New))) [ ✔ ]⇐ (□ , {!   !}))
 
 data _U↦_ : ExpUp -> ExpUp -> Set where 
   StepAp : ∀ {e-fun e-arg t-fun t-in-fun t-out-fun m-all m-arg m-fun syn-all ana-arg} ->
-    t-fun ▸TArrowM t-in-fun , t-out-fun , m-fun -> 
-    (EAp ((e-fun ⇒ (■ (t-fun , New))) [ ✔ ]⇐ □) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all U↦
-    (EAp ((e-fun ⇒ (■ (t-fun , Old))) [ ✔ ]⇐ □) m-fun (e-arg [ m-arg ]⇐ (■ (t-in-fun , New)))) ⇒ (■ (t-out-fun , New))
+    t-fun ▸TArrow t-in-fun , t-out-fun , m-fun -> 
+    (EAp ((e-fun ⇒ ((■ t-fun , New))) [ ✔ ]⇐ (□ , Old)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all U↦
+    (EAp ((e-fun ⇒ ((■ t-fun , Old))) [ ✔ ]⇐ (□ , Old)) m-fun (e-arg [ m-arg ]⇐ ((■ t-in-fun , New)))) ⇒ ((■ t-out-fun , New))
   StepAsc : ∀ {e-body t-asc m-body syn-all ana-body} ->
     (EAsc (t-asc , New) (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all  U↦
-    (EAsc (t-asc , Old) (e-body [ m-body ]⇐ (■ (t-asc , New)))) ⇒ (■ (t-asc , New))
+    (EAsc (t-asc , Old) (e-body [ m-body ]⇐ ((■ t-asc , New)))) ⇒ ((■ t-asc , New))
 
 mutual 
 
   data LEnvUp : Set where 
-    LEnvUpRec : LEnvMid -> TypeData -> LEnvUp
+    LEnvUpRec : LEnvMid -> NewData -> LEnvUp
 
   data LEnvMid : Set where 
-    LEnvFun : NewType -> MarkData -> MarkData -> LEnvLow -> LEnvMid 
-    LEnvAp1 : LEnvLow -> MarkData -> ExpLow -> LEnvMid 
-    LEnvAp2 : ExpLow -> MarkData -> LEnvLow -> LEnvMid 
+    LEnvFun : NewType -> Mark -> Mark -> LEnvLow -> LEnvMid 
+    LEnvAp1 : LEnvLow -> Mark -> ExpLow -> LEnvMid 
+    LEnvAp2 : ExpLow -> Mark -> LEnvLow -> LEnvMid 
     LEnvAsc : NewType -> LEnvLow -> LEnvMid 
 
   data LEnvLow : Set where 
     L⊙ : LEnvLow
-    LEnvLowRec : LEnvUp -> MarkData -> TypeData -> LEnvLow
+    LEnvLowRec : LEnvUp -> Mark -> NewData -> LEnvLow
 
 mutual 
 
   data UEnvUp : Set where 
     U⊙ : UEnvUp
-    UEnvUpRec : UEnvMid -> TypeData -> UEnvUp
+    UEnvUpRec : UEnvMid -> NewData -> UEnvUp
 
   data UEnvMid : Set where 
-    UEnvFun : NewType -> MarkData -> MarkData -> UEnvLow -> UEnvMid 
-    UEnvAp1 : UEnvLow -> MarkData -> ExpLow -> UEnvMid 
-    UEnvAp2 : ExpLow -> MarkData -> UEnvLow -> UEnvMid 
+    UEnvFun : NewType -> Mark -> Mark -> UEnvLow -> UEnvMid 
+    UEnvAp1 : UEnvLow -> Mark -> ExpLow -> UEnvMid 
+    UEnvAp2 : ExpLow -> Mark -> UEnvLow -> UEnvMid 
     UEnvAsc : NewType -> UEnvLow -> UEnvMid 
 
   data UEnvLow : Set where 
-    UEnvLowRec : UEnvUp -> MarkData -> TypeData -> UEnvLow
+    UEnvLowRec : UEnvUp -> Mark -> NewData -> UEnvLow
 
 mutual 
   data _L⟦_⟧Up==_ : (ε : LEnvUp) (e : ExpLow) (e' : ExpUp)  -> Set where
@@ -187,4 +185,4 @@ data _P↦_ : (e e' : Program) -> Set where
     e Up↦ e' ->
     (Root e) P↦ (Root e')
   TopStepDone : ∀{t e} ->
-    (Root (e ⇒ (■ (t , New)))) P↦ (Root (e ⇒ (■ (t , Old))))
+    (Root (e ⇒ ((■ t , New)))) P↦ (Root (e ⇒ ((■ t , Old))))
