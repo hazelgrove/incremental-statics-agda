@@ -55,10 +55,19 @@ data _▸DTArrowNM_,_,_ : TypeData -> NewType -> NewType -> NewMark -> Set where
     (■ t) ▸DTArrowNM t1 , t2 , m
 
 data _,_∈NM_,_ : ℕ -> NewType -> Ctx -> NewMark -> Set where 
-  NMInCtxBound : ∀ {x t Γ} -> 
-    x , t ∈ Γ -> x , t ∈NM Γ , (✔ , Old)
-  NMInCtxFree : ∀ {x Γ} -> 
-    x ̸∈ Γ -> x , (THole , Old) ∈NM Γ , (✖ , Old)
+  InCtxEmpty : 
+    0 , (THole , Old) ∈NM ∅ , (✖ , Old)
+  InCtxFound : ∀ {Γ t} -> 
+    0 , t ∈NM (t ∷ Γ) , (✔ , Old)
+  InCtxSkip : ∀ {Γ t t' x m} -> 
+    (x , t ∈NM Γ , m) -> 
+    (suc x , t ∈NM (t' ∷ Γ) , m)
+
+-- data _,_∈NM_,_ : ℕ -> NewType -> Ctx -> NewMark -> Set where 
+--   NMInCtxBound : ∀ {x t Γ} -> 
+--     x , t ∈ Γ -> x , t ∈NM Γ , (✔ , Old)
+--   NMInCtxFree : ∀ {x Γ} -> 
+--     x ̸∈ Γ -> x , (THole , Old) ∈NM Γ , (✖ , Old)
 
 data _~NM_,_ : NewType -> NewType -> NewMark -> Set where 
   NMConsist : ∀ {t1 t2 n1 n2 m} ->

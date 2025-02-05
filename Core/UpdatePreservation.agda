@@ -223,6 +223,14 @@ module Core.UpdatePreservation where
   ▸DTArrowNM-unicity SynArrowNone SynArrowNone = refl , refl , refl
   ▸DTArrowNM-unicity (SynArrowSome match1) (SynArrowSome match2) = ▸TArrowNM-unicity match1 match2
 
+  ∈NM-unicity : ∀ {x t t' Γ m m'} ->
+    x , t ∈NM Γ , m ->
+    x , t' ∈NM Γ , m' ->
+    (t ≡ t' × m ≡ m')
+  ∈NM-unicity InCtxEmpty InCtxEmpty = refl , refl
+  ∈NM-unicity InCtxFound InCtxFound = refl , refl
+  ∈NM-unicity (InCtxSkip in-ctx) (InCtxSkip in-ctx') = ∈NM-unicity in-ctx in-ctx'
+
   ▸DTArrowNM-=▷ : ∀ {syn syn' t-in t-in' t-out t-out' m m'} ->
     =▷D syn syn' ->
     syn ▸DTArrowNM t-in , t-out , m -> 
@@ -348,10 +356,28 @@ module Core.UpdatePreservation where
   oldify-ctx ((t , n) ∷ Γ) zero = ((t , Old) ∷ Γ)
   oldify-ctx ((t , n) ∷ Γ) (suc x) = ((t , n) ∷ (oldify-ctx Γ x))
 
+  oldify-access : ∀ {x t n Γ m} ->
+    x , (t , n) ∈NM Γ , m ->
+    x , (t , Old) ∈NM oldify-ctx Γ x , m
+  oldify-access InCtxEmpty = InCtxEmpty
+  oldify-access InCtxFound = InCtxFound
+  oldify-access (InCtxSkip in-ctx) = InCtxSkip (oldify-access in-ctx)
+
+  oldify-access-neq : ∀ {x y t Γ m} ->
+    y , t ∈NM Γ , m ->
+    ¬(y ≡ x) ->
+    y , t ∈NM oldify-ctx Γ x , m
+  oldify-access-neq InCtxEmpty neq = InCtxEmpty
+  oldify-access-neq {x = zero} InCtxFound neq = ⊥-elim (neq refl)
+  oldify-access-neq {x = suc x} InCtxFound neq = InCtxFound
+  oldify-access-neq {x = zero} (InCtxSkip in-ctx) neq = InCtxSkip in-ctx
+  oldify-access-neq {x = suc x} (InCtxSkip in-ctx) neq = InCtxSkip (oldify-access-neq in-ctx λ eq → neq (cong suc eq))
+  
   PreservationVarsAna :
     ∀ {Γ Γ' x t e e' m ana} ->
     (Γ ⊢ (e [ m ]⇐ ana) ⇐) ->
     VarsSynthesize x t e e' ->
+    x , t ∈NM Γ , (✔ , Old) ->
     oldify-ctx Γ x ≡ Γ' ->
     (Γ' ⊢ (e' [ m ]⇐ ana) ⇐)
   PreservationVarsAna = {!   !}
@@ -360,15 +386,19 @@ module Core.UpdatePreservation where
     ∀ {Γ Γ' x t e e'} ->
     (Γ ⊢ e ⇒) ->
     VarsSynthesize x t e e' ->
+    x , t ∈NM Γ , (✔ , Old) ->
     oldify-ctx Γ x ≡ Γ' ->
     (Γ' ⊢ e' ⇒)
-  PreservationVarsSyn (SynConst consist) VSConst refl = SynConst consist
-  PreservationVarsSyn (SynHole consist) VSHole refl = SynHole consist
-  PreservationVarsSyn (SynFun consist syn) (VSFun var-syn) refl = {!   !}
-  PreservationVarsSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (VSAp {e1' = e-fun' ⇒ syn-fun'} var-syn-fun var-syn-arg) refl = SynAp {!   !} {!   !} {!   !} {!   !} (PreservationVarsSyn syn var-syn-fun refl) (PreservationVarsAna ana var-syn-arg refl)
-  PreservationVarsSyn (SynVar in-ctx consist consist-m) VSVar refl = SynVar {!   !} {!  !} {!   !}
-  PreservationVarsSyn (SynVar in-ctx consist consist-m) (VSOtherVar x₃) refl = {!   !}
-  PreservationVarsSyn (SynAsc consist-syn consist-ana ana) (VSAsc var-syn) refl = SynAsc consist-syn consist-ana (PreservationVarsAna ana var-syn refl)
+  PreservationVarsSyn (SynConst consist) VSConst in-ctx refl = SynConst consist
+  PreservationVarsSyn (SynHole consist) VSHole in-ctx refl = SynHole consist
+  PreservationVarsSyn (SynFun consist syn) (VSFun {e-body' = e-body' ⇒ syn-body'} var-syn) in-ctx refl = SynFun (preservation-lambda-lemma (vars-syn-beyond var-syn) consist) (PreservationVarsSyn syn var-syn (InCtxSkip in-ctx) refl)
+  PreservationVarsSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (VSAp {e1' = e-fun' ⇒ syn-fun'} var-syn-fun var-syn-arg) in-ctx refl with ▸DTArrowNM-dec syn-fun' 
+  ... | t-in-fun' , t-out-fun' , m-fun' , marrow' with ▸DTArrowNM-=▷ (vars-syn-beyond var-syn-fun) marrow marrow' 
+  ... | t-in-beyond , t-out-beyond , m-beyond = SynAp marrow' (beyond-consist-t t-out-beyond consist-syn) (beyond-consist-t t-in-beyond consist-ana) (beyond-consist-m m-beyond consist-mark) (PreservationVarsSyn syn var-syn-fun in-ctx refl) (PreservationVarsAna ana var-syn-arg in-ctx refl)
+  PreservationVarsSyn {t = (t , n)} (SynVar in-ctx consist consist-m) VSVar in-ctx' refl with ∈NM-unicity in-ctx in-ctx' 
+  ... | refl , refl = SynVar (oldify-access in-ctx) (▷DSome (MergeInfoOld refl)) consist-m
+  PreservationVarsSyn (SynVar in-ctx consist consist-m) (VSOtherVar neq) in-ctx' refl = SynVar (oldify-access-neq in-ctx neq) consist consist-m
+  PreservationVarsSyn (SynAsc consist-syn consist-ana ana) (VSAsc var-syn) in-ctx refl = SynAsc consist-syn consist-ana (PreservationVarsAna ana var-syn in-ctx refl)
   
   PreservationStepSyn :  
     ∀ {Γ e e'} ->
@@ -377,7 +407,7 @@ module Core.UpdatePreservation where
     (Γ ⊢ e' ⇒)
   PreservationStepSyn (SynConst _) ()
   PreservationStepSyn (SynHole _) ()
-  PreservationStepSyn (SynFun consist syn) (StepNewAnnFun {e-body' = e-body' ⇒ syn-body'} vars-syn) = SynFun (preservation-lambda-lemma-2 (vars-syn-beyond vars-syn)) (PreservationVarsSyn syn vars-syn refl)
+  PreservationStepSyn (SynFun consist syn) (StepNewAnnFun {e-body' = e-body' ⇒ syn-body'} vars-syn) = SynFun (preservation-lambda-lemma-2 (vars-syn-beyond vars-syn)) (PreservationVarsSyn syn vars-syn InCtxFound refl)
   PreservationStepSyn (SynFun consist syn) (StepNewSynFun {t-asc = t-asc} {t-body} {n-asc}) = SynFun (direct-arrow-consist-lemma t-asc t-body n-asc Old) (oldify-syn syn)
   PreservationStepSyn (SynFun consist syn) (StepVoidSynFun {t-asc = t-asc} {t-body} {n-asc}) = SynFun (direct-arrow-consist-lemma t-asc t-body n-asc Old) (oldify-syn syn)
   PreservationStepSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (StepAp marrow') = SynAp (SynArrowSome (MNTArrowOld marrow')) (▷DSome (MergeInfoOld refl)) (▷DSome (MergeInfoOld refl)) (▷NMOld refl) (oldify-syn syn) (newify-ana ana)
