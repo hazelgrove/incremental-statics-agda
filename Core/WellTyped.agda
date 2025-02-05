@@ -8,7 +8,6 @@ open import Relation.Binary.PropositionalEquality hiding (inspect)
 open import Prelude
 
 open import Core.Core
-open import Core.Merge
 
 module Core.WellTyped where
 
@@ -54,20 +53,14 @@ data _▸DTArrowNM_,_,_ : TypeData -> NewType -> NewType -> NewMark -> Set where
     t ▸TArrowNM t1 , t2 , m -> 
     (■ t) ▸DTArrowNM t1 , t2 , m
 
-data _,_∈NM_,_ : ℕ -> NewType -> Ctx -> NewMark -> Set where 
+data _,_∈NM_,_ : ℕ -> NewType -> Ctx -> MarkData -> Set where 
   InCtxEmpty : 
-    0 , (THole , Old) ∈NM ∅ , (✖ , Old)
+    0 , (THole , Old) ∈NM ∅ , ✖ 
   InCtxFound : ∀ {Γ t} -> 
-    0 , t ∈NM (t ∷ Γ) , (✔ , Old)
+    0 , t ∈NM (t ∷ Γ) , ✔
   InCtxSkip : ∀ {Γ t t' x m} -> 
     (x , t ∈NM Γ , m) -> 
     (suc x , t ∈NM (t' ∷ Γ) , m)
-
--- data _,_∈NM_,_ : ℕ -> NewType -> Ctx -> NewMark -> Set where 
---   NMInCtxBound : ∀ {x t Γ} -> 
---     x , t ∈ Γ -> x , t ∈NM Γ , (✔ , Old)
---   NMInCtxFree : ∀ {x Γ} -> 
---     x ̸∈ Γ -> x , (THole , Old) ∈NM Γ , (✖ , Old)
 
 data _~NM_,_ : NewType -> NewType -> NewMark -> Set where 
   NMConsist : ∀ {t1 t2 n1 n2 m} ->
@@ -83,12 +76,28 @@ data _~D_,_ : TypeData -> TypeData -> NewMark -> Set where
     d1 ~NM d2 , m -> 
     (■ d1) ~D (■ d2) , m
 
+-- Legal arrangements of the synthesized, mark, and analyzed on a 
+-- lambda in analytic position. Should be thought of as a predicate on 
+-- syn and m as a function of ana. 
+data AnaLamEdge : TypeData -> MarkData -> TypeData -> Set where 
+  AnaLamVoid : ∀ {syn m} ->
+    AnaLamEdge syn m □
+  AnaLamNew : ∀ {syn m ana} ->
+    AnaLamEdge syn m (■ (ana , New))
+  AnaLamOld : ∀ {ana} ->
+    AnaLamEdge □ ✔ (■ (ana , Old))
+
 NTArrow : NewType -> NewType -> NewType
 NTArrow (t1 , n1) (t2 , n2) = ( TArrow t1 t2 , n1 ⊓ n2 )
 
 SynArrow : NewType -> TypeData -> TypeData 
 SynArrow t □ = □
 SynArrow t1 (■ t2) = ■ (NTArrow t1 t2)
+
+-- Note: this version is not actually bidirectional. The two judgments are for
+-- upper and lower expressions. The bidirectional invariant doesn't work; at a 
+-- high level this is because mode is non-local, while the invariant must be 
+-- local. 
 
 mutual 
 
@@ -111,11 +120,10 @@ mutual
       Γ ⊢ (e-fun ⇒ syn-fun) ⇒ ->
       Γ ⊢ (e-arg [ m-arg ]⇐ ana-arg) ⇐ ->
       Γ ⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ □) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all) ⇒
-    SynVar : ∀ {Γ x syn-all t-var m-all m-var} ->
+    SynVar : ∀ {Γ x syn-all t-var m-var} ->
       x , t-var ∈NM Γ , m-var ->
       ▷D (■ t-var) syn-all ->
-      ▷NM m-var m-all -> 
-      Γ ⊢ ((EVar x m-all) ⇒ syn-all) ⇒
+      Γ ⊢ ((EVar x m-var) ⇒ syn-all) ⇒
     SynAsc : ∀ {Γ e-body syn-all ana-body t-asc m-body} ->
       ▷D (■ t-asc) syn-all -> 
       ▷D (■ t-asc) ana-body -> 
@@ -129,7 +137,7 @@ mutual
       ▷NM m-consist m-all ->
       Γ ⊢ (e-all ⇒ syn-all) ⇒ -> 
       Γ ⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐ 
-    AnaFun : ∀ {Γ e-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-body m-ana-ana m-asc-ana} ->
+    AnaFun : ∀ {Γ e-body syn-all ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana} ->
       -- steps from marking
       ana-all ▸DTArrowNM t-in-ana , t-out-ana , m-ana-ana -> 
       (t-asc ∷ Γ) ⊢ (e-body [ m-body ]⇐ ana-body) ⇐ ->
@@ -139,7 +147,8 @@ mutual
       ▷NM m-ana-ana m-ana -> 
       ▷NM m-asc-ana m-asc -> 
       ▷D (■ t-out-ana) ana-body ->
-      Γ ⊢ (((EFun t-asc m-ana m-asc (e-body [ m-body ]⇐ ana-body)) ⇒ □) [ ✔ ]⇐ ana-all) ⇐ 
+      AnaLamEdge syn-all m-all ana-all ->
+      Γ ⊢ (((EFun t-asc m-ana m-asc (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐  
     
 data _⇒ : Program -> Set where 
   SynProg : ∀ {e} ->

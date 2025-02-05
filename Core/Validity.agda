@@ -10,7 +10,7 @@ open import Prelude
 
 open import Core.Core
 open import Core.Marking
-open import Core.WellTypedStructural
+open import Core.WellTyped
 open import Core.Settled
 
 module Core.Validity where

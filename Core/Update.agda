@@ -8,8 +8,6 @@ open import Relation.Binary.PropositionalEquality hiding (inspect)
 open import Prelude
 
 open import Core.Core
-open import Core.WellTyped
-open import Core.Merge
 
 module Core.Update where
 
