@@ -40,45 +40,60 @@ _⊓_ : Newness -> Newness -> Newness
 Old ⊓ n = n
 New ⊓ n = New
   
-data MarkData : Set where 
-  ✖ : MarkData
-  ✔ : MarkData
+data Mark : Set where 
+  ✖ : Mark
+  ✔ : Mark
   
-_⊓M_ : MarkData -> MarkData -> MarkData 
+_⊓M_ : Mark -> Mark -> Mark 
 ✔ ⊓M m = m
 ✖ ⊓M m = ✖
 
-data _~M_,_ : Type -> Type -> MarkData -> Set where 
-  ConsistBase : TBase ~M TBase , ✔
-  ConsistHoleL : ∀ {t} -> THole ~M t , ✔
-  ConsistHoleR : ∀ {t} -> t ~M THole , ✔
+data _~_,_ : Type -> Type -> Mark -> Set where 
+  ConsistBase : TBase ~ TBase , ✔
+  ConsistHoleL : ∀ {t} -> THole ~ t , ✔
+  ConsistHoleR : ∀ {t} -> t ~ THole , ✔
   ConsistArr : ∀ {t1 t2 t3 t4 m1 m2} -> 
-    t1 ~M t3 , m1 -> 
-    t2 ~M t4 , m2 -> 
-    ((TArrow t1 t2) ~M (TArrow t3 t4) , (m1 ⊓M m2))
+    t1 ~ t3 , m1 -> 
+    t2 ~ t4 , m2 -> 
+    ((TArrow t1 t2) ~ (TArrow t3 t4) , (m1 ⊓M m2))
   InconsistBaseArr : ∀ {t1 t2} ->
-    TBase ~M (TArrow t1 t2) , ✖
+    TBase ~ (TArrow t1 t2) , ✖
   InconsistArrBase : ∀ {t1 t2} ->
-    (TArrow t1 t2) ~M TBase , ✖
+    (TArrow t1 t2) ~ TBase , ✖
 
--- If we had other types, then there would sometimes be a mark
-data _▸TArrowM_,_,_ : Type -> Type -> Type -> MarkData -> Set where 
+data _▸TArrow_,_,_ : Type -> Type -> Type -> Mark -> Set where 
   MArrowBase :
-    TBase ▸TArrowM THole , THole , ✖
+    TBase ▸TArrow THole , THole , ✖
   MArrowHole :
-    THole ▸TArrowM THole , THole , ✔
+    THole ▸TArrow THole , THole , ✔
   MArrowArrow : ∀ {t1 t2} -> 
-    (TArrow t1 t2) ▸TArrowM t1 , t2 , ✔
+    (TArrow t1 t2) ▸TArrow t1 , t2 , ✔
+
+-- data (option)
+data DATA (A : Set) : Set where 
+  □ : DATA A
+  ■ : A -> DATA A
+
+Data : Set 
+Data = DATA Type
+
+-- MData : Set 
+-- MData = DATA Mark
+
+NEW : (A : Set) -> Set 
+NEW A = A × Newness 
 
 NewType : Set 
-NewType = (Type × Newness) 
+NewType = NEW Type 
 
-data TypeData : Set where 
-  □ : TypeData 
-  ■ : NewType -> TypeData
+NewData : Set 
+NewData = NEW Data
 
 NewMark : Set 
-NewMark = MarkData × Newness
+NewMark = NEW Mark
+
+-- NewMData : Set 
+-- NewMData = NEW MData
 
 -- data ExpPointer : Set where 
 --   Here : ExpPointer 
@@ -94,18 +109,18 @@ NewMark = MarkData × Newness
 mutual 
 
   data ExpUp : Set where  
-    _⇒_ : ExpMid -> TypeData -> ExpUp
+    _⇒_ : ExpMid -> NewData -> ExpUp
 
   data ExpMid : Set where 
     EConst : ExpMid 
     EHole : ExpMid
-    EFun : NewType -> MarkData -> MarkData -> ExpLow -> ExpMid 
-    EAp : ExpLow -> MarkData -> ExpLow -> ExpMid 
-    EVar : ℕ -> MarkData -> ExpMid 
+    EFun : NewType -> Mark -> Mark -> ExpLow -> ExpMid 
+    EAp : ExpLow -> Mark -> ExpLow -> ExpMid 
+    EVar : ℕ -> Mark -> ExpMid 
     EAsc : NewType -> ExpLow -> ExpMid 
 
   data ExpLow : Set where 
-    _[_]⇐_ : ExpUp -> MarkData -> TypeData -> ExpLow
+    _[_]⇐_ : ExpUp -> Mark -> NewData -> ExpLow
 
 data Program : Set where 
     Root : ExpUp -> Program
@@ -124,12 +139,5 @@ data Context (A : Set) : Set where
   ∅ : Context A
   _∷_ : A -> Context A -> Context A
   
-data _,_∈_ {A : Set} : ℕ -> A -> (Context A) -> Set where 
-  InCtx0 : ∀ {Γ t} -> 0 , t ∈ (t ∷ Γ)
-  InCtxSuc : ∀ {Γ t t' n} -> (n , t ∈ Γ) -> (suc n , t ∈ (t' ∷ Γ))
-
-_̸∈_ : ∀ {A} -> ℕ -> (Context A) -> Set
-x ̸∈ Γ = ∀ {t} -> ¬(x , t ∈ Γ)
-
 Ctx : Set 
 Ctx = Context NewType

@@ -16,134 +16,135 @@ module Core.WellTyped where
 -- from slightly upstream in the information flow) is consistent with the 
 -- second (which is found as an annotation slghtly downstream). 
 
-data _▷NT_ : NewType -> NewType -> Set where 
-  MergeInfoNew : ∀ {t1 t2 n2} -> 
-    (t1 , New) ▷NT (t2 , n2)
-  MergeInfoOld : ∀ {t1 t2 n2} -> 
-    (t1 ≡ t2) -> (t1 , Old) ▷NT (t2 , n2)
+data ▶ {A : Set} : NEW A -> A -> Set where 
+  ▶New : ∀ {a a'} -> 
+    ▶ (a , New) a' 
+  ▶Old : ∀ {a} ->
+    ▶ (a , Old) a
 
-data ▷D : TypeData -> TypeData -> Set where 
-  ▷DVoidL : ∀ {s} -> 
-    ▷D □ s
-  ▷DVoidR : ∀ {s} -> 
-    ▷D s □
-  ▷DSome : ∀ {syn1 syn2} -> 
-    syn1 ▷NT syn2 ->
-    ▷D (■ syn1) (■ syn2)
+data ▷ {A : Set} : NEW A -> NEW A -> Set where 
+  ▷Pair : ∀ {a a' n n'} -> 
+    ▷ (a , n) (a' , n')
+    
+data ▷■ {A : Set} : NEW A -> NEW (DATA A) -> Set where
+  ▷■Pair : ∀ {a a' n n'} -> 
+    ▷ (■ a , n) (a' , n') ->
+    ▷■ (a , n) (a' , n')
 
-data ▷NM : (m1 : NewMark) (m2 : MarkData) -> Set where 
-  ▷NMNew : ∀ {m1 m2} ->
-    ▷NM (m1 , New) m2
-  ▷NMOld : ∀ {m1 m2} ->
-    (m1 ≡ m2) -> ▷NM (m1 , Old) m2
+-- -- Side conditions returning new marks. 
 
--- Side conditions returning new marks. 
+data _▸DTArrow_,_,_ : Data -> Data -> Data -> Mark -> Set where 
+  DTArrowSome : ∀ {t t1 t2 m} ->
+    t ▸TArrow t1 , t2 , m ->
+    (■ t) ▸DTArrow (■ t1) , (■ t2) , (m)
+  DTArrowNone : 
+    □ ▸DTArrow □ , □ , ✔
 
-data _▸TArrowNM_,_,_ : NewType -> NewType -> NewType -> NewMark -> Set where 
-  MNTArrowOld : ∀ {t t1 t2 m} ->
-    t ▸TArrowM t1 , t2 , m ->
-    (t , Old) ▸TArrowNM (t1 , Old) , (t2 , Old) , (m , Old)
-  MNTArrowNew : ∀ {t t1 t2 m} ->
-    t ▸TArrowM t1 , t2 , m ->
-    (t , New) ▸TArrowNM (t1 , New) , (t2 , New) , (m , New)
+data _▸NTArrow_,_,_ : NewData -> NewData -> NewData -> NewMark -> Set where 
+  NTArrowC : ∀ {d n t1 t2 m} ->
+    (d , n) ▸NTArrow (t1 , n) , (t2 , n) , (m , n)
 
-data _▸DTArrowNM_,_,_ : TypeData -> NewType -> NewType -> NewMark -> Set where 
-  SynArrowNone : □ ▸DTArrowNM (THole , New) , (THole , New) , (✔ , New)
-  SynArrowSome : ∀ {t t1 t2 m} ->
-    t ▸TArrowNM t1 , t2 , m -> 
-    (■ t) ▸DTArrowNM t1 , t2 , m
+  -- SynArrowNone : □ ▸DTArrowNM (THole , New) , (THole , New) , Any
+  -- SynArrowSome : ∀ {t t1 t2 m} ->
+  --   t ▸TArrowNM t1 , t2 , m -> 
+  --   (■ t) ▸DTArrowNM t1 , t2 , m
 
-data _,_∈NM_,_ : ℕ -> NewType -> Ctx -> MarkData -> Set where 
+data _,_∈N_,_ : ℕ -> NewType -> Ctx -> Mark -> Set where 
   InCtxEmpty : 
-    0 , (THole , Old) ∈NM ∅ , ✖ 
+    0 , (THole , Old) ∈N ∅ , (✖)
   InCtxFound : ∀ {Γ t} -> 
-    0 , t ∈NM (t ∷ Γ) , ✔
+    0 , t ∈N (t ∷ Γ) , (✔)
   InCtxSkip : ∀ {Γ t t' x m} -> 
-    (x , t ∈NM Γ , m) -> 
-    (suc x , t ∈NM (t' ∷ Γ) , m)
+    (x , t ∈N Γ , m) -> 
+    (suc x , t ∈N (t' ∷ Γ) , m)
 
-data _~NM_,_ : NewType -> NewType -> NewMark -> Set where 
-  NMConsist : ∀ {t1 t2 n1 n2 m} ->
-    t1 ~M t2 , m -> 
-    (t1 , n1) ~NM (t2 , n2) , (m , n1 ⊓ n2) 
-
-data _~D_,_ : TypeData -> TypeData -> NewMark -> Set where 
+data _~D_,_ : Data -> Data -> Mark -> Set where 
   ~DVoidL : ∀ {d} ->
-     □ ~D d , (✔ , New)
+    □ ~D d , ✔
   ~DVoidR : ∀ {d} ->
-    d ~D □ , (✔ , New)
+    d ~D □ , ✔
   ~DSome : ∀ {d1 d2 m} ->
-    d1 ~NM d2 , m -> 
+    d1 ~ d2 , m -> 
     (■ d1) ~D (■ d2) , m
 
--- Legal arrangements of the synthesized, mark, and analyzed on a 
--- lambda in analytic position. Should be thought of as a predicate on 
--- syn and m as a function of ana. 
-data AnaLamEdge : TypeData -> MarkData -> TypeData -> Set where 
-  AnaLamVoid : ∀ {syn m} ->
-    AnaLamEdge syn m □
-  AnaLamNew : ∀ {syn m ana} ->
-    AnaLamEdge syn m (■ (ana , New))
-  AnaLamOld : ∀ {ana} ->
-    AnaLamEdge □ ✔ (■ (ana , Old))
+data _~N_,_ : NewData -> NewData -> NewMark -> Set where 
+  NConsist : ∀ {d1 d2 n1 n2 m} ->
+    d1 ~D d2 , m -> 
+    (d1 , n1) ~N (d2 , n2) , (m , n1 ⊓ n2)
 
-NTArrow : NewType -> NewType -> NewType
-NTArrow (t1 , n1) (t2 , n2) = ( TArrow t1 t2 , n1 ⊓ n2 )
+data _■~N_,_ : NewType -> NewData -> NewMark -> Set where 
+  ■~N-pair : ∀ {t n d m} ->
+    (■ t , n) ~N d , m ->
+    (t , n) ■~N d , m
 
-SynArrow : NewType -> TypeData -> TypeData 
-SynArrow t □ = □
-SynArrow t1 (■ t2) = ■ (NTArrow t1 t2)
+-- -- Legal arrangements of the synthesized, mark, and analyzed on a 
+-- -- lambda in analytic position. Should be thought of as a predicate on 
+-- -- syn and m as a function of ana. 
+-- data AnaLamEdge : Data -> Mark -> Data -> Set where 
+--   AnaLamVoid : ∀ {syn m} ->
+--     AnaLamEdge syn m □
+--   AnaLamNew : ∀ {syn m ana} ->
+--     AnaLamEdge syn m (■ (ana , New))
+--   AnaLamOld : ∀ {ana} ->
+--     AnaLamEdge □ ✔ (■ (ana , Old))
 
--- Note: this version is not actually bidirectional. The two judgments are for
--- upper and lower expressions. The bidirectional invariant doesn't work; at a 
--- high level this is because mode is non-local, while the invariant must be 
--- local.
+DArrow : Type -> Data -> Data
+DArrow t1 □ = □
+DArrow t1 (■ t2) = ■ (TArrow t1 t2)
+
+NArrow : NewType -> NewData -> NewData 
+NArrow (t , n1) (d , n2) = (DArrow t d , n1 ⊓ n2)
+
+-- -- Note: this version is not actually bidirectional. The two judgments are for
+-- -- upper and lower expressions. The bidirectional invariant doesn't work; at a 
+-- -- high level this is because mode is non-local, while the invariant must be 
+-- -- local.
 
 mutual 
 
   data _⊢_⇒ : (Γ : Ctx) (e : ExpUp) -> Set where 
     SynConst : ∀ {Γ syn-all} ->
-      ▷D (■ (TBase , Old)) syn-all ->
+      ▷ (■ TBase , Old) syn-all ->
       Γ ⊢ (EConst ⇒ syn-all) ⇒
     SynHole : ∀ {Γ syn-all} ->
-      ▷D (■ (THole , Old)) syn-all ->
+      ▷ (■ THole , Old) syn-all ->
       Γ ⊢ (EHole ⇒ syn-all) ⇒
     SynAp : ∀ {Γ e-fun e-arg syn-all syn-fun ana-arg t-in-fun t-out-fun m-all m-fun m-arg} ->
-      syn-fun ▸DTArrowNM t-in-fun , t-out-fun , m-fun -> 
-      ▷D (■ t-out-fun) syn-all -> 
-      ▷D (■ t-in-fun) ana-arg -> 
-      ▷NM m-fun m-all -> 
+      syn-fun ▸NTArrow t-in-fun , t-out-fun , m-fun -> 
+      ▷ t-out-fun syn-all -> 
+      ▷ t-in-fun ana-arg -> 
+      ▶ m-fun m-all -> 
       Γ ⊢ (e-fun ⇒ syn-fun) ⇒ ->
       Γ ⊢ (e-arg [ m-arg ]⇐ ana-arg) ⇐ ->
-      Γ ⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ □) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all) ⇒
+      Γ ⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , Old)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all) ⇒
     SynVar : ∀ {Γ x syn-all t-var m-var} ->
-      x , t-var ∈NM Γ , m-var ->
-      ▷D (■ t-var) syn-all ->
+      x , t-var ∈N Γ , m-var ->
+      ▷■ t-var syn-all ->
       Γ ⊢ ((EVar x m-var) ⇒ syn-all) ⇒
     SynAsc : ∀ {Γ e-body syn-all ana-body t-asc m-body} ->
-      ▷D (■ t-asc) syn-all -> 
-      ▷D (■ t-asc) ana-body -> 
+      ▷■ (t-asc) syn-all -> 
+      ▷■ (t-asc) ana-body -> 
       Γ ⊢ (e-body [ m-body ]⇐ ana-body) ⇐ ->
       Γ ⊢ ((EAsc t-asc (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all) ⇒
 
   data _⊢_⇐ : (Γ : Ctx) (e : ExpLow) -> Set where 
     AnaSubsume : ∀ {Γ e-all syn-all ana-all m-all m-consist} ->
       SubsumableMid e-all ->
-      syn-all ~D ana-all , m-consist ->
-      ▷NM m-consist m-all ->
+      syn-all ~N ana-all , m-consist ->
+      ▶ m-consist m-all ->
       Γ ⊢ (e-all ⇒ syn-all) ⇒ -> 
       Γ ⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐ 
     AnaFun : ∀ {Γ e-body syn-all syn-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana m-all-ana} ->
       -- analytic flow
-      ana-all ▸DTArrowNM t-in-ana , t-out-ana , m-ana-ana -> 
-      t-asc ~NM t-in-ana , m-asc-ana ->
-      ▷D (■ t-out-ana) ana-body ->
-      ▷NM m-ana-ana m-ana -> 
-      ▷NM m-asc-ana m-asc -> 
+      ana-all ▸NTArrow t-in-ana , t-out-ana , m-ana-ana -> 
+      t-asc ■~N t-in-ana , m-asc-ana ->
+      ▷ t-out-ana ana-body ->
+      ▶ m-ana-ana m-ana -> 
+      ▶ m-asc-ana m-asc -> 
       -- synthetic flow
-      ▷D (SynArrow t-asc syn-body) syn-all ->
-      syn-all ~D ana-all , m-all-ana ->
-      ▷NM m-all-ana m-all -> 
+      ▷ (NArrow t-asc syn-body) syn-all ->
+      syn-all ~N ana-all , m-all-ana ->
+      ▶ m-all-ana m-all -> 
       -- recursive call
       (t-asc ∷ Γ) ⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ⇐ ->
       Γ ⊢ (((EFun t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐  

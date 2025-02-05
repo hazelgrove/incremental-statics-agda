@@ -17,7 +17,7 @@ mutual
   data SettledSyn : ExpUp -> Set where 
     SettledSynSyn : ∀ {e t} ->
       SettledSynMid e -> 
-      SettledSyn (e ⇒ (■ (t , Old)))
+      SettledSyn (e ⇒ ((■ t , Old)))
 
   data SettledSynMid : ExpMid -> Set where 
     SettledSynConst :
@@ -26,11 +26,11 @@ mutual
       SettledSynMid (EHole)
     SettledSynFun : ∀ {t e} ->
       SettledSyn e ->
-      SettledSynMid ((EFun (t , Old) ✔ ✔ (e [ ✔ ]⇐ □)))
+      SettledSynMid ((EFun (t , Old) ✔ ✔ (e [ ✔ ]⇐ (□ , Old))))
     SettledSynAp : ∀ {m e1 e2} ->
       SettledSyn e1 -> 
       SettledAna e2 -> 
-      SettledSynMid ((EAp (e1 [ ✔ ]⇐ □) m e2))
+      SettledSynMid ((EAp (e1 [ ✔ ]⇐ (□ , Old)) m e2))
     SettledSynVar : ∀ {x m} ->
       SettledSynMid ((EVar x m))
     SettledSynAsc : ∀ {t e} ->
@@ -40,12 +40,12 @@ mutual
   data SettledAna : ExpLow -> Set where 
     SettledAnaAna : ∀ {t e m} ->
       SettledAnaUp e ->
-      SettledAna (e [ m ]⇐ (■ (t , Old)))
+      SettledAna (e [ m ]⇐ ((■ t , Old)))
   
   data SettledAnaUp : ExpUp -> Set where 
     SettledAnaFun : ∀ {t m1 m2 e} ->
       SettledAna e ->
-      SettledAnaUp ((EFun (t , Old) m1 m2 e) ⇒ □)
+      SettledAnaUp ((EFun (t , Old) m1 m2 e) ⇒ (□ , Old))
     SettledAnaSubsume : ∀ {e} ->
       Subsumable e ->
       SettledSyn e ->
