@@ -13,7 +13,7 @@ open import Core.Merge
 
 module Core.Update where
 
-data VarsSynthesize : ℕ -> NewType -> ExpUp -> ExpUp -> Set where 
+data VarsSynthesize : ℕ -> Type -> ExpUp -> ExpUp -> Set where 
   VSConst : ∀ {x t syn} ->
     VarsSynthesize x t (EConst ⇒ syn) (EConst ⇒ syn)
   VSHole : ∀ {x t syn} ->
@@ -26,7 +26,7 @@ data VarsSynthesize : ℕ -> NewType -> ExpUp -> ExpUp -> Set where
     VarsSynthesize x t e2 e2' ->
     VarsSynthesize x t ((EAp (e1 [ m1 ]⇐ ana1) m2 (e2 [ m3 ]⇐ ana2)) ⇒ syn) ((EAp (e1' [ m1 ]⇐ ana1) m2 (e2' [ m3 ]⇐ ana2)) ⇒ syn)
   VSVar : ∀ {x t syn} ->
-    VarsSynthesize x t ((EVar x ✔) ⇒ syn) ((EVar x ✔) ⇒ (■ t))
+    VarsSynthesize x t ((EVar x ✔) ⇒ syn) ((EVar x ✔) ⇒ (■ (t , New)))
   VSOtherVar : ∀ {x y t syn} ->
     ¬(x ≡ y) -> 
     VarsSynthesize y t ((EVar x ✔) ⇒ syn) ((EVar x ✔) ⇒ syn)
@@ -58,7 +58,7 @@ data _L↦_ : ExpLow -> ExpLow -> Set where
 
 data _U↦_ : ExpUp -> ExpUp -> Set where 
   StepNewAnnFun : ∀ {e-body e-body' t-asc t-body n-body m-body} ->
-    VarsSynthesize 0 (t-asc , New) (e-body ⇒ (■ (t-body , n-body))) e-body' ->
+    VarsSynthesize 0 t-asc (e-body ⇒ (■ (t-body , n-body))) e-body' ->
     (EFun (t-asc , New) ✔ ✔ ((e-body ⇒ (■ (t-body , n-body))) [ m-body ]⇐ □)) ⇒ □ U↦
     (EFun (t-asc , Old) ✔ ✔ (e-body' [ m-body ]⇐ □)) ⇒ (■ (TArrow t-asc t-body , New))
   StepNewSynFun : ∀ {e-body t-asc t-body n-asc m-body syn-all} ->
