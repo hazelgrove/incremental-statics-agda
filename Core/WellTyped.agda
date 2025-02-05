@@ -94,11 +94,6 @@ SynArrow : NewType -> TypeData -> TypeData
 SynArrow t □ = □
 SynArrow t1 (■ t2) = ■ (NTArrow t1 t2)
 
--- Note: this version is not actually bidirectional. The two judgments are for
--- upper and lower expressions. The bidirectional invariant doesn't work; at a 
--- high level this is because mode is non-local, while the invariant must be 
--- local. 
-
 mutual 
 
   data _⊢_⇒ : (Γ : Ctx) (e : ExpUp) -> Set where 
@@ -138,16 +133,13 @@ mutual
       Γ ⊢ (e-all ⇒ syn-all) ⇒ -> 
       Γ ⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐ 
     AnaFun : ∀ {Γ e-body syn-all ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana} ->
-      -- steps from marking
       ana-all ▸DTArrowNM t-in-ana , t-out-ana , m-ana-ana -> 
       (t-asc ∷ Γ) ⊢ (e-body [ m-body ]⇐ ana-body) ⇐ ->
       t-asc ~NM t-in-ana , m-asc-ana ->
-      -- checks on each output (including those given to recursive calls) of the 
-      -- marking judgment (but which are inputs to this judgment)
       ▷NM m-ana-ana m-ana -> 
       ▷NM m-asc-ana m-asc -> 
       ▷D (■ t-out-ana) ana-body ->
-      AnaLamEdge syn-all m-all ana-all ->
+      -- AnaLamEdge syn-all m-all ana-all ->
       Γ ⊢ (((EFun t-asc m-ana m-asc (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐  
     
 data _⇒ : Program -> Set where 
