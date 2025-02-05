@@ -50,10 +50,13 @@ BareCtx : Set
 BareCtx = Context Type
 
 data _,_∈M_,_ : ℕ -> Type -> BareCtx -> MarkData -> Set where 
-  MInCtxBound : ∀ {x t Γ} -> 
-    x , t ∈ Γ -> x , t ∈M Γ , ✔
-  MInCtxFree : ∀ {x Γ} -> 
-    x ̸∈ Γ -> x , THole ∈M Γ , ✖
+  InCtxEmpty : 
+    0 , THole ∈M ∅ , ✖ 
+  InCtxFound : ∀ {Γ t} -> 
+    0 , t ∈M (t ∷ Γ) , ✔
+  InCtxSkip : ∀ {Γ t t' x m} -> 
+    (x , t ∈M Γ , m) -> 
+    (suc x , t ∈M (t' ∷ Γ) , m)
 
 -- This version of marking uses side conditions (matched arrow, consistency, or 
 -- variable lookup in the context) that are total functions which also return a

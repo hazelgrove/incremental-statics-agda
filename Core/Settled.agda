@@ -47,6 +47,7 @@ mutual
       SettledAna e ->
       SettledAnaUp ((EFun (t , Old) m1 m2 e) ⇒ □)
     SettledAnaSubsume : ∀ {e} ->
+      Subsumable e ->
       SettledSyn e ->
       SettledAnaUp e
 
