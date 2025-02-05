@@ -24,13 +24,13 @@ mutual
       SettledSynMid EConst
     SettledSynHole : 
       SettledSynMid (EHole)
-    SettledSynFun : ∀ {t m1 m2 m3 e} ->
+    SettledSynFun : ∀ {t e} ->
       SettledSyn e ->
-      SettledSynMid ((EFun (t , Old) m1 m2 (e [ m3 ]⇐ □)))
-    SettledSynAp : ∀ {m1 m2 e1 e2} ->
+      SettledSynMid ((EFun (t , Old) ✔ ✔ (e [ ✔ ]⇐ □)))
+    SettledSynAp : ∀ {m e1 e2} ->
       SettledSyn e1 -> 
       SettledAna e2 -> 
-      SettledSynMid ((EAp (e1 [ m1 ]⇐ □) m2 e2))
+      SettledSynMid ((EAp (e1 [ ✔ ]⇐ □) m e2))
     SettledSynVar : ∀ {x m} ->
       SettledSynMid ((EVar x m))
     SettledSynAsc : ∀ {t e} ->

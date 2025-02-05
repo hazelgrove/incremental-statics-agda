@@ -353,13 +353,8 @@ module Core.UpdatePreservation where
   step-syn-beyond : ∀ {e e' syn syn'} -> 
     (e ⇒ syn) U↦ (e' ⇒ syn') -> 
     =▷D syn syn' 
-  step-syn-beyond (StepNewAnnFun _) = =▷DNew
-  step-syn-beyond StepNewSynFun = =▷DNew
-  step-syn-beyond StepVoidSynFun = =▷DNew
   step-syn-beyond (StepAp _) = =▷DNew
   step-syn-beyond StepAsc = =▷DNew
-
-  
 
 
   -- stays the same, except possibly becomes old
@@ -384,6 +379,10 @@ module Core.UpdatePreservation where
   step-ana-beyond (StepNewAnaConsist _ _) = ◁=DOld
   step-ana-beyond (StepAnaFun _ _) = ◁=DOld
   step-ana-beyond StepNoAnaFun = ◁=DRefl
+  step-ana-beyond (StepNewAnnFun _) = ◁=DRefl
+  step-ana-beyond StepNewSynFun = ◁=DRefl
+  step-ana-beyond StepVoidSynFun = ◁=DRefl
+  
 
   step-ana-env-beyond : ∀ {ε e e' e-in e-in' m m' ana ana'} -> 
     e L↦ e' -> 
@@ -397,9 +396,6 @@ module Core.UpdatePreservation where
     (e ⇒ syn) U↦ (e' ⇒ syn') ->
     SubsumableMid e -> 
     SubsumableMid e'
-  step-subsumable (StepNewAnnFun _) ()
-  step-subsumable StepNewSynFun ()
-  step-subsumable StepVoidSynFun ()
   step-subsumable (StepAp _) SubsumableAp = SubsumableAp
   step-subsumable StepAsc SubsumableAsc = SubsumableAsc
 
@@ -448,10 +444,10 @@ module Core.UpdatePreservation where
   newify-ana {t = t} (AnaSubsume {syn-all = syn-all} subsumable consist-t consist-m syn) with ~D-dec syn-all (■ (t , New)) 
   ... | _ , consist-t' with new-through-~D-left consist-t' 
   ... | _ , refl = AnaSubsume subsumable consist-t' ▷NMNew syn
-  newify-ana {t = t-ana'} (AnaFun {t-asc = t-asc} marrow ana consist consist-ana consist-asc consist-body edge) with ▸DTArrowNM-dec (■ (t-ana' , New)) 
+  newify-ana {t = t-ana'} (AnaFun {t-asc = t-asc} marrow ana consist consist-ana consist-asc consist-body) with ▸DTArrowNM-dec (■ (t-ana' , New)) 
   ... | t-in-ana' , t-out-ana' , m-ana-ana' , marrow' with ~NM-dec t-asc t-in-ana' | new-through-▸DTArrowNM marrow' 
   ... | _ , consist' | a , b , c , refl , refl , refl with new-through-~NM consist'
-  ... | _ , refl = AnaFun marrow' ana consist' ▷NMNew ▷NMNew ▷D-new AnaLamNew
+  ... | _ , refl = AnaFun marrow' ana consist' ▷NMNew ▷NMNew ▷D-new
 
   oldify-ctx : Ctx -> ℕ -> Ctx 
   oldify-ctx ∅ x = ∅
@@ -486,7 +482,7 @@ module Core.UpdatePreservation where
       (Γ' ⊢ (e' [ m ]⇐ ana) ⇐)
     PreservationVarsAna {e' = e-all' ⇒ syn-all'} {ana = ana} (AnaSubsume subsumable consist-t consist-m syn) vars-syn in-ctx refl with ~D-dec syn-all' ana 
     ... | m-consist' , consist-t' = AnaSubsume (vars-syn-subsumable vars-syn subsumable) consist-t' (beyond-consist-m (beyond-through-~D (vars-syn-beyond vars-syn) consist-t consist-t') consist-m) (PreservationVarsSyn syn vars-syn in-ctx refl)
-    PreservationVarsAna (AnaFun marrow ana consist consist-ana consist-asc consist-body edge) (VSFun vars-syn) in-ctx refl = AnaFun marrow (PreservationVarsAna ana vars-syn (InCtxSkip in-ctx) refl) consist consist-ana consist-asc consist-body edge
+    PreservationVarsAna (AnaFun marrow ana consist consist-ana consist-asc consist-body) (VSFun vars-syn) in-ctx refl = AnaFun marrow (PreservationVarsAna ana vars-syn (InCtxSkip in-ctx) refl) consist consist-ana consist-asc consist-body
 
     PreservationVarsSyn :
       ∀ {Γ Γ' x t e e'} ->
@@ -513,9 +509,6 @@ module Core.UpdatePreservation where
     (Γ ⊢ e' ⇒)
   PreservationStepSyn (SynConst _) ()
   PreservationStepSyn (SynHole _) ()
-  PreservationStepSyn (SynFun consist syn) (StepNewAnnFun {e-body' = e-body' ⇒ syn-body'} vars-syn) = SynFun (preservation-lambda-lemma-2 (vars-syn-beyond vars-syn)) (PreservationVarsSyn syn vars-syn InCtxFound refl)
-  PreservationStepSyn (SynFun consist syn) (StepNewSynFun {t-asc = t-asc} {t-body} {n-asc}) = SynFun (direct-arrow-consist-lemma t-asc t-body n-asc Old) (oldify-syn syn)
-  PreservationStepSyn (SynFun consist syn) (StepVoidSynFun {t-asc = t-asc} {t-body} {n-asc}) = SynFun (direct-arrow-consist-lemma t-asc t-body n-asc Old) (oldify-syn syn)
   PreservationStepSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (StepAp marrow') = SynAp (SynArrowSome (MNTArrowOld marrow')) (▷DSome (MergeInfoOld refl)) (▷DSome (MergeInfoOld refl)) (▷NMOld refl) (oldify-syn syn) (newify-ana ana)
   PreservationStepSyn (SynVar _ _) ()
   PreservationStepSyn (SynAsc consist-syn consist-ana ana) StepAsc = SynAsc (▷DSome (MergeInfoOld refl)) (▷DSome (MergeInfoOld refl)) (newify-ana ana)
@@ -526,6 +519,9 @@ module Core.UpdatePreservation where
     (e L↦ e') ->   
     (Γ ⊢ e' ⇐)
   PreservationStepAna ana step = {!   !}
+  -- PreservationStepSyn (SynFun consist syn) (StepNewAnnFun {e-body' = e-body' ⇒ syn-body'} vars-syn) = SynFun (preservation-lambda-lemma-2 (vars-syn-beyond vars-syn)) (PreservationVarsSyn syn vars-syn InCtxFound refl)
+  -- PreservationStepSyn (SynFun consist syn) (StepNewSynFun {t-asc = t-asc} {t-body} {n-asc}) = SynFun (direct-arrow-consist-lemma t-asc t-body n-asc Old) (oldify-syn syn)
+  -- PreservationStepSyn (SynFun consist syn) (StepVoidSynFun {t-asc = t-asc} {t-body} {n-asc}) = SynFun (direct-arrow-consist-lemma t-asc t-body n-asc Old) (oldify-syn syn)
 
   mutual 
 
@@ -550,9 +546,14 @@ module Core.UpdatePreservation where
     PreservationSyn (SynAsc consist-syn consist-ana ana) (StepUp (FillUEnvUpRec (FillUEnvAsc (FillUEnvLowRec (FillUEnvUpRec fill1)))) step (FillUEnvUpRec (FillUEnvAsc (FillUEnvLowRec (FillUEnvUpRec fill2))))) = SynAsc consist-syn consist-ana (PreservationAna ana (StepUp (FillUEnvLowRec (FillUEnvUpRec fill1)) step (FillUEnvLowRec (FillUEnvUpRec fill2))))
     PreservationSyn (SynConst _) (StepLow (FillLEnvUpRec ()) _ (FillLEnvUpRec _))
     PreservationSyn (SynHole _) (StepLow (FillLEnvUpRec ()) _ (FillLEnvUpRec _))
-    PreservationSyn (SynFun consist ()) (StepLow (FillLEnvUpRec (FillLEnvFun FillL⊙)) StepNoAnaFun (FillLEnvUpRec (FillLEnvFun FillL⊙)))
+    PreservationSyn (SynFun {t-asc = t-asc , n-asc} consist syn) (StepLow (FillLEnvUpRec (FillLEnvFun FillL⊙)) step (FillLEnvUpRec (FillLEnvFun FillL⊙))) = {! e-in'  !}
+    -- PreservationSyn (SynFun {t-asc = t-asc , n-asc} consist syn) (StepLow (FillLEnvUpRec (FillLEnvFun FillL⊙)) (StepNewAnnFun {t-asc = t-asc'} vars-syn) (FillLEnvUpRec (FillLEnvFun FillL⊙))) rewrite new-max-r n-asc = SynFun {!  !} {!   !}
+    -- PreservationSyn (SynFun consist syn) (StepLow (FillLEnvUpRec (FillLEnvFun FillL⊙)) StepNewSynFun (FillLEnvUpRec (FillLEnvFun FillL⊙))) = {!   !}
+    -- PreservationSyn (SynFun consist syn) (StepLow (FillLEnvUpRec (FillLEnvFun FillL⊙)) StepVoidSynFun (FillLEnvUpRec (FillLEnvFun FillL⊙))) = {!   !}
+
     PreservationSyn (SynFun consist syn) (StepLow (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec (FillLEnvUpRec fill1)))) step (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec (FillLEnvUpRec fill2))))) = SynFun consist (PreservationSyn syn (StepLow (FillLEnvUpRec fill1) step (FillLEnvUpRec fill2)))
-    PreservationSyn (SynAp marrow consist-syn consist-ana consist-mark () ana) (StepLow (FillLEnvUpRec (FillLEnvAp1 FillL⊙)) StepNoAnaFun (FillLEnvUpRec (FillLEnvAp1 FillL⊙)))
+    PreservationSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (StepLow (FillLEnvUpRec (FillLEnvAp1 FillL⊙)) step (FillLEnvUpRec (FillLEnvAp1 FillL⊙))) = {!   !}
+    
     PreservationSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec (FillLEnvUpRec fill1)))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec (FillLEnvUpRec fill2))))) = SynAp marrow consist-syn consist-ana consist-mark (PreservationSyn syn (StepLow (FillLEnvUpRec fill1) step (FillLEnvUpRec fill2))) ana
     PreservationSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (StepLow {e-in' = e-in' [ m' ]⇐ ana'} (FillLEnvUpRec (FillLEnvAp2 FillL⊙)) step (FillLEnvUpRec (FillLEnvAp2 FillL⊙))) = SynAp marrow consist-syn (beyond-consist-contra (step-ana-env-beyond step FillL⊙ FillL⊙) consist-ana) consist-mark syn (PreservationAna ana (StepLow FillL⊙ step FillL⊙))  
     PreservationSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (StepLow (FillLEnvUpRec (FillLEnvAp2 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp2 (FillLEnvLowRec fill2)))) = SynAp marrow consist-syn consist-ana consist-mark syn (PreservationAna ana (StepLow (FillLEnvLowRec fill1) step (FillLEnvLowRec fill2)))
@@ -567,14 +568,15 @@ module Core.UpdatePreservation where
       (Γ ⊢ e ⇐) ->
       (e Low↦ e') ->   
       (Γ ⊢ e' ⇐) 
-    PreservationAna ana (StepLow FillL⊙ step FillL⊙) = PreservationStepAna ana step  
-    PreservationAna (AnaSubsume subsumable consist-t consist-m syn) (StepLow (FillLEnvLowRec (FillLEnvUpRec fill1)) step (FillLEnvLowRec (FillLEnvUpRec fill2))) = AnaSubsume (step-l-env-subsumable step fill1 fill2 subsumable) consist-t consist-m (PreservationSyn syn (StepLow (FillLEnvUpRec fill1) step (FillLEnvUpRec fill2)))
-    PreservationAna (AnaFun marrow ana consist consist-ana consist-asc consist-body edge) (StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun fill1))) step (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun {e' = e' [ m' ]⇐ ana'} fill2)))) = AnaFun marrow (PreservationAna ana (StepLow fill1 step fill2)) consist consist-ana consist-asc (beyond-consist-contra (step-ana-env-beyond step fill1 fill2) consist-body) edge
-    PreservationAna (AnaSubsume {ana-all = ana-all} subsumable consist-t consist-m syn) (StepUp {e-in' = e-all' ⇒ syn-all'} (FillUEnvLowRec FillU⊙) step (FillUEnvLowRec FillU⊙)) with ~D-dec syn-all' ana-all 
-    ... | m' , consist-t' = AnaSubsume (step-subsumable step subsumable) consist-t' (beyond-consist-m (beyond-through-~D (step-syn-beyond step) consist-t consist-t') consist-m) (PreservationSyn syn (StepUp FillU⊙ step FillU⊙))
-    PreservationAna (AnaSubsume subsumable consist-t consist-m syn) (StepUp (FillUEnvLowRec (FillUEnvUpRec fill1)) step (FillUEnvLowRec (FillUEnvUpRec fill2))) = AnaSubsume (step-u-env-subsumable step fill1 fill2 subsumable) consist-t consist-m (PreservationSyn syn (StepUp (FillUEnvUpRec fill1) step (FillUEnvUpRec fill2)))
-    PreservationAna (AnaFun {t-in-ana = t-in-ana} marrow ana consist consist-ana consist-asc consist-body edge) (StepUp (FillUEnvLowRec FillU⊙) (StepNewAnnFun {t-asc = t-asc} vars-syn) (FillUEnvLowRec FillU⊙)) with ~NM-dec (t-asc , Old) t-in-ana
-    ... | m-asc-ana' , consist' = AnaFun marrow (PreservationVarsAna ana vars-syn InCtxFound refl) consist' consist-ana (beyond-consist-m {!   !} consist-asc) consist-body {!   !}
-    PreservationAna (AnaFun marrow ana consist consist-ana consist-asc consist-body edge) (StepUp (FillUEnvLowRec FillU⊙) StepNewSynFun (FillUEnvLowRec FillU⊙)) = {!   !} 
-    PreservationAna (AnaFun marrow ana consist consist-ana consist-asc consist-body edge) (StepUp (FillUEnvLowRec FillU⊙) StepVoidSynFun (FillUEnvLowRec FillU⊙)) = {!   !}
-    PreservationAna (AnaFun marrow ana consist consist-ana consist-asc consist-body edge) (StepUp (FillUEnvLowRec (FillUEnvUpRec x₅)) step (FillUEnvLowRec (FillUEnvUpRec x₆))) = {!   !}  
+    PreservationAna = {!   !}
+    -- PreservationAna ana (StepLow FillL⊙ step FillL⊙) = PreservationStepAna ana step  
+    -- PreservationAna (AnaSubsume subsumable consist-t consist-m syn) (StepLow (FillLEnvLowRec (FillLEnvUpRec fill1)) step (FillLEnvLowRec (FillLEnvUpRec fill2))) = AnaSubsume (step-l-env-subsumable step fill1 fill2 subsumable) consist-t consist-m (PreservationSyn syn (StepLow (FillLEnvUpRec fill1) step (FillLEnvUpRec fill2)))
+    -- PreservationAna (AnaFun marrow ana consist consist-ana consist-asc consist-body edge) (StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun fill1))) step (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun {e' = e' [ m' ]⇐ ana'} fill2)))) = AnaFun marrow (PreservationAna ana (StepLow fill1 step fill2)) consist consist-ana consist-asc (beyond-consist-contra (step-ana-env-beyond step fill1 fill2) consist-body) edge
+    -- PreservationAna (AnaSubsume {ana-all = ana-all} subsumable consist-t consist-m syn) (StepUp {e-in' = e-all' ⇒ syn-all'} (FillUEnvLowRec FillU⊙) step (FillUEnvLowRec FillU⊙)) with ~D-dec syn-all' ana-all 
+    -- ... | m' , consist-t' = AnaSubsume (step-subsumable step subsumable) consist-t' (beyond-consist-m (beyond-through-~D (step-syn-beyond step) consist-t consist-t') consist-m) (PreservationSyn syn (StepUp FillU⊙ step FillU⊙))
+    -- PreservationAna (AnaSubsume subsumable consist-t consist-m syn) (StepUp (FillUEnvLowRec (FillUEnvUpRec fill1)) step (FillUEnvLowRec (FillUEnvUpRec fill2))) = AnaSubsume (step-u-env-subsumable step fill1 fill2 subsumable) consist-t consist-m (PreservationSyn syn (StepUp (FillUEnvUpRec fill1) step (FillUEnvUpRec fill2)))
+    -- PreservationAna (AnaFun {t-in-ana = t-in-ana} marrow ana consist consist-ana consist-asc consist-body edge) (StepUp (FillUEnvLowRec FillU⊙) (StepNewAnnFun {t-asc = t-asc} vars-syn) (FillUEnvLowRec FillU⊙)) with ~NM-dec (t-asc , Old) t-in-ana
+    -- ... | m-asc-ana' , consist' = AnaFun marrow (PreservationVarsAna ana vars-syn InCtxFound refl) consist' consist-ana (beyond-consist-m {!   !} consist-asc) consist-body {!   !}
+    -- PreservationAna (AnaFun marrow ana consist consist-ana consist-asc consist-body edge) (StepUp (FillUEnvLowRec FillU⊙) StepNewSynFun (FillUEnvLowRec FillU⊙)) = {!   !}   
+    -- PreservationAna (AnaFun marrow ana consist consist-ana consist-asc consist-body edge) (StepUp (FillUEnvLowRec FillU⊙) StepVoidSynFun (FillUEnvLowRec FillU⊙)) = {!   !}
+    -- PreservationAna (AnaFun marrow ana consist consist-ana consist-asc consist-body edge) (StepUp (FillUEnvLowRec (FillUEnvUpRec x₅)) step (FillUEnvLowRec (FillUEnvUpRec x₆))) = {!   !}  

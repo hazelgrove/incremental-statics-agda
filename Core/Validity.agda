@@ -106,8 +106,7 @@ module Core.Validity where
       Γ' ⊢ b ~> e ⇐ t
     validity-ana (AnaSubsume subsumable (~DSome (NMConsist consist)) (▷NMOld refl) syn) (SettledAnaAna (SettledAnaSubsume settled-subsumable (SettledSynSyn settled))) (BarrenLow (BarrenUp bare)) bare-ctx ctx-old refl
       = MarkSubsume (validity-syn syn (SettledSynSyn settled) (BarrenUp bare) bare-ctx ctx-old refl) (barren-subsumable subsumable bare) consist
-    validity-ana (AnaFun (SynArrowSome (MNTArrowOld tarrow)) ana (NMConsist mark-consist) (▷NMOld refl) (▷NMOld refl) (▷DSome (MergeInfoOld refl)) AnaLamOld) (SettledAnaAna (SettledAnaFun (SettledAnaAna settled))) (BarrenLow (BarrenUp (BarrenFun (BarrenLow (BarrenUp bare))))) bare-ctx ctx-old refl
-      = MarkAnaFun tarrow (validity-ana ana (SettledAnaAna settled) (BarrenLow (BarrenUp bare)) (BarrenCtxCons bare-ctx) (ConsAllOld ctx-old) refl) mark-consist
+    validity-ana (AnaFun (SynArrowSome (MNTArrowOld tarrow)) ana (NMConsist mark-consist) (▷NMOld refl) (▷NMOld refl) (▷DSome (MergeInfoOld refl)) AnaLamOld) (SettledAnaAna (SettledAnaFun (SettledAnaAna settled))) (BarrenLow (BarrenUp (BarrenFun (BarrenLow (BarrenUp bare))))) bare-ctx ctx-old refl = MarkAnaFun tarrow (validity-ana ana (SettledAnaAna settled) (BarrenLow (BarrenUp bare)) (BarrenCtxCons bare-ctx) (ConsAllOld ctx-old) refl) mark-consist
 
   validity : ∀ {e e' b t n} ->
     e ⇒ ->

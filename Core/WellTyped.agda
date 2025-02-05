@@ -103,10 +103,10 @@ mutual
     SynHole : ∀ {Γ syn-all} ->
       ▷D (■ (THole , Old)) syn-all ->
       Γ ⊢ (EHole ⇒ syn-all) ⇒
-    SynFun : ∀ {Γ e-body syn-all syn-body t-asc} ->
+    SynFun : ∀ {Γ e-body syn-all syn-body ana-body t-asc m-ana m-asc m-body} ->
       ▷D (SynArrow t-asc syn-body) syn-all ->
       (t-asc ∷ Γ) ⊢ (e-body ⇒ syn-body) ⇒ ->
-      Γ ⊢ ((EFun t-asc ✔ ✔ ((e-body ⇒ syn-body) [ ✔ ]⇐ □)) ⇒ syn-all) ⇒
+      Γ ⊢ ((EFun t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) ⇒
     SynAp : ∀ {Γ e-fun e-arg syn-all syn-fun ana-arg t-in-fun t-out-fun m-all m-fun m-arg} ->
       syn-fun ▸DTArrowNM t-in-fun , t-out-fun , m-fun -> 
       ▷D (■ t-out-fun) syn-all -> 
@@ -139,7 +139,7 @@ mutual
       ▷NM m-ana-ana m-ana -> 
       ▷NM m-asc-ana m-asc -> 
       ▷D (■ t-out-ana) ana-body ->
-      -- AnaLamEdge syn-all m-all ana-all ->
+      AnaLamEdge syn-all m-all ana-all ->
       Γ ⊢ (((EFun t-asc m-ana m-asc (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐  
     
 data _⇒ : Program -> Set where 
