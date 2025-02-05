@@ -94,6 +94,11 @@ SynArrow : NewType -> TypeData -> TypeData
 SynArrow t □ = □
 SynArrow t1 (■ t2) = ■ (NTArrow t1 t2)
 
+-- Note: this version is not actually bidirectional. The two judgments are for
+-- upper and lower expressions. The bidirectional invariant doesn't work; at a 
+-- high level this is because mode is non-local, while the invariant must be 
+-- local.
+
 mutual 
 
   data _⊢_⇒ : (Γ : Ctx) (e : ExpUp) -> Set where 
@@ -103,10 +108,6 @@ mutual
     SynHole : ∀ {Γ syn-all} ->
       ▷D (■ (THole , Old)) syn-all ->
       Γ ⊢ (EHole ⇒ syn-all) ⇒
-    SynFun : ∀ {Γ e-body syn-all syn-body ana-body t-asc m-ana m-asc m-body} ->
-      ▷D (SynArrow t-asc syn-body) syn-all ->
-      (t-asc ∷ Γ) ⊢ (e-body ⇒ syn-body) ⇒ ->
-      Γ ⊢ ((EFun t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) ⇒
     SynAp : ∀ {Γ e-fun e-arg syn-all syn-fun ana-arg t-in-fun t-out-fun m-all m-fun m-arg} ->
       syn-fun ▸DTArrowNM t-in-fun , t-out-fun , m-fun -> 
       ▷D (■ t-out-fun) syn-all -> 
@@ -132,15 +133,20 @@ mutual
       ▷NM m-consist m-all ->
       Γ ⊢ (e-all ⇒ syn-all) ⇒ -> 
       Γ ⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐ 
-    AnaFun : ∀ {Γ e-body syn-all ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana} ->
+    AnaFun : ∀ {Γ e-body syn-all syn-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana m-all-ana} ->
+      -- analytic flow
       ana-all ▸DTArrowNM t-in-ana , t-out-ana , m-ana-ana -> 
-      (t-asc ∷ Γ) ⊢ (e-body [ m-body ]⇐ ana-body) ⇐ ->
       t-asc ~NM t-in-ana , m-asc-ana ->
+      ▷D (■ t-out-ana) ana-body ->
       ▷NM m-ana-ana m-ana -> 
       ▷NM m-asc-ana m-asc -> 
-      ▷D (■ t-out-ana) ana-body ->
-      AnaLamEdge syn-all m-all ana-all ->
-      Γ ⊢ (((EFun t-asc m-ana m-asc (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐  
+      -- synthetic flow
+      ▷D (SynArrow t-asc syn-body) syn-all ->
+      syn-all ~D ana-all , m-all-ana ->
+      ▷NM m-all-ana m-all -> 
+      -- recursive call
+      (t-asc ∷ Γ) ⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ⇐ ->
+      Γ ⊢ (((EFun t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐  
     
 data _⇒ : Program -> Set where 
   SynProg : ∀ {e} ->
