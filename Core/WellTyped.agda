@@ -161,7 +161,7 @@ mutual
       ▶ m-ana-ana m-ana -> 
       ▶ m-asc-ana m-asc -> 
       -- synthetic flow
-      ▷ (NUnless (NArrow t-asc syn-body) ana-all) syn-all ->
+      ▷ (NUnless (NArrow t-asc syn-body) ana-all) syn-all -> -- <-- this step also flows from ana
       syn-all ~N ana-all , m-all-ana ->
       ▶ m-all-ana m-all -> 
       -- recursive call
