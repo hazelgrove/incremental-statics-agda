@@ -57,7 +57,7 @@ data _L↦_ : ExpLow -> ExpLow -> Set where
     (((EFun (t-asc , Old) ✔ ✔ (e-body' [ m-body ]⇐ (□ , Old))) ⇒ ((■ (TArrow t-asc t-body) , New))) [ ✔ ]⇐ (□ , Old))
   StepSynFun : ∀ {e-body t-asc t-body n-asc m-body syn-all} ->
     (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (t-body , New)) [ m-body ]⇐ (□ , Old))) ⇒ syn-all) [ ✔ ]⇐ (□ , Old)) L↦
-    (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (t-body , Old)) [ m-body ]⇐ (□ , Old) )) ⇒ (DArrow t-asc t-body , New)) [ ✔ ]⇐ (□ , Old))
+    (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (t-body , Old)) [ ✔ ]⇐ (□ , Old) )) ⇒ (DArrow t-asc t-body , New)) [ ✔ ]⇐ (□ , Old))
   
   -- StepVoidSynFun : ∀ {e-body t-asc t-body n-asc n-body m-body syn-all} ->
   --   (((EFun (t-asc , n-asc) ✔ ✔ ((e-body ⇒ ((■ t-body , n-body))) [ m-body ]⇐ (□ , {!   !}))) ⇒ syn-all) [ ✔ ]⇐ (□ , {!   !})) L↦

@@ -44,6 +44,12 @@ module Core.UpdatePreservation where
   max-old Old = refl
   max-old New = refl
 
+  ~DVoid-left : ∀ {t m} ->
+    t ~D □ , m ->
+    m ≡ ✔
+  ~DVoid-left ~DVoidL = refl
+  ~DVoid-left ~DVoidR = refl
+
   ~D-unless : ∀ {t1 t2} ->
     DUnless t1 t2 ~D t2 , ✔
   ~D-unless {t2 = □} = ~DVoidR
@@ -377,12 +383,9 @@ module Core.UpdatePreservation where
   step-u-env-subsumable step (FillUEnvAp2 _) (FillUEnvAp2 _) SubsumableAp = SubsumableAp
   step-u-env-subsumable step (FillUEnvAsc _) (FillUEnvAsc _) SubsumableAsc = SubsumableAsc
 
-  -- oldify-▷D : ∀ {d t n} ->
-  --   ▷D d (■ (t , n)) -> 
-  --   ▷D d (■ (t , Old))
-  -- oldify-▷D ▷DVoidL = ▷DVoidL
-  -- oldify-▷D (▷DSome MergeInfoNew) = ▷DSome MergeInfoNew
-  -- oldify-▷D (▷DSome (MergeInfoOld refl)) = ▷DSome (MergeInfoOld refl)
+  -- void-ana-unmarked : 
+  --   Γ ⊢ e [ m ]⇐ (□ , Old) ⇐
+  --   m ≡ ✔
 
   oldify-syn : ∀ {Γ e t n} ->
     Γ ⊢ e ⇒ (t , n) ⇒ ->
@@ -393,12 +396,12 @@ module Core.UpdatePreservation where
   oldify-syn (SynVar in-ctx (▷■Pair (▷Pair consist))) = SynVar in-ctx (▷■Pair (▷Pair consist)) 
   oldify-syn (SynAsc (▷■Pair (▷Pair consist-syn)) consist-ana ana) = SynAsc (▷■Pair (▷Pair consist-syn)) consist-ana ana
   
-  oldify-syn-inner : ∀ {Γ e t n} ->
-    Γ ⊢ ((e ⇒ (t , n)) [ ✔ ]⇐ (□ , Old)) ⇐ ->
+  oldify-syn-inner : ∀ {Γ e t m n} ->
+    Γ ⊢ ((e ⇒ (t , n)) [ m ]⇐ (□ , Old)) ⇐ ->
     Γ ⊢ ((e ⇒ (t , Old)) [ ✔ ]⇐ (□ , Old)) ⇐
-  oldify-syn-inner (AnaSubsume subsumable _ _ syn) = AnaSubsume subsumable (~N-pair ~DVoidR) ▶Old (oldify-syn syn) 
+  oldify-syn-inner (AnaSubsume subsumable (~N-pair consist) consist-m syn) = AnaSubsume subsumable (~N-pair ~DVoidR) ▶Old (oldify-syn syn) 
   oldify-syn-inner (AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ x₅ x₆ x₇ syn) = AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ (beyond-▷-contra ◁=Old x₅) (~N-pair ~DVoidR) ▶Old syn
-
+  
   newify-ana : ∀ {Γ e m ana t} ->
     Γ ⊢ e [ m ]⇐ ana ⇐ -> 
     Γ ⊢ e [ m ]⇐ (t , New) ⇐
@@ -456,7 +459,6 @@ module Core.UpdatePreservation where
       x , (t , New) ∈N Γ , ✔ ->
       oldify-ctx Γ x ≡ Γ' ->
       (Γ' ⊢ e' ⇒)
-    -- preservation-vars-syn = {!   !}
     preservation-vars-syn (SynConst consist) VSConst in-ctx refl = SynConst consist
     preservation-vars-syn (SynHole consist) VSHole in-ctx refl = SynHole consist
     -- preservation-vars-syn (SynFun consist syn) (VSFun {e-body' = e-body' ⇒ syn-body'} vars-syn) in-ctx refl = SynFun (preservation-lambda-lemma (vars-syn-beyond vars-syn) consist) (preservation-vars-syn syn vars-syn (InCtxSkip in-ctx) refl)
@@ -503,8 +505,7 @@ module Core.UpdatePreservation where
     where 
     vars-syn' : VarsSynthesize 0 t-asc (e-body ⇒ (■ t-body , n-body)) (e-body' ⇒ (syn-body' , n-syn-body' ⊓ Old))
     vars-syn' rewrite max-old n-syn-body' = vars-syn
-  -- snag : generalize oldify-syn-inner.
-  PreservationStepAna (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) StepSynFun = AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) (▷Pair ▶Old) ▶Old ▶Same (▷Pair ▶Same) (~N-pair ~DVoidR) ▶New {! oldify-syn-inner  !}
+  PreservationStepAna (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) StepSynFun = AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) (▷Pair ▶Old) ▶Old ▶Same (▷Pair ▶Same) (~N-pair ~DVoidR) ▶New (oldify-syn-inner ana)
   
   -- PreservationStepSyn (SynFun consist syn) (StepNewAnnFun {e-body' = e-body' ⇒ syn-body'} vars-syn) = SynFun (preservation-lambda-lemma-2 (vars-syn-beyond vars-syn)) (preservation-vars-syn syn vars-syn InCtxFound refl)
   -- PreservationStepSyn (SynFun consist syn) (StepNewSynFun {t-asc = t-asc} {t-body} {n-asc}) = SynFun (direct-arrow-consist-lemma t-asc t-body n-asc Old) (oldify-syn syn)
