@@ -84,16 +84,23 @@ data _■~N_,_ : NewType -> NewData -> NewMark -> Set where
     (■ t , n) ~N d , m ->
     (t , n) ■~N d , m
 
+DUnless : Data -> Data -> Data 
+DUnless d □ = d
+DUnless d (■ t) = □
+
+NUnless : NewData -> NewData -> NewData 
+NUnless (d1 , n1) (d2 , n2) = (DUnless d1 d2 , n1 ⊓ n2)
+
 -- -- Legal arrangements of the synthesized, mark, and analyzed on a 
 -- -- lambda in analytic position. Should be thought of as a predicate on 
 -- -- syn and m as a function of ana. 
 -- data AnaLamEdge : Data -> Mark -> Data -> Set where 
---   AnaLamVoid : ∀ {syn m} ->
---     AnaLamEdge syn m □
+--   AnaLamVoid : ∀ {syn m n} ->
+--     AnaLamEdge syn m (□ , n)
 --   AnaLamNew : ∀ {syn m ana} ->
---     AnaLamEdge syn m (■ (ana , New))
+--     AnaLamEdge syn m (■ ana , New)
 --   AnaLamOld : ∀ {ana} ->
---     AnaLamEdge □ ✔ (■ (ana , Old))
+--     AnaLamEdge □ ✔ (■ ana , Old)
 
 DArrow : Type -> Data -> Data
 DArrow t1 □ = □
@@ -154,7 +161,7 @@ mutual
       ▶ m-ana-ana m-ana -> 
       ▶ m-asc-ana m-asc -> 
       -- synthetic flow
-      ▷ (NArrow t-asc syn-body) syn-all ->
+      ▷ (NUnless (NArrow t-asc syn-body) ana-all) syn-all ->
       syn-all ~N ana-all , m-all-ana ->
       ▶ m-all-ana m-all -> 
       -- recursive call

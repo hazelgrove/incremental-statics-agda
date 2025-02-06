@@ -27,32 +27,16 @@ module Core.Validity where
       CtxAllOld Γ -> 
       CtxAllOld ((t , Old) ∷ Γ)
 
-  barren-ctx-lookup : ∀ {x t n Γ Γ'} ->
-    x , (t , n) ∈ Γ ->
+  ∈-of-∈N : ∀ {x t n m Γ Γ'} ->
+    x , (t , n) ∈N Γ , m -> 
     BarrenCtx Γ Γ' ->
-    x , t ∈ Γ'
-  barren-ctx-lookup InCtx0 (BarrenCtxCons bare-ctx) = InCtx0
-  barren-ctx-lookup (InCtxSuc in-ctx) (BarrenCtxCons bare-ctx) = InCtxSuc (barren-ctx-lookup in-ctx bare-ctx)
-
-  barren-ctx-lookup-rev : ∀ {x t Γ Γ'} ->
-    BarrenCtx Γ Γ' ->
-    x , t ∈ Γ' ->
-    ∃[ n ] (x , (t , n) ∈ Γ)
-  barren-ctx-lookup-rev BarrenCtxEmpty ()
-  barren-ctx-lookup-rev (BarrenCtxCons bare-ctx) InCtx0 = _ , InCtx0
-  barren-ctx-lookup-rev (BarrenCtxCons bare-ctx) (InCtxSuc in-ctx) with barren-ctx-lookup-rev bare-ctx in-ctx 
-  ... | n , ih = n , (InCtxSuc ih)
-
-  ∈M-of-∈NM : ∀ {x t n m Γ Γ'} ->
-    x , (t , n) ∈NM Γ , m -> 
-    BarrenCtx Γ Γ' ->
-    x , t ∈M Γ' , m
-  ∈M-of-∈NM InCtxEmpty BarrenCtxEmpty = InCtxEmpty
-  ∈M-of-∈NM InCtxFound (BarrenCtxCons bare-ctx) = InCtxFound
-  ∈M-of-∈NM (InCtxSkip in-ctx) (BarrenCtxCons bare-ctx) = InCtxSkip (∈M-of-∈NM in-ctx bare-ctx)
+    x , t ∈ Γ' , m
+  ∈-of-∈N InCtxEmpty BarrenCtxEmpty = InCtxEmpty
+  ∈-of-∈N InCtxFound (BarrenCtxCons bare-ctx) = InCtxFound
+  ∈-of-∈N (InCtxSkip in-ctx) (BarrenCtxCons bare-ctx) = InCtxSkip (∈-of-∈N in-ctx bare-ctx)
 
   all-old-lookup : ∀ {x nt nm Γ} ->
-    x , nt ∈NM Γ , nm ->
+    x , nt ∈N Γ , nm ->
     CtxAllOld Γ ->
     ∃[ t ] nt ≡ (t , Old)
   all-old-lookup InCtxEmpty ctx-old = THole , refl
@@ -74,6 +58,18 @@ module Core.Validity where
     -- scratch results in e again (the type it will synthesize is the type 
     -- on the top annotation of e).
 
+    validity-indirect-syn : ∀ {Γ Γ' e b t n e'} ->
+      Γ ⊢ (e [ ✔ ]⇐ (□ , Old)) ⇐ ->
+      SettledSyn e ->
+      BarrenExpUp e b ->
+      BarrenCtx Γ Γ' ->
+      CtxAllOld Γ -> 
+      e ≡ (e' ⇒ ((■ t , n))) ->
+      Γ' ⊢ b ~> e ⇒ t
+    validity-indirect-syn (AnaSubsume x x₁ x₂ x₃) settled bare bare-ctx ctx-old refl = validity-syn x₃ settled bare bare-ctx ctx-old refl
+    validity-indirect-syn (AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) (▷Pair ▶Old) ▶Old ▶Old (▷Pair ▶Old) (~N-pair ~DVoidR) ▶Old syn) (SettledSynSyn (SettledSynFun (SettledSynSyn settled))) (BarrenUp (BarrenFun (BarrenLow (BarrenUp bare)))) bare-ctx ctx-old refl = 
+      MarkSynFun (validity-indirect-syn syn (SettledSynSyn settled) (BarrenUp bare) (BarrenCtxCons bare-ctx) (ConsAllOld ctx-old) refl)
+
     -- Issue: maybe this should really provide the annotation rather than assume it 
     -- (the conclusion is that there exists an e' t and n such that e ≡ (e' ⇒ (■ (t , n))) and Γ' ⊢ b ~> e ⇒ t)
     -- this will make things less nice, and require tightening the invariant
@@ -83,16 +79,16 @@ module Core.Validity where
       BarrenExpUp e b ->
       BarrenCtx Γ Γ' ->
       CtxAllOld Γ -> 
-      e ≡ (e' ⇒ (■ (t , n))) ->
+      e ≡ (e' ⇒ ((■ t , n))) ->
       Γ' ⊢ b ~> e ⇒ t
-    validity-syn (SynConst (▷DSome (MergeInfoOld refl))) (SettledSynSyn _) (BarrenUp BarrenConst) bare-ctx ctx-old refl = MarkConst
-    validity-syn (SynHole (▷DSome (MergeInfoOld refl))) (SettledSynSyn _) (BarrenUp BarrenHole) bare-ctx ctx-old refl = MarkHole
-    validity-syn (SynAp (SynArrowSome (MNTArrowOld tarrow)) (▷DSome (MergeInfoOld refl)) (▷DSome (MergeInfoOld refl)) (▷NMOld refl) wt-syn wt-ana) (SettledSynSyn (SettledSynAp (SettledSynSyn set-syn) (SettledAnaAna set-ana))) (BarrenUp (BarrenAp (BarrenLow bare1) (BarrenLow bare2))) bare-ctx ctx-old refl
-      = MarkAp (validity-syn wt-syn (SettledSynSyn set-syn) bare1 bare-ctx ctx-old refl) tarrow (validity-ana wt-ana (SettledAnaAna set-ana) (BarrenLow bare2) bare-ctx ctx-old refl)
-    validity-syn (SynVar in-ctx (▷DSome x)) (SettledSynSyn SettledSynVar) (BarrenUp BarrenVar) bare-ctx ctx-old refl with all-old-lookup in-ctx ctx-old | x
-    ... | t , refl | MergeInfoOld refl = MarkVar (∈M-of-∈NM in-ctx bare-ctx)
-    validity-syn (SynAsc (▷DSome (MergeInfoOld refl)) (▷DSome (MergeInfoOld refl)) wt-ana) (SettledSynSyn (SettledSynAsc (SettledAnaAna set-ana))) (BarrenUp (BarrenAsc bare)) bare-ctx ctx-old refl 
-      = MarkAsc (validity-ana wt-ana (SettledAnaAna set-ana) bare bare-ctx ctx-old refl)
+    validity-syn (SynConst (▷Pair ▶Old)) (SettledSynSyn _) (BarrenUp BarrenConst) bare-ctx ctx-old refl = MarkConst
+    validity-syn (SynHole (▷Pair ▶Old)) (SettledSynSyn _) (BarrenUp BarrenHole) bare-ctx ctx-old refl = MarkHole
+    validity-syn (SynAp (NTArrowC (DTArrowSome tarrow)) (▷Pair ▶Old) (▷Pair ▶Old) ▶Old syn ana) (SettledSynSyn (SettledSynAp (SettledSynSyn set-syn) (SettledAnaAna set-ana))) (BarrenUp (BarrenAp (BarrenLow bare1) (BarrenLow bare2))) bare-ctx ctx-old refl
+      = MarkAp (validity-indirect-syn syn (SettledSynSyn set-syn) bare1 bare-ctx ctx-old refl) tarrow (validity-ana ana (SettledAnaAna set-ana) (BarrenLow bare2) bare-ctx ctx-old refl)
+    validity-syn (SynVar in-ctx (▷■Pair (▷Pair x))) (SettledSynSyn SettledSynVar) (BarrenUp BarrenVar) bare-ctx ctx-old refl with all-old-lookup in-ctx ctx-old | x
+    ... | t , refl | ▶Old = MarkVar (∈-of-∈N in-ctx bare-ctx)
+    validity-syn (SynAsc (▷■Pair (▷Pair ▶Old)) (▷■Pair (▷Pair ▶Old)) ana) (SettledSynSyn (SettledSynAsc set-ana)) (BarrenUp (BarrenAsc bare)) bare-ctx ctx-old refl 
+      = MarkAsc (validity-ana ana set-ana bare bare-ctx ctx-old refl)
 
     validity-ana : ∀ {Γ Γ' e b t n m e'} ->
       Γ ⊢ e ⇐ ->
@@ -100,23 +96,18 @@ module Core.Validity where
       BarrenExpLow e b ->
       BarrenCtx Γ Γ' ->
       CtxAllOld Γ -> 
-      e ≡ (e' [ m ]⇐ (■ (t , n))) ->
+      e ≡ (e' [ m ]⇐ ((■ t , n))) ->
       Γ' ⊢ b ~> e ⇐ t
-    validity-ana (AnaSubsume subsumable (~DSome (NMConsist consist)) (▷NMOld refl) syn) (SettledAnaAna (SettledAnaSubsume settled-subsumable (SettledSynSyn settled))) (BarrenLow (BarrenUp bare)) bare-ctx ctx-old refl = MarkSubsume (validity-syn syn (SettledSynSyn settled) (BarrenUp bare) bare-ctx ctx-old refl) (barren-subsumable settled-subsumable bare) consist
-    validity-ana (AnaFun (SynArrowSome (MNTArrowOld x)) consist consist-ana consist-m-ana consist-m-asc consist-syn ~DVoidL ▷NMNew ana) (SettledAnaAna (SettledAnaFun (SettledAnaAna settled))) (BarrenLow (BarrenUp (BarrenFun bare))) bare-ctx ctx-old refl = {!   !} 
-    -- validity-ana (AnaFun marrow consist consist-ana consist-m-ana consist-m-asc consist-syn consist-all consist-m-all ana) = {!   !} 
-    
-    -- (AnaFun (SynArrowSome (MNTArrowOld tarrow)) ana (NMConsist mark-consist) (▷NMOld refl) (▷NMOld refl) (▷DSome (MergeInfoOld refl)) AnaLamOld) (SettledAnaAna (SettledAnaFun (SettledAnaAna settled))) (BarrenLow (BarrenUp (BarrenFun (BarrenLow (BarrenUp bare))))) bare-ctx ctx-old refl = MarkAnaFun tarrow (validity-ana ana (SettledAnaAna settled) (BarrenLow (BarrenUp bare)) (BarrenCtxCons bare-ctx) (ConsAllOld ctx-old) refl) mark-consist
-    
-    -- validity-syn (SynFun (▷DSome (MergeInfoOld refl)) syn) (SettledSynSyn (SettledSynFun (SettledSynSyn sett))) (BarrenUp (BarrenFun {b = b} (BarrenLow (BarrenUp bare)))) bare-ctx ctx-old refl 
-    --   = MarkSynFun (validity-syn syn (SettledSynSyn sett) (BarrenUp bare) (BarrenCtxCons bare-ctx) (ConsAllOld ctx-old) refl)
-
+    validity-ana (AnaSubsume subsumable (~N-pair (~DSome consist)) ▶Old syn) (SettledAnaAna (SettledAnaSubsume settled-subsumable (SettledSynSyn settled))) (BarrenLow (BarrenUp bare)) bare-ctx ctx-old refl 
+      = MarkSubsume (validity-syn syn (SettledSynSyn settled) (BarrenUp bare) bare-ctx ctx-old refl) (barren-subsumable settled-subsumable bare) consist
+    validity-ana (AnaFun (NTArrowC (DTArrowSome marrow)) (■~N-pair (~N-pair (~DSome consist))) (▷Pair ▶Old) ▶Old ▶Old (▷Pair x₁) (~N-pair ~DVoidL) ▶Old ana) (SettledAnaAna (SettledAnaFun (SettledAnaAna settled))) (BarrenLow (BarrenUp (BarrenFun bare))) bare-ctx ctx-old refl 
+      = MarkAnaFun marrow (validity-ana ana (SettledAnaAna settled) bare (BarrenCtxCons bare-ctx) (ConsAllOld ctx-old) refl) consist 
 
   validity : ∀ {e e' b t n} ->
     e ⇒ ->
     SettledProgram e ->
     BarrenProgram e b ->   
-    e ≡ Root (e' ⇒ (■ (t , n))) -> 
-    b ~> e ⇒ t  
-  validity (SynProg syn) (SettledRoot settled) (BarrenP bare) refl   
-    = MarkProgram (validity-syn syn settled bare BarrenCtxEmpty EmptyAllOld refl)     
+    e ≡ Root (e' ⇒ ((■ t , n))) -> 
+    b ~> e ⇒ t   
+  validity (SynProg syn) (SettledRoot settled) (BarrenP bare) refl     
+    = MarkProgram (validity-syn syn settled bare BarrenCtxEmpty EmptyAllOld refl)      
