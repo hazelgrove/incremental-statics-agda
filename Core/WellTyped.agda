@@ -24,6 +24,7 @@ data ▶ {A : Set} : NEW A -> A -> Set where
 
 data ▷ {A : Set} : NEW A -> NEW A -> Set where 
   ▷Pair : ∀ {a a' n n'} -> 
+    ▶ (a , n) a' ->
     ▷ (a , n) (a' , n')
     
 data ▷■ {A : Set} : NEW A -> NEW (DATA A) -> Set where
@@ -74,7 +75,7 @@ data _■~D_,_ : Type -> Data -> Mark -> Set where
     t ■~D d , m
 
 data _~N_,_ : NewData -> NewData -> NewMark -> Set where 
-  NConsist : ∀ {d1 d2 n1 n2 m} ->
+  ~N-pair : ∀ {d1 d2 n1 n2 m} ->
     d1 ~D d2 , m -> 
     (d1 , n1) ~N (d2 , n2) , (m , n1 ⊓ n2)
 
@@ -115,12 +116,17 @@ mutual
     SynHole : ∀ {Γ syn-all} ->
       ▷ (■ THole , Old) syn-all ->
       Γ ⊢ (EHole ⇒ syn-all) ⇒
+    -- SynFun : ∀ {Γ e-body syn-all syn-body ana-body t-asc m-ana m-asc m-body} ->
+    --   ▷ (NArrow t-asc syn-body) syn-all ->
+    --   (t-asc ∷ Γ) ⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ⇐ ->
+    --   Γ ⊢ ((EFun t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) ⇒  
     SynAp : ∀ {Γ e-fun e-arg syn-all syn-fun ana-arg t-in-fun t-out-fun m-all m-fun m-arg} ->
       syn-fun ▸NTArrow t-in-fun , t-out-fun , m-fun -> 
       ▷ t-out-fun syn-all -> 
       ▷ t-in-fun ana-arg -> 
       ▶ m-fun m-all -> 
-      Γ ⊢ (e-fun ⇒ syn-fun) ⇒ ->
+      Γ ⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , Old)) ⇐ ->
+      -- Γ ⊢ (e-fun ⇒ syn-fun) ⇒ ->
       Γ ⊢ (e-arg [ m-arg ]⇐ ana-arg) ⇐ ->
       Γ ⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , Old)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all) ⇒
     SynVar : ∀ {Γ x syn-all t-var m-var} ->
