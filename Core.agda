@@ -8,7 +8,10 @@ module Core where
   import Core.Settled
   import Core.Validity
   
+  import Core.Lemmas-Preservation
+
   import Core.Update
   import Core.UpdatePreservation
 
   import Core.Actions
+  -- import Core.ActionPreservation

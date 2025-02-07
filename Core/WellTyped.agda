@@ -128,15 +128,15 @@ mutual
     --   ▷ (NArrow t-asc syn-body) syn-all ->
     --   (t-asc ∷ Γ) ⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ⇐ ->
     --   Γ ⊢ ((EFun t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) ⇒  
-    SynAp : ∀ {Γ e-fun e-arg syn-all syn-fun ana-arg t-in-fun t-out-fun m-all m-fun m-arg} ->
+    SynAp : ∀ {Γ e-fun e-arg syn-all syn-fun ana-arg t-in-fun t-out-fun m-all m-fun m-arg n} ->
       syn-fun ▸NTArrow t-in-fun , t-out-fun , m-fun -> 
       ▷ t-out-fun syn-all -> 
       ▷ t-in-fun ana-arg -> 
       ▶ m-fun m-all -> 
-      Γ ⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , Old)) ⇐ ->
+      Γ ⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) ⇐ ->
       -- Γ ⊢ (e-fun ⇒ syn-fun) ⇒ ->
       Γ ⊢ (e-arg [ m-arg ]⇐ ana-arg) ⇐ ->
-      Γ ⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , Old)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all) ⇒
+      Γ ⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all) ⇒
     SynVar : ∀ {Γ x syn-all t-var m-var} ->
       x , t-var ∈N Γ , m-var ->
       ▷■ t-var syn-all ->

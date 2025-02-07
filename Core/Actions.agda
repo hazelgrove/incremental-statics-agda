@@ -31,9 +31,9 @@ module Core.Actions where
     ActInsertConst : ∀ {syn} ->
       InsertConst , (EHole ⇒ syn) AU↦ (EConst ⇒ (■ TBase , New))
     ActWrapFun : ∀ {e t n} ->
-      WrapFun , (e ⇒ (t , n)) AU↦ ((EFun (THole , New) ✔ ✔ ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , Old))) ⇒ (□ , Old))
+      WrapFun , (e ⇒ (t , n)) AU↦ ((EFun (THole , New) ✔ ✔ ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , Old))) ⇒ (t , n))
     ActWrapApOne : ∀ {e t n} ->
-      (WrapAp One) , (e ⇒ (t , n)) AU↦ ((EAp ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , Old)) ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old))) ⇒ (□ , Old))
+      (WrapAp One) , (e ⇒ (t , n)) AU↦ ((EAp ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , Old)) ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old))) ⇒ (t , n))
     ActWrapApTwo : ∀ {e t n} ->
       (WrapAp Two) , (e ⇒ (t , n)) AU↦ ((EAp ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old)) ✔ ((e ⇒ (t , Old)) [ ✔ ]⇐ (■ THole , Old))) ⇒ (■ THole , New))
     ActInsertVarWith : ∀ {syn x t m} ->
@@ -106,8 +106,8 @@ module Core.Actions where
 
   data _,_AP↦_ : (α : Action) -> (p p' : Program) -> Set where
     AStepProgram : ∀{α p p'} ->
-      α , e AUp↦ e' ->
-      α , (Root e) AP↦ (Root e')
+      α , (ExpLowOfProgram p) ALow↦ (ExpLowOfProgram p') ->
+      α , p AP↦ p'
       
 
       
