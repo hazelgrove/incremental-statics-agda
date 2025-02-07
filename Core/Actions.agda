@@ -31,7 +31,7 @@ module Core.Actions where
     ActInsertConst : ∀ {Γ syn} ->
       Γ ⊢ InsertConst , (EHole ⇒ syn) AU↦ (EConst ⇒ (■ TBase , New))
     ActWrapFun : ∀ {Γ x e e' t t' n n'} ->
-      VarsSynthesize? x THole (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
+      VarsSynthesize? x THole ✔ (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
       Γ ⊢ WrapFun x , (e ⇒ (t , n)) AU↦ ((EFun x (THole , New) ✔ ✔ ((e' ⇒ (t' , New)) [ ✔ ]⇐ (□ , Old))) ⇒ (t , n))
     ActWrapApOne : ∀ {Γ e t n} ->
       Γ ⊢ (WrapAp One) , (e ⇒ (t , n)) AU↦ ((EAp ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old))) ⇒ (t , n))
@@ -47,7 +47,7 @@ module Core.Actions where
       Γ ⊢ Delete , e AU↦ (EHole ⇒ (■ THole , New))
     ActUnwrapFun : ∀ {Γ x asc m-ana m-ann e e' t t' n n' tx nx m m-body ana syn} ->
       x , (tx , nx) ∈N? Γ , m ->
-      VarsSynthesize? x tx (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
+      VarsSynthesize? x tx m (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
       Γ ⊢ (Unwrap One) , ((EFun x asc m-ana m-ann ((e ⇒ (t , n)) [ m-body ]⇐ ana)) ⇒ syn) AU↦ (e' ⇒ (t' , New))
     -- ActUnwrapFunNone : ∀ {Γ asc m-ana m-ann e t n m-body ana syn} ->
     --   Γ ⊢ (Unwrap One) , ((EFun BHole asc m-ana m-ann ((e ⇒ (t , n)) [ m-body ]⇐ ana)) ⇒ syn) AU↦ (e ⇒ (t , New))

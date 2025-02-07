@@ -369,8 +369,8 @@ module Core.Lemmas-Preservation where
     Γ ⊢ e [ m' ]⇐ (t , New) ⇐
   small-newify-ana {e = e ⇒ (t , n)} ana = newify-ana ana
 
-  vars-syn-subsumable : ∀ {x t e e' syn syn'} ->
-    VarsSynthesize x t (e ⇒ syn) (e' ⇒ syn') -> 
+  vars-syn-subsumable : ∀ {x t m e e' syn syn'} ->
+    VarsSynthesize x t m (e ⇒ syn) (e' ⇒ syn') -> 
     SubsumableMid e ->
     SubsumableMid e'
   vars-syn-subsumable VSConst SubsumableConst = SubsumableConst
@@ -382,8 +382,8 @@ module Core.Lemmas-Preservation where
   vars-syn-subsumable (VSVarNeq _) SubsumableVar = SubsumableVar
   vars-syn-subsumable (VSAsc vars-syn) SubsumableAsc = SubsumableAsc
 
-  vars-syn-beyond : ∀ {x t e syn e' syn'} ->
-    VarsSynthesize x t (e ⇒ syn) (e' ⇒ syn') -> 
+  vars-syn-beyond : ∀ {x t m e syn e' syn'} ->
+    VarsSynthesize x t m (e ⇒ syn) (e' ⇒ syn') -> 
     =▷ syn syn' 
   vars-syn-beyond VSConst = =▷Refl
   vars-syn-beyond VSHole = =▷Refl
@@ -394,8 +394,8 @@ module Core.Lemmas-Preservation where
   vars-syn-beyond (VSVarNeq x) = =▷Refl
   vars-syn-beyond (VSAsc syn) = =▷Refl
 
-  vars-syn?-beyond : ∀ {x t e syn e' syn'} ->
-    VarsSynthesize? x t (e ⇒ syn) (e' ⇒ syn') -> 
+  vars-syn?-beyond : ∀ {x t m e syn e' syn'} ->
+    VarsSynthesize? x t m (e ⇒ syn) (e' ⇒ syn') -> 
     =▷ syn syn' 
   vars-syn?-beyond {BHole} refl = =▷Refl
   vars-syn?-beyond {BVar x} vars-syn = vars-syn-beyond vars-syn
@@ -480,11 +480,11 @@ module Core.Lemmas-Preservation where
   mutual 
 
     preservation-vars-ana :
-      ∀ {Γ Γ' x t e e' m ana} ->
-      (Γ ⊢ (e [ m ]⇐ ana) ⇐) ->
-      VarsSynthesize x t e e' ->
+      ∀ {Γ Γ' x t m' e e' ana} ->
+      (Γ ⊢ (e [ m' ]⇐ ana) ⇐) ->
+      VarsSynthesize x t ✔ e e' ->
       CtxInv x t Γ Γ' ->
-      (Γ' ⊢ (e' [ m ]⇐ ana) ⇐)
+      (Γ' ⊢ (e' [ m' ]⇐ ana) ⇐)
     preservation-vars-ana {e' = e-all' ⇒ syn-all'} {ana = ana} (AnaSubsume subsumable consist-t consist-m syn) vars-syn ctx-inv with ~N-dec syn-all' ana 
     ... | m-consist' , consist-t' = AnaSubsume (vars-syn-subsumable vars-syn subsumable) consist-t' (beyond-▶ (beyond-through-~N (vars-syn-beyond vars-syn) consist-t consist-t') consist-m) (preservation-vars-syn syn vars-syn ctx-inv)
     preservation-vars-ana (AnaFun {t-asc = t-asc} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunNeq {e-body' = e-body' ⇒ syn-body'} neq vars-syn) ctx-inv = AnaFun marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma-3 {t = t-asc} (vars-syn?-beyond vars-syn) consist-syn) consist-all consist-m-all (preservation-vars-ana ana vars-syn (CtxInvNeq? neq ctx-inv))    
@@ -493,7 +493,7 @@ module Core.Lemmas-Preservation where
     preservation-vars-syn :
       ∀ {Γ Γ' x t e e'} ->
       (Γ ⊢ e ⇒) ->
-      VarsSynthesize x t e e' ->
+      VarsSynthesize x t ✔ e e' ->
       CtxInv x t Γ Γ' ->
       (Γ' ⊢ e' ⇒)
     preservation-vars-syn (SynConst consist) VSConst ctx-inv = SynConst consist
@@ -506,9 +506,10 @@ module Core.Lemmas-Preservation where
     preservation-vars-syn (SynAsc consist-syn consist-ana ana) (VSAsc vars-syn) ctx-inv = SynAsc consist-syn consist-ana (preservation-vars-ana ana vars-syn ctx-inv)
 
   preservation-vars-ana? :
-    ∀ {x Γ t e e' m ana} ->
-    ((x ∶ t , New ∷? Γ) ⊢ (e [ m ]⇐ ana) ⇐) ->
-    VarsSynthesize? x t e e' ->
-    ((x ∶ t , Old ∷? Γ) ⊢ (e' [ m ]⇐ ana) ⇐)
+    ∀ {x Γ t e e' m' ana} ->
+    ((x ∶ t , New ∷? Γ) ⊢ (e [ m' ]⇐ ana) ⇐) ->
+    VarsSynthesize? x t ✔ e e' ->
+    ((x ∶ t , Old ∷? Γ) ⊢ (e' [ m' ]⇐ ana) ⇐)
   preservation-vars-ana? {BHole} ana refl = ana
   preservation-vars-ana? {BVar x} ana vars-syn = preservation-vars-ana ana vars-syn CtxInvInit2
+ 

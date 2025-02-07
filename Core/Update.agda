@@ -33,7 +33,7 @@ data _L↦_ : ExpLow -> ExpLow -> Set where
     ((EFun x (t-asc , n-asc) m-ana m-asc ((e-body ⇒ (t-body , n-body)) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (t-ana , New) L↦
     ((EFun x (t-asc , n-asc) m-ana' m-asc' ((e-body ⇒ (t-body , n-body)) [ m-body ]⇐ (t-out-ana , New))) ⇒ ((DUnless (DArrow t-asc t-body) t-ana) , New)) [ ✔ ]⇐ (t-ana , Old)
   StepNewAnnFun : ∀ {x e-body e-body' t-asc t-body n-body m-body syn-all} ->
-    VarsSynthesize? x t-asc (e-body ⇒ (■ t-body , n-body)) e-body' ->
+    VarsSynthesize? x t-asc ✔ (e-body ⇒ (■ t-body , n-body)) e-body' ->
     (((EFun x (t-asc , New) ✔ ✔ ((e-body ⇒ ((■ t-body , n-body))) [ m-body ]⇐ (□ , Old))) ⇒ syn-all) [ ✔ ]⇐ (□ , Old)) L↦
     (((EFun x (t-asc , Old) ✔ ✔ (e-body' [ m-body ]⇐ (□ , Old))) ⇒ ((■ (TArrow t-asc t-body) , New))) [ ✔ ]⇐ (□ , Old))
   StepSynFun : ∀ {x e-body t-asc t-body n-asc m-body syn-all} ->
