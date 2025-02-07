@@ -1,4 +1,4 @@
-open import Data.Nat hiding (_+_; _⊓_)
+open import Data.Nat hiding (_+_; _⊓_; _⊔_)
 open import Data.Unit 
 open import Data.Bool hiding (_<_; _≟_)
 open import Data.Sum renaming (_⊎_ to _+_; inj₁ to Inl ; inj₂ to Inr) hiding (map)
@@ -89,7 +89,8 @@ DUnless d □ = d
 DUnless d (■ t) = □
 
 NUnless : NewData -> NewData -> NewData 
-NUnless (d1 , n1) (d2 , n2) = (DUnless d1 d2 , n1 ⊓ n2)
+NUnless (d , n1) (■ t , n2) = (□ , n2)
+NUnless (d , n1) (□ , n2) = (d , n1 ⊓ n2)
 
 -- -- Legal arrangements of the synthesized, mark, and analyzed on a 
 -- -- lambda in analytic position. Should be thought of as a predicate on 

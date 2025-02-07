@@ -1,4 +1,4 @@
-open import Data.Nat hiding (_+_; _⊓_)
+open import Data.Nat hiding (_+_; _⊓_; _⊔_)
 open import Data.Unit 
 open import Data.Bool hiding (_<_; _≟_)
 open import Data.Sum renaming (_⊎_ to _+_; inj₁ to Inl ; inj₂ to Inr) hiding (map)
@@ -39,6 +39,10 @@ data Newness : Set where
 _⊓_ : Newness -> Newness -> Newness 
 Old ⊓ n = n
 New ⊓ n = New
+
+-- _⊔_ : Newness -> Newness -> Newness 
+-- Old ⊔ n = Old
+-- New ⊔ n = n
   
 data Mark : Set where 
   ✖ : Mark

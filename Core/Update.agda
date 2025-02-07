@@ -50,7 +50,7 @@ data _L↦_ : ExpLow -> ExpLow -> Set where
     t-ana ▸DTArrow t-in-ana , t-out-ana , m-ana' ->
     t-asc ■~D t-in-ana , m-asc' ->
     ((EFun (t-asc , n-asc) m-ana m-asc ((e-body ⇒ (t-body , n-body)) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (t-ana , New) L↦
-    ((EFun (t-asc , n-asc) m-ana' m-asc' ((e-body ⇒ (t-body , n-body)) [ m-body ]⇐ (t-out-ana , New))) ⇒ ((DUnless (DArrow t-asc t-body) t-ana) , Old)) [ ✔ ]⇐ (t-ana , Old)
+    ((EFun (t-asc , n-asc) m-ana' m-asc' ((e-body ⇒ (t-body , n-body)) [ m-body ]⇐ (t-out-ana , New))) ⇒ ((DUnless (DArrow t-asc t-body) t-ana) , New)) [ ✔ ]⇐ (t-ana , Old)
   StepNewAnnFun : ∀ {e-body e-body' t-asc t-body n-body m-body syn-all} ->
     VarsSynthesize 0 t-asc (e-body ⇒ ((■ t-body , n-body))) e-body' ->
     (((EFun (t-asc , New) ✔ ✔ ((e-body ⇒ ((■ t-body , n-body))) [ m-body ]⇐ (□ , Old))) ⇒ syn-all) [ ✔ ]⇐ (□ , Old)) L↦
