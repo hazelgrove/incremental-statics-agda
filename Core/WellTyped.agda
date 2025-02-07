@@ -51,6 +51,10 @@ data _,_∈N_,_ : Var -> NewType -> Ctx -> Mark -> Set where
     (x , t ∈N Γ , m) -> 
     (x , t ∈N (x' ∶ t' ∷ Γ) , m)
 
+_,_∈N?_,_ : Binding -> NewType -> Ctx -> Mark -> Set
+BHole , t ∈N? Γ , m = ⊤
+BVar x , t ∈N? Γ , m = x , t ∈N Γ , m
+
 InCtxSkip? : ∀ {x' x  Γ t t' m} -> 
   ¬((BVar x) ≡ x') ->
   (x , t ∈N Γ , m) -> 

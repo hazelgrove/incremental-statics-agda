@@ -15,18 +15,6 @@ open import Core.Settled
 
 module Core.Validity where
 
-  data BarrenCtx : Ctx -> BareCtx -> Set where 
-    BarrenCtxEmpty : BarrenCtx ∅ ∅
-    BarrenCtxCons : ∀ {x t n Γ Γ'} ->
-      BarrenCtx Γ Γ' ->
-      BarrenCtx (x ∶ (t , n) ∷ Γ) (x ∶ t ∷ Γ')
-  
-  BarrenCtxCons? : ∀ {x t n Γ Γ'} ->
-    BarrenCtx Γ Γ' -> 
-    BarrenCtx (x ∶ (t , n) ∷? Γ) (x ∶ t ∷? Γ')
-  BarrenCtxCons? {BHole} ctx-bare = ctx-bare
-  BarrenCtxCons? {BVar x} ctx-bare = BarrenCtxCons ctx-bare
-
   data CtxAllOld : Ctx -> Set where 
     EmptyAllOld : CtxAllOld ∅
     ConsAllOld : ∀ {x t Γ} -> 
