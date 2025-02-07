@@ -18,56 +18,39 @@ module Core.Actions where
     -- Three : Child
 
   data Action : Set where 
-    -- MoveUp : Action 
-    -- MoveDown : Child -> Action
     InsertConst : Action
     WrapFun : Action
     WrapAp : Child -> Action
-    InsertVar : ℕ -> Action
+    InsertVarWith : ℕ -> Type -> Mark -> Action
     WrapAsc : Action
     Delete : Action 
     Unwrap : Child -> Action
 
-  data FreshenSyn : SynData -> SynData -> Set where
-    FreshenNoneSyn : FreshenSyn ̸⇑ ̸⇑
-    FreshenSomeSyn : ∀ {t n} ->
-      FreshenSyn (⇑ (t , n)) (⇑ (t , New))
-
-  new-hole-up : ExpUp 
-  new-hole-up = (EUp (⇑ (THole , New)) EHole)
-
+  -- still need to renew analyzed type above it
   data _,_A↦_ : Action -> ExpUp -> ExpUp -> Set where 
     ActInsertConst : ∀ {syn} ->
-      InsertConst , (EUp syn EHole) A↦ (EUp (⇑ (TBase , New)) EConst)
-    ActWrapFun : ∀ {syn syn' e} ->
-      FreshenSyn syn syn' ->
-      WrapFun , (EUp syn e) A↦ (EUp ̸⇑ (EFun (THole , New) Unmarked (ELow ̸⇓ Unmarked (EUp syn' e))))
-    ActWrapApOne : ∀ {syn syn' e} ->
-      FreshenSyn syn syn' ->
-      (WrapAp One) , (EUp syn e) A↦ (EUp ̸⇑ (EAp (ELow ̸⇓ Unmarked (EUp syn' e)) Unmarked (ELow ̸⇓ Unmarked new-hole-up)))
-    ActWrapApTwo : ∀ {syn syn' e} ->
-      FreshenSyn syn syn' ->
-      (WrapAp Two) , (EUp syn e) A↦ (EUp ̸⇑ (EAp (ELow ̸⇓ Unmarked new-hole-up) Unmarked (ELow ̸⇓ Unmarked (EUp syn' e))))
-    ActInsertVar : ∀ {syn x} ->
-      (InsertVar x) , (EUp syn EHole) A↦ (EUp ̸⇑ (EVar x Unmarked)) -- wrong bc bindings 
-    ActWrapAsc : ∀ {syn syn' e} ->
-      FreshenSyn syn syn' ->
-      WrapAsc , (EUp syn e) A↦ (EUp ̸⇑ (EAsc (THole , New) (ELow ̸⇓ Unmarked (EUp syn' e))))
-  ------------------------------------------------------------------------------
+      InsertConst , (EHole ⇒ syn) A↦ (EConst ⇒ (■ TBase , New))
+    ActWrapFun : ∀ {e t n} ->
+      WrapFun , (e ⇒ (t , n)) A↦ ((EFun (THole , New) ✔ ✔ ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , Old))) ⇒ (□ , Old))
+    ActWrapApOne : ∀ {e t n} ->
+      (WrapAp One) , (e ⇒ (t , n)) A↦ ((EAp ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , Old)) ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old))) ⇒ (□ , Old))
+    ActWrapApTwo : ∀ {e t n} ->
+      (WrapAp Two) , (e ⇒ (t , n)) A↦ ((EAp ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old)) ✔ ((e ⇒ (t , Old)) [ ✔ ]⇐ (■ THole , Old))) ⇒ (■ THole , New))
+    ActInsertVarWith : ∀ {syn x t m} ->
+      (InsertVarWith x t m) , (EHole ⇒ syn) A↦ ((EVar x m) ⇒ (■ t , New))
+    ActWrapAsc : ∀ {e syn} ->
+      WrapAsc , (e ⇒ syn) A↦ ((EAsc (THole , New) ((e ⇒ syn) [ ✔ ]⇐ (■ THole , New))) ⇒ (■ THole , New))
+  -- ------------------------------------------------------------------------------
     ActDelete : ∀ {e} ->
-      Delete , e A↦  new-hole-up -- wrong bc bindings
-    ActUnwrapFun : ∀ {syn1 syn2 syn3 asc m1 m2 ana e} ->
-      FreshenSyn syn2 syn3 ->
-      (Unwrap One) , (EUp syn1 (EFun asc m1 (ELow ana m2 (EUp syn2 e)))) A↦ (EUp syn3 e)
-    ActUnwrapApOne : ∀ {syn1 syn2 syn3 m1 m2 ana e1 e2} ->
-      FreshenSyn syn2 syn3 ->
-      (Unwrap One) , (EUp syn1 (EAp (ELow ana m1 (EUp syn2 e1)) m2 e2)) A↦ (EUp syn3 e1)
-    ActUnwrapApTwo : ∀ {syn1 syn2 syn3 m1 m2 ana e1 e2} ->
-      FreshenSyn syn2 syn3 ->
-      (Unwrap Two) , (EUp syn1 (EAp e1 m1 (ELow ana m2 (EUp syn2 e2)))) A↦ (EUp syn3 e2)
-    ActUnwrapAsc : ∀ {syn1 syn2 syn3 asc m ana e} ->
-      FreshenSyn syn2 syn3 ->
-      (Unwrap One) , (EUp syn1 (EAsc asc (ELow ana m (EUp syn2 e)))) A↦ (EUp syn3 e)
+      Delete , e A↦ (EHole ⇒ (■ THole , New))
+    ActUnwrapFun : ∀ {asc m-ana m-ann e t n m-body ana syn} ->
+      (Unwrap One) , ((EFun asc m-ana m-ann ((e ⇒ (t , n)) [ m-body ]⇐ ana)) ⇒ syn) A↦ (e ⇒ (t , New))
+    ActUnwrapApOne : ∀ {e t n m ana e-arg syn} ->
+      (Unwrap One) , ((EAp ((e ⇒ (t , n)) [ m ]⇐ ana) ✔ e-arg) ⇒ syn) A↦ (e ⇒ (t , New))
+    ActUnwrapApTwo : ∀ {e t n m ana e-fun syn} ->
+      (Unwrap Two) , ((EAp e-fun ✔ ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) A↦ (e ⇒ (t , New))
+    ActUnwrapAsc : ∀ {asc e t n m ana syn} ->
+      (Unwrap One) , ((EAsc asc ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) A↦ (e ⇒ (t , New))
     
 
     
