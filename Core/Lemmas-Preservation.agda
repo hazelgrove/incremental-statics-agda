@@ -31,10 +31,10 @@ module Core.Lemmas-Preservation where
     =▷Refl : ∀ {s} -> 
       =▷ s s
 
-  -- stays the same, except possibly becomes old
+  -- stays the same, or becomes old
   data ◁= {A : Set} : NEW A -> NEW A -> Set where 
-    ◁=Old : ∀ {t n} -> 
-      ◁= (t , n) (t , Old)
+    ◁=Old : ∀ {t t' n} -> 
+      ◁= (t , n) (t' , Old)
     ◁=Refl : ∀ {t} -> ◁= t t
 
   data ◁▷ {A : Set} : NEW A -> NEW A -> Set where 
@@ -206,7 +206,9 @@ module Core.Lemmas-Preservation where
     (t ≡ t' × m ≡ m')
   ∈N-unicity InCtxEmpty InCtxEmpty = refl , refl
   ∈N-unicity InCtxFound InCtxFound = refl , refl
-  ∈N-unicity (InCtxSkip in-ctx) (InCtxSkip in-ctx') = ∈N-unicity in-ctx in-ctx'
+  ∈N-unicity InCtxFound (InCtxSkip neq _) = ⊥-elim (neq refl)
+  ∈N-unicity (InCtxSkip neq _) InCtxFound = ⊥-elim (neq refl)
+  ∈N-unicity (InCtxSkip neq in-ctx) (InCtxSkip neq' in-ctx') = ∈N-unicity in-ctx in-ctx'
 
   beyond-▸NTArrow : ∀ {syn syn' t-in t-in' t-out t-out' m m'} ->
     =▷ syn syn' ->

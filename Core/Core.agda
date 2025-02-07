@@ -4,6 +4,7 @@ open import Data.Bool hiding (_<_; _≟_)
 open import Data.Sum renaming (_⊎_ to _+_; inj₁ to Inl ; inj₂ to Inr) hiding (map)
 open import Data.Product hiding (map)
 open import Relation.Nullary 
+open import Relation.Nullary.Decidable
 open import Relation.Binary.PropositionalEquality hiding (inspect)
 open import Prelude
 
@@ -14,12 +15,20 @@ data Type : Set where
   THole : Type
   TArrow : Type -> Type -> Type 
 
+postulate 
+  Var : Set 
+  _≡?_ : (x y : Var) -> Dec (x ≡ y) 
+
+data Binding : Set where 
+  BHole : Binding
+  BVar : Var -> Binding
+
 data BareExp : Set where 
   BareEConst : BareExp 
   BareEHole : BareExp
-  BareEFun : Type -> BareExp -> BareExp 
+  BareEFun : Binding -> Type -> BareExp -> BareExp 
   BareEAp : BareExp -> BareExp -> BareExp 
-  BareEVar : ℕ -> BareExp 
+  BareEVar : Var -> BareExp 
   BareEAsc : Type -> BareExp -> BareExp 
 
 data BareProgram : Set where 
@@ -118,9 +127,9 @@ mutual
   data ExpMid : Set where 
     EConst : ExpMid 
     EHole : ExpMid
-    EFun : NewType -> Mark -> Mark -> ExpLow -> ExpMid 
+    EFun : Binding -> NewType -> Mark -> Mark -> ExpLow -> ExpMid 
     EAp : ExpLow -> Mark -> ExpLow -> ExpMid 
-    EVar : ℕ -> Mark -> ExpMid 
+    EVar : Var -> Mark -> ExpMid 
     EAsc : NewType -> ExpLow -> ExpMid 
 
   data ExpLow : Set where 
@@ -144,7 +153,11 @@ Subsumable (mid ⇒ _) = SubsumableMid mid
 
 data Context (A : Set) : Set where 
   ∅ : Context A
-  _∷_ : A -> Context A -> Context A
+  _∶_∷_ : Var -> A -> Context A -> Context A
+
+_∶_∷?_ : {A : Set} -> Binding -> A -> Context A -> Context A
+BHole ∶ t ∷? Γ = Γ
+BVar x ∶ t ∷? Γ = x ∶ t ∷ Γ
   
 Ctx : Set 
 Ctx = Context NewType

@@ -25,9 +25,9 @@ mutual
       SettledSynMid EConst
     SettledSynHole : 
       SettledSynMid (EHole)
-    SettledSynFun : ∀ {t e} ->
+    SettledSynFun : ∀ {x t e} ->
       SettledSyn e ->
-      SettledSynMid ((EFun (t , Old) ✔ ✔ (e [ ✔ ]⇐ (□ , Old))))
+      SettledSynMid ((EFun x (t , Old) ✔ ✔ (e [ ✔ ]⇐ (□ , Old))))
     SettledSynAp : ∀ {m e1 e2} ->
       SettledSyn e1 -> 
       SettledAna e2 -> 
@@ -44,9 +44,9 @@ mutual
       SettledAna (e [ m ]⇐ ((■ t , Old)))
   
   data SettledAnaUp : ExpUp -> Set where 
-    SettledAnaFun : ∀ {t m1 m2 e} ->
+    SettledAnaFun : ∀ {x t m1 m2 e} ->
       SettledAna e ->
-      SettledAnaUp ((EFun (t , Old) m1 m2 e) ⇒ (□ , Old))
+      SettledAnaUp ((EFun x (t , Old) m1 m2 e) ⇒ (□ , Old))
     SettledAnaSubsume : ∀ {e} ->
       Subsumable e ->
       SettledSyn e ->

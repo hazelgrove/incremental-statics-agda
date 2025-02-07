@@ -17,15 +17,27 @@ module Core.Validity where
 
   data BarrenCtx : Ctx -> BareCtx -> Set where 
     BarrenCtxEmpty : BarrenCtx ∅ ∅
-    BarrenCtxCons : ∀ {t n Γ Γ'} ->
+    BarrenCtxCons : ∀ {x t n Γ Γ'} ->
       BarrenCtx Γ Γ' ->
-      BarrenCtx ((t , n) ∷ Γ) (t ∷ Γ')
+      BarrenCtx (x ∶ (t , n) ∷ Γ) (x ∶ t ∷ Γ')
+  
+  BarrenCtxCons? : ∀ {x t n Γ Γ'} ->
+    BarrenCtx Γ Γ' -> 
+    BarrenCtx (x ∶ (t , n) ∷? Γ) (x ∶ t ∷? Γ')
+  BarrenCtxCons? {BHole} ctx-bare = ctx-bare
+  BarrenCtxCons? {BVar x} ctx-bare = BarrenCtxCons ctx-bare
 
   data CtxAllOld : Ctx -> Set where 
     EmptyAllOld : CtxAllOld ∅
-    ConsAllOld : ∀ {t Γ} -> 
+    ConsAllOld : ∀ {x t Γ} -> 
       CtxAllOld Γ -> 
-      CtxAllOld ((t , Old) ∷ Γ)
+      CtxAllOld (x ∶ (t , Old) ∷ Γ)
+  
+  ConsAllOld? : ∀ {x t Γ} -> 
+    CtxAllOld Γ -> 
+    CtxAllOld (x ∶ (t , Old) ∷? Γ)
+  ConsAllOld? {BHole} ctx-old = ctx-old
+  ConsAllOld? {BVar x} ctx-old = ConsAllOld ctx-old
 
   ∈-of-∈N : ∀ {x t n m Γ Γ'} ->
     x , (t , n) ∈N Γ , m -> 
@@ -33,7 +45,7 @@ module Core.Validity where
     x , t ∈ Γ' , m
   ∈-of-∈N InCtxEmpty BarrenCtxEmpty = InCtxEmpty
   ∈-of-∈N InCtxFound (BarrenCtxCons bare-ctx) = InCtxFound
-  ∈-of-∈N (InCtxSkip in-ctx) (BarrenCtxCons bare-ctx) = InCtxSkip (∈-of-∈N in-ctx bare-ctx)
+  ∈-of-∈N (InCtxSkip neq in-ctx) (BarrenCtxCons bare-ctx) = InCtxSkip neq (∈-of-∈N in-ctx bare-ctx)
 
   all-old-lookup : ∀ {x nt nm Γ} ->
     x , nt ∈N Γ , nm ->
@@ -41,7 +53,7 @@ module Core.Validity where
     ∃[ t ] nt ≡ (t , Old)
   all-old-lookup InCtxEmpty ctx-old = THole , refl
   all-old-lookup InCtxFound (ConsAllOld ctx-old) = _ , refl
-  all-old-lookup (InCtxSkip in-ctx) (ConsAllOld ctx-old) = all-old-lookup in-ctx ctx-old
+  all-old-lookup (InCtxSkip neq in-ctx) (ConsAllOld ctx-old) = all-old-lookup in-ctx ctx-old
 
   barren-subsumable : ∀ {e b} ->
     SubsumableMid e ->
@@ -67,8 +79,8 @@ module Core.Validity where
       e ≡ (e' ⇒ ((■ t , n))) ->
       Γ' ⊢ b ~> e ⇒ t
     validity-indirect-syn (AnaSubsume x x₁ x₂ x₃) settled bare bare-ctx ctx-old refl = validity-syn x₃ settled bare bare-ctx ctx-old refl
-    validity-indirect-syn (AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) (▷Pair ▶Old) ▶Old ▶Old (▷Pair ▶Old) (~N-pair ~DVoidR) ▶Old syn) (SettledSynSyn (SettledSynFun (SettledSynSyn settled))) (BarrenUp (BarrenFun (BarrenLow (BarrenUp bare)))) bare-ctx ctx-old refl = 
-      MarkSynFun (validity-indirect-syn syn (SettledSynSyn settled) (BarrenUp bare) (BarrenCtxCons bare-ctx) (ConsAllOld ctx-old) refl)
+    validity-indirect-syn (AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) (▷Pair ▶Old) ▶Old ▶Old (▷Pair ▶Old) (~N-pair ~DVoidR) ▶Old syn) (SettledSynSyn (SettledSynFun (SettledSynSyn settled))) (BarrenUp (BarrenFun (BarrenLow (BarrenUp bare)))) bare-ctx ctx-old refl 
+      = MarkSynFun (validity-indirect-syn syn (SettledSynSyn settled) (BarrenUp bare) (BarrenCtxCons? bare-ctx) (ConsAllOld? ctx-old) refl)
 
     -- Issue: maybe this should really provide the annotation rather than assume it 
     -- (the conclusion is that there exists an e' t and n such that e ≡ (e' ⇒ (■ (t , n))) and Γ' ⊢ b ~> e ⇒ t)
@@ -101,7 +113,7 @@ module Core.Validity where
     validity-ana (AnaSubsume subsumable (~N-pair (~DSome consist)) ▶Old syn) (SettledAnaAna (SettledAnaSubsume settled-subsumable (SettledSynSyn settled))) (BarrenLow (BarrenUp bare)) bare-ctx ctx-old refl 
       = MarkSubsume (validity-syn syn (SettledSynSyn settled) (BarrenUp bare) bare-ctx ctx-old refl) (barren-subsumable settled-subsumable bare) consist
     validity-ana (AnaFun (NTArrowC (DTArrowSome marrow)) (■~N-pair (~N-pair (~DSome consist))) (▷Pair ▶Old) ▶Old ▶Old (▷Pair x₁) (~N-pair ~DVoidL) ▶Old ana) (SettledAnaAna (SettledAnaFun (SettledAnaAna settled))) (BarrenLow (BarrenUp (BarrenFun bare))) bare-ctx ctx-old refl 
-      = MarkAnaFun marrow (validity-ana ana (SettledAnaAna settled) bare (BarrenCtxCons bare-ctx) (ConsAllOld ctx-old) refl) consist 
+    = MarkAnaFun marrow (validity-ana ana (SettledAnaAna settled) bare (BarrenCtxCons? bare-ctx) (ConsAllOld? ctx-old) refl) consist 
 
   validity : ∀ {p b e t n1 n2} ->
     WellTypedProgram p ->

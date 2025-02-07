@@ -22,10 +22,11 @@ module Core.UpdatePreservation where
     SubsumableMid e'
   vars-syn-subsumable VSConst SubsumableConst = SubsumableConst
   vars-syn-subsumable VSHole SubsumableHole = SubsumableHole
-  vars-syn-subsumable (VSFun vars-syn) ()
+  vars-syn-subsumable VSFunEq ()
+  vars-syn-subsumable (VSFunNeq neq vars-syn) ()
   vars-syn-subsumable (VSAp vars-syn1 vars-syn2) SubsumableAp = SubsumableAp
-  vars-syn-subsumable VSVar SubsumableVar = SubsumableVar
-  vars-syn-subsumable (VSOtherVar _) SubsumableVar = SubsumableVar
+  vars-syn-subsumable VSVarEq SubsumableVar = SubsumableVar
+  vars-syn-subsumable (VSVarNeq _) SubsumableVar = SubsumableVar
   vars-syn-subsumable (VSAsc vars-syn) SubsumableAsc = SubsumableAsc
 
   vars-syn-beyond : ∀ {x t e syn e' syn'} ->
@@ -33,11 +34,18 @@ module Core.UpdatePreservation where
     =▷ syn syn' 
   vars-syn-beyond VSConst = =▷Refl
   vars-syn-beyond VSHole = =▷Refl
-  vars-syn-beyond (VSFun syn) = =▷Refl
+  vars-syn-beyond VSFunEq = =▷Refl
+  vars-syn-beyond (VSFunNeq neq syn) = =▷Refl
   vars-syn-beyond (VSAp syn syn₁) = =▷Refl
-  vars-syn-beyond VSVar = =▷New
-  vars-syn-beyond (VSOtherVar x) = =▷Refl
+  vars-syn-beyond VSVarEq = =▷New
+  vars-syn-beyond (VSVarNeq x) = =▷Refl
   vars-syn-beyond (VSAsc syn) = =▷Refl
+
+  vars-syn?-beyond : ∀ {x t e syn e' syn'} ->
+    VarsSynthesize? x t (e ⇒ syn) (e' ⇒ syn') -> 
+    =▷ syn syn' 
+  vars-syn?-beyond {BHole} refl = =▷Refl
+  vars-syn?-beyond {BVar x} vars-syn = vars-syn-beyond vars-syn
 
   -- -- this is imprecise : the =▷D relation is bigger than required. oh well. 
   beyond-U↦ : ∀ {e e' syn syn'} -> 
@@ -102,27 +110,83 @@ module Core.UpdatePreservation where
   step-subsumable (StepAp _) SubsumableAp = SubsumableAp
   step-subsumable StepAsc SubsumableAsc = SubsumableAsc
 
-  oldify-ctx : Ctx -> ℕ -> Ctx 
-  oldify-ctx ∅ x = ∅
-  oldify-ctx ((t , n) ∷ Γ) zero = ((t , Old) ∷ Γ)
-  oldify-ctx ((t , n) ∷ Γ) (suc x) = ((t , n) ∷ (oldify-ctx Γ x))
+  data CtxInv : Var -> Type -> Ctx -> Ctx -> Set where 
+    CtxInvInit : ∀ {Γ x t} ->
+      CtxInv x t Γ (x ∶ t , Old ∷ Γ)
+    CtxInvInit2 : ∀ {Γ x t} ->
+      CtxInv x t (x ∶ t , New ∷ Γ) (x ∶ t , Old ∷ Γ)
+    CtxInvNeq : ∀ {x x' t t' Γ Γ'} ->
+      ¬(x ≡ x') ->
+      CtxInv x t Γ Γ' ->
+      CtxInv x t (x' ∶ t' ∷ Γ) (x' ∶ t' ∷ Γ')
 
-  oldify-access : ∀ {x t n Γ m} ->
-    x , (t , n) ∈N Γ , m ->
-    x , (t , Old) ∈N oldify-ctx Γ x , m
-  oldify-access InCtxEmpty = InCtxEmpty
-  oldify-access InCtxFound = InCtxFound
-  oldify-access (InCtxSkip in-ctx) = InCtxSkip (oldify-access in-ctx)
+  CtxInvNeq? : ∀ {x' x t t' Γ Γ'} ->
+    ¬(BVar x ≡ x') ->
+    CtxInv x t Γ Γ' ->
+    CtxInv x t (x' ∶ t' ∷? Γ) (x' ∶ t' ∷? Γ')
+  CtxInvNeq? {BHole} neq inv = inv
+  CtxInvNeq? {BVar x} neq inv = CtxInvNeq (λ eq → neq (cong BVar eq)) inv
 
-  oldify-access-neq : ∀ {x y t Γ m} ->
-    y , t ∈N Γ , m ->
-    ¬(y ≡ x) ->
-    y , t ∈N oldify-ctx Γ x , m
-  oldify-access-neq InCtxEmpty neq = InCtxEmpty
-  oldify-access-neq {x = zero} InCtxFound neq = ⊥-elim (neq refl)
-  oldify-access-neq {x = suc x} InCtxFound neq = InCtxFound
-  oldify-access-neq {x = zero} (InCtxSkip in-ctx) neq = InCtxSkip in-ctx
-  oldify-access-neq {x = suc x} (InCtxSkip in-ctx) neq = InCtxSkip (oldify-access-neq in-ctx λ eq → neq (cong suc eq))
+  ctx-inv-access-eq : ∀ {x t Γ Γ'} ->
+    CtxInv x t Γ Γ' ->
+    x , (t , Old) ∈N Γ' , ✔
+  ctx-inv-access-eq CtxInvInit = InCtxFound
+  ctx-inv-access-eq CtxInvInit2 = InCtxFound
+  ctx-inv-access-eq (CtxInvNeq neq inv) = InCtxSkip neq (ctx-inv-access-eq inv)
+
+  ctx-inv-access-neq : ∀ {x x' t t' m Γ Γ'} ->
+    CtxInv x t Γ Γ' ->
+    ¬ x' ≡ x ->
+    x' , t' ∈N Γ , m ->
+    x' , t' ∈N Γ' , m
+  ctx-inv-access-neq CtxInvInit neq in-ctx = InCtxSkip neq in-ctx
+  ctx-inv-access-neq CtxInvInit2 neq InCtxFound = ⊥-elim (neq refl)
+  ctx-inv-access-neq CtxInvInit2 neq (InCtxSkip x in-ctx) = InCtxSkip neq in-ctx
+  ctx-inv-access-neq (CtxInvNeq x inv) neq InCtxFound = InCtxFound
+  ctx-inv-access-neq (CtxInvNeq x₁ inv) neq (InCtxSkip x in-ctx) = InCtxSkip x (ctx-inv-access-neq inv neq in-ctx)
+
+  data CtxEquiv : Ctx -> Ctx -> Set where 
+    CtxEquivInit : ∀ {x t t' Γ Γ'} ->
+      CtxInv x t Γ Γ' ->
+      CtxEquiv (x ∶ t' ∷ Γ) (x ∶ t' ∷ Γ') 
+    CtxEquivCons : ∀ {x t Γ Γ'} ->
+      CtxEquiv Γ Γ' ->
+      CtxEquiv (x ∶ t ∷ Γ) (x ∶ t ∷ Γ') 
+  
+  CtxEquivCons? : ∀ {x t Γ Γ'} ->
+    CtxEquiv Γ Γ' ->
+    CtxEquiv (x ∶ t ∷? Γ) (x ∶ t ∷? Γ') 
+  CtxEquivCons? {BHole} equiv = equiv
+  CtxEquivCons? {BVar x} equiv = CtxEquivCons equiv
+
+  CtxEquiv-access : ∀ {x t Γ Γ' m} ->
+    CtxEquiv Γ Γ' ->
+    x , t ∈N Γ , m  ->
+    x , t ∈N Γ' , m
+  CtxEquiv-access (CtxEquivInit x) InCtxFound = InCtxFound
+  CtxEquiv-access (CtxEquivInit x) (InCtxSkip x₁ in-ctx) = InCtxSkip x₁ (ctx-inv-access-neq x x₁ in-ctx)
+  CtxEquiv-access (CtxEquivCons equiv) InCtxFound = InCtxFound
+  CtxEquiv-access (CtxEquivCons equiv) (InCtxSkip x in-ctx) = InCtxSkip x (CtxEquiv-access equiv in-ctx)
+
+  mutual 
+
+    ctx-inv-ana : ∀ {Γ Γ' e} ->
+      CtxEquiv Γ Γ' ->
+      Γ ⊢ e ⇐ ->
+      Γ' ⊢ e ⇐
+    ctx-inv-ana equiv (AnaSubsume x x₁ x₂ x₃) = AnaSubsume x x₁ x₂ (ctx-inv-syn equiv x₃)
+    ctx-inv-ana equiv (AnaFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ ana) = AnaFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ (ctx-inv-ana (CtxEquivCons? equiv) ana)
+
+    ctx-inv-syn : ∀ {Γ Γ' e} ->
+      CtxEquiv Γ Γ' ->
+      Γ ⊢ e ⇒ ->
+      Γ' ⊢ e ⇒
+    ctx-inv-syn equiv (SynConst x) = SynConst x
+    ctx-inv-syn equiv (SynHole x) = SynHole x
+    ctx-inv-syn equiv (SynAp x x₁ x₂ x₃ x₄ x₅) = SynAp x x₁ x₂ x₃ (ctx-inv-ana equiv x₄) (ctx-inv-ana equiv x₅)
+    ctx-inv-syn equiv (SynVar x x₁) = SynVar (CtxEquiv-access equiv x) x₁
+    ctx-inv-syn equiv (SynAsc x x₁ x₂) = SynAsc x x₁ (ctx-inv-ana equiv x₂)
+
   
   mutual 
 
@@ -130,31 +194,47 @@ module Core.UpdatePreservation where
       ∀ {Γ Γ' x t e e' m ana} ->
       (Γ ⊢ (e [ m ]⇐ ana) ⇐) ->
       VarsSynthesize x t e e' ->
-      x , (t , New) ∈N Γ , ✔ ->
-      oldify-ctx Γ x ≡ Γ' ->
+      CtxInv x t Γ Γ' ->
+      -- x , (t , New) ∈N Γ , ✔ ->
+      -- oldify-ctx Γ x ≡ Γ' ->
       (Γ' ⊢ (e' [ m ]⇐ ana) ⇐)
-    preservation-vars-ana {e' = e-all' ⇒ syn-all'} {ana = ana} (AnaSubsume subsumable consist-t consist-m syn) vars-syn in-ctx refl with ~N-dec syn-all' ana 
-    ... | m-consist' , consist-t' = AnaSubsume (vars-syn-subsumable vars-syn subsumable) consist-t' (beyond-▶ (beyond-through-~N (vars-syn-beyond vars-syn) consist-t consist-t') consist-m) (preservation-vars-syn syn vars-syn in-ctx refl)
-    preservation-vars-ana (AnaFun {t-asc = t-asc} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFun {e-body' = e-body' ⇒ syn-body'} vars-syn) in-ctx refl 
-      = AnaFun marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma-3 {t = t-asc} (vars-syn-beyond vars-syn) consist-syn) consist-all consist-m-all (preservation-vars-ana ana vars-syn (InCtxSkip in-ctx) refl)      
+    preservation-vars-ana {e' = e-all' ⇒ syn-all'} {ana = ana} (AnaSubsume subsumable consist-t consist-m syn) vars-syn ctx-inv with ~N-dec syn-all' ana 
+    ... | m-consist' , consist-t' = AnaSubsume (vars-syn-subsumable vars-syn subsumable) consist-t' (beyond-▶ (beyond-through-~N (vars-syn-beyond vars-syn) consist-t consist-t') consist-m) (preservation-vars-syn syn vars-syn ctx-inv)
+    preservation-vars-ana (AnaFun {t-asc = t-asc} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunNeq {e-body' = e-body' ⇒ syn-body'} neq vars-syn) ctx-inv = AnaFun marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma-3 {t = t-asc} (vars-syn?-beyond vars-syn) consist-syn) consist-all consist-m-all (preservation-vars-ana ana vars-syn (CtxInvNeq? neq ctx-inv))    
+    preservation-vars-ana (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunEq) ctx-inv = AnaFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all (ctx-inv-ana (CtxEquivInit ctx-inv) ana)
 
     preservation-vars-syn :
       ∀ {Γ Γ' x t e e'} ->
       (Γ ⊢ e ⇒) ->
       VarsSynthesize x t e e' ->
-      x , (t , New) ∈N Γ , ✔ ->
-      oldify-ctx Γ x ≡ Γ' ->
+      CtxInv x t Γ Γ' ->
       (Γ' ⊢ e' ⇒)
-    preservation-vars-syn (SynConst consist) VSConst in-ctx refl = SynConst consist
-    preservation-vars-syn (SynHole consist) VSHole in-ctx refl = SynHole consist
-    -- preservation-vars-syn (SynFun consist syn) (VSFun {e-body' = e-body' ⇒ syn-body'} vars-syn) in-ctx refl = SynFun (preservation-lambda-lemma (vars-syn-beyond vars-syn) consist) (preservation-vars-syn syn vars-syn (InCtxSkip in-ctx) refl)
-    preservation-vars-syn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (VSAp {e1' = e-fun' ⇒ syn-fun'} vars-syn-fun vars-syn-arg) in-ctx refl with ▸NTArrow-dec syn-fun' 
+    preservation-vars-syn (SynConst consist) VSConst ctx-inv = SynConst consist
+    preservation-vars-syn (SynHole consist) VSHole ctx-inv = SynHole consist
+    -- preservation-vars-syn (SynFun consist syn) (VSFun {e-body' = e-body' ⇒ syn-body'} vars-syn) ctx-inv = SynFun (preservation-lambda-lemma (vars-syn-beyond vars-syn) consist) (preservation-vars-syn syn vars-syn (InCtxSkip in-ctx) refl)
+    preservation-vars-syn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (VSAp {e1' = e-fun' ⇒ syn-fun'} vars-syn-fun vars-syn-arg) ctx-inv with ▸NTArrow-dec syn-fun' 
     ... | t-in-fun' , t-out-fun' , m-fun' , marrow' with beyond-▸NTArrow (vars-syn-beyond vars-syn-fun) marrow marrow' 
-    ... | t-in-beyond , t-out-beyond , m-beyond = SynAp marrow' (beyond-▷ t-out-beyond consist-syn) (beyond-▷ t-in-beyond consist-ana) (beyond-▶ m-beyond consist-mark) (preservation-vars-ana syn vars-syn-fun in-ctx refl) (preservation-vars-ana ana vars-syn-arg in-ctx refl)
-    preservation-vars-syn {t = t} (SynVar in-ctx consist) VSVar in-ctx' refl with ∈N-unicity in-ctx in-ctx' 
-    ... | refl , refl = SynVar (oldify-access in-ctx) (▷■Pair (▷Pair ▶Old)) 
-    preservation-vars-syn (SynVar in-ctx consist) (VSOtherVar neq) in-ctx' refl = SynVar (oldify-access-neq in-ctx neq) consist
-    preservation-vars-syn (SynAsc consist-syn consist-ana ana) (VSAsc vars-syn) in-ctx refl = SynAsc consist-syn consist-ana (preservation-vars-ana ana vars-syn in-ctx refl)
+    ... | t-in-beyond , t-out-beyond , m-beyond = SynAp marrow' (beyond-▷ t-out-beyond consist-syn) (beyond-▷ t-in-beyond consist-ana) (beyond-▶ m-beyond consist-mark) (preservation-vars-ana syn vars-syn-fun ctx-inv) (preservation-vars-ana ana vars-syn-arg ctx-inv)
+    preservation-vars-syn {t = t} (SynVar in-ctx consist) VSVarEq ctx-inv = SynVar (ctx-inv-access-eq ctx-inv) (▷■Pair (▷Pair ▶Old)) 
+    preservation-vars-syn (SynVar in-ctx consist) (VSVarNeq neq) ctx-inv = SynVar (ctx-inv-access-neq ctx-inv (λ eq → neq (sym eq)) in-ctx) consist
+    preservation-vars-syn (SynAsc consist-syn consist-ana ana) (VSAsc vars-syn) ctx-inv = SynAsc consist-syn consist-ana (preservation-vars-ana ana vars-syn ctx-inv)
+    
+    preservation-vars-ana? :
+      ∀ {x Γ t e e' m ana} ->
+      (Γ ⊢ (e [ m ]⇐ ana) ⇐) ->
+      VarsSynthesize? x t e e' ->
+      ((x ∶ t , Old ∷? Γ) ⊢ (e' [ m ]⇐ ana) ⇐)
+    preservation-vars-ana? {BHole} ana refl = ana
+    preservation-vars-ana? {BVar x} ana vars-syn = preservation-vars-ana ana vars-syn CtxInvInit 
+
+    preservation-vars-ana?-2 :
+      ∀ {x Γ t e e' m ana} ->
+      ((x ∶ t , New ∷? Γ) ⊢ (e [ m ]⇐ ana) ⇐) ->
+      VarsSynthesize? x t e e' ->
+      ((x ∶ t , Old ∷? Γ) ⊢ (e' [ m ]⇐ ana) ⇐)
+    preservation-vars-ana?-2 {BHole} ana refl = ana
+    preservation-vars-ana?-2 {BVar x} ana vars-syn = preservation-vars-ana ana vars-syn CtxInvInit2
+
 
   -- preservation-vars-indirect-syn :
   --   ∀ {Γ Γ' x t e e' m} ->
@@ -187,9 +267,10 @@ module Core.UpdatePreservation where
   PreservationStepAna (AnaSubsume subsumable (~N-pair (~DSome consist-t)) consist-m syn) (StepNewAnaConsist subsumable' consist) rewrite ~-unicity consist consist-t = AnaSubsume subsumable' (~N-pair (~DSome consist-t)) ▶Old (oldify-syn syn)
   PreservationStepAna (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair (~DSome consist-all)) consist-m-all ana) (StepNewSynConsist consist') rewrite ~-unicity consist' consist-all  = AnaFun marrow consist consist-ana consist-asc consist-body (beyond-▷-contra ◁▷C consist-syn) (~N-pair (~DSome consist-all)) ▶Old ana
   PreservationStepAna (AnaFun {t-asc = t-asc , n-asc} (NTArrowC x) consist (▷Pair ▶New) ▶New consist-body consist-syn consist-all consist-m-all ana) (StepAnaFun marrow' (■~D-pair consist')) = AnaFun (NTArrowC marrow') (■~N-pair (~N-pair consist')) (▷Pair ▶Old) ▶Old ▶Same (consist-unless-lemma {n1 = n-asc}) (~N-pair ~D-unless) ▶Same (newify-ana ana)
-  PreservationStepAna (AnaFun {e-body = e-body} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (StepNewAnnFun {e-body' = e-body' ⇒ (syn-body' , n-syn-body')} {t-asc} {t-body} {n-body} vars-syn) = AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) (▷Pair ▶Old) ▶Old ▶Old (preservation-lambda-lemma-2 (vars-syn-beyond vars-syn')) (~N-pair ~DVoidR) ▶New (preservation-vars-ana ana vars-syn InCtxFound refl)
+  PreservationStepAna (AnaFun {x = x} {e-body = e-body} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (StepNewAnnFun {e-body' = e-body' ⇒ (syn-body' , n-syn-body')} {t-asc} {t-body} {n-body} vars-syn) 
+    = AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) (▷Pair ▶Old) ▶Old ▶Old (preservation-lambda-lemma-2 (vars-syn?-beyond vars-syn')) (~N-pair ~DVoidR) ▶New (preservation-vars-ana?-2 ana vars-syn) 
     where 
-    vars-syn' : VarsSynthesize 0 t-asc (e-body ⇒ (■ t-body , n-body)) (e-body' ⇒ (syn-body' , n-syn-body' ⊓ Old))
+    vars-syn' : VarsSynthesize? x t-asc (e-body ⇒ (■ t-body , n-body)) (e-body' ⇒ (syn-body' , n-syn-body' ⊓ Old))
     vars-syn' rewrite max-old n-syn-body' = vars-syn
   PreservationStepAna (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) StepSynFun = AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) (▷Pair ▶Old) ▶Old ▶Same (▷Pair ▶Same) (~N-pair ~DVoidR) ▶New (oldify-syn-inner ana)
   

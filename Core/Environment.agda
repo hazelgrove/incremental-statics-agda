@@ -18,7 +18,7 @@ module Core.Environment where
       LEnvUpRec : LEnvMid -> NewData -> LEnvUp
 
     data LEnvMid : Set where 
-      LEnvFun : NewType -> Mark -> Mark -> LEnvLow -> LEnvMid 
+      LEnvFun : Binding -> NewType -> Mark -> Mark -> LEnvLow -> LEnvMid 
       LEnvAp1 : LEnvLow -> Mark -> ExpLow -> LEnvMid 
       LEnvAp2 : ExpLow -> Mark -> LEnvLow -> LEnvMid 
       LEnvAsc : NewType -> LEnvLow -> LEnvMid 
@@ -34,7 +34,7 @@ module Core.Environment where
       UEnvUpRec : UEnvMid -> NewData -> UEnvUp
 
     data UEnvMid : Set where 
-      UEnvFun : NewType -> Mark -> Mark -> UEnvLow -> UEnvMid 
+      UEnvFun : Binding -> NewType -> Mark -> Mark -> UEnvLow -> UEnvMid 
       UEnvAp1 : UEnvLow -> Mark -> ExpLow -> UEnvMid 
       UEnvAp2 : ExpLow -> Mark -> UEnvLow -> UEnvMid 
       UEnvAsc : NewType -> UEnvLow -> UEnvMid 
@@ -49,9 +49,9 @@ module Core.Environment where
         (LEnvUpRec ε syn) L⟦ e ⟧Up== (e' ⇒ syn)
 
     data _L⟦_⟧Mid==_ : (ε : LEnvMid) (e : ExpLow) (e' : ExpMid)  -> Set where
-      FillLEnvFun : ∀ {e ε e' t m1 m2} ->
+      FillLEnvFun : ∀ {e ε e' x t m1 m2} ->
         ε L⟦ e ⟧Low== e' ->
-        (LEnvFun t m1 m2 ε) L⟦ e ⟧Mid== (EFun t m1 m2 e')
+        (LEnvFun x t m1 m2 ε) L⟦ e ⟧Mid== (EFun x t m1 m2 e')
       FillLEnvAp1 : ∀ {e ε e' e2 m} ->
         ε L⟦ e ⟧Low== e' ->
         (LEnvAp1 ε m e2) L⟦ e ⟧Mid== (EAp e' m e2)
@@ -78,9 +78,9 @@ module Core.Environment where
         (UEnvUpRec ε syn) U⟦ e ⟧Up== (e' ⇒ syn)
 
     data _U⟦_⟧Mid==_ : (ε : UEnvMid) (e : ExpUp) (e' : ExpMid)  -> Set where
-      FillUEnvFun : ∀ {e ε e' t m1 m2} ->
+      FillUEnvFun : ∀ {e ε e' x t m1 m2} ->
         ε U⟦ e ⟧Low== e' ->
-        (UEnvFun t m1 m2 ε) U⟦ e ⟧Mid== (EFun t m1 m2 e')
+        (UEnvFun x t m1 m2 ε) U⟦ e ⟧Mid== (EFun x t m1 m2 e')
       FillUEnvAp1 : ∀ {e ε e' e2 m} ->
         ε U⟦ e ⟧Low== e' ->
         (UEnvAp1 ε m e2) U⟦ e ⟧Mid== (EAp e' m e2)

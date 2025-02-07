@@ -51,14 +51,22 @@ data _▸NTArrow_,_,_ : NewData -> NewData -> NewData -> NewMark -> Set where
   --   t ▸TArrowNM t1 , t2 , m -> 
   --   (■ t) ▸DTArrowNM t1 , t2 , m
 
-data _,_∈N_,_ : ℕ -> NewType -> Ctx -> Mark -> Set where 
-  InCtxEmpty : 
-    0 , (THole , Old) ∈N ∅ , (✖)
-  InCtxFound : ∀ {Γ t} -> 
-    0 , t ∈N (t ∷ Γ) , (✔)
-  InCtxSkip : ∀ {Γ t t' x m} -> 
+data _,_∈N_,_ : Var -> NewType -> Ctx -> Mark -> Set where 
+  InCtxEmpty : ∀ {x} ->
+    x ,  (THole , Old) ∈N ∅ , ✖ 
+  InCtxFound : ∀ {Γ x t} ->
+    x , t ∈N (x ∶ t ∷ Γ) , ✔
+  InCtxSkip : ∀ {Γ t t' x x' m} -> 
+    ¬(x ≡ x') ->
     (x , t ∈N Γ , m) -> 
-    (suc x , t ∈N (t' ∷ Γ) , m)
+    (x , t ∈N (x' ∶ t' ∷ Γ) , m)
+
+InCtxSkip? : ∀ {x' x  Γ t t' m} -> 
+  ¬((BVar x) ≡ x') ->
+  (x , t ∈N Γ , m) -> 
+  (x , t ∈N (x' ∶ t' ∷? Γ) , m)
+InCtxSkip? {BHole} neq in-ctx = in-ctx
+InCtxSkip? {BVar x} neq in-ctx = InCtxSkip (λ eq → neq (cong BVar eq)) in-ctx
 
 data _~D_,_ : Data -> Data -> Mark -> Set where 
   ~DVoidL : ∀ {d} ->
@@ -154,7 +162,7 @@ mutual
       ▶ m-consist m-all ->
       Γ ⊢ (e-all ⇒ syn-all) ⇒ -> 
       Γ ⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐ 
-    AnaFun : ∀ {Γ e-body syn-all syn-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana m-all-ana} ->
+    AnaFun : ∀ {Γ x e-body syn-all syn-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana m-all-ana} ->
       -- analytic flow
       ana-all ▸NTArrow t-in-ana , t-out-ana , m-ana-ana -> 
       t-asc ■~N t-in-ana , m-asc-ana ->
@@ -166,8 +174,8 @@ mutual
       syn-all ~N ana-all , m-all-ana ->
       ▶ m-all-ana m-all -> 
       -- recursive call
-      (t-asc ∷ Γ) ⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ⇐ ->
-      Γ ⊢ (((EFun t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐  
+      (x ∶ t-asc ∷? Γ) ⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ⇐ ->
+      Γ ⊢ (((EFun x t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐  
     
 data WellTypedProgram : Program -> Set where 
   WTProg : ∀ {p} ->
