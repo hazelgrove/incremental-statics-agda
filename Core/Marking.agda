@@ -45,19 +45,6 @@ data BarrenProgram : Program -> BareProgram -> Set where
   BarrenP : ∀ {p b} ->
     BarrenExpLow (ExpLowOfProgram p) b -> 
     BarrenProgram p (BareRoot b)
-    
-BareCtx : Set 
-BareCtx = Context Type
-
-data _,_∈_,_ : Var -> Type -> BareCtx -> Mark -> Set where 
-  InCtxEmpty : ∀ {x} ->
-    x , THole ∈ ∅ , ✖ 
-  InCtxFound : ∀ {Γ x t} ->
-    x , t ∈ (x ∶ t ∷ Γ) , ✔
-  InCtxSkip : ∀ {Γ t t' x x' m} -> 
-    ¬(x ≡ x') ->
-    (x , t ∈ Γ , m) -> 
-    (x , t ∈ (x' ∶ t' ∷ Γ) , m)
 
 -- This version of marking uses side conditions (matched arrow, consistency, or 
 -- variable lookup in the context) that are total functions which also return a

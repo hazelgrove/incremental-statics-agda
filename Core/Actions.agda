@@ -9,98 +9,98 @@ open import Prelude
 
 open import Core.Core
 open import Core.Environment
+open import Core.Update
 
 module Core.Actions where
 
   data Child : Set where 
     One : Child
     Two : Child
-    -- Three : Child
 
   data Action : Set where 
     InsertConst : Action
-    WrapFun : Action
+    WrapFun : Binding -> Action
     WrapAp : Child -> Action
-    InsertVarWith : ℕ -> Type -> Mark -> Action
+    InsertVar : Var -> Action
     WrapAsc : Action
     Delete : Action 
     Unwrap : Child -> Action
 
-  -- still need to renew analyzed type above it
-  data _,_AU↦_ : Action -> ExpUp -> ExpUp -> Set where 
-    ActInsertConst : ∀ {syn} ->
-      InsertConst , (EHole ⇒ syn) AU↦ (EConst ⇒ (■ TBase , New))
-    ActWrapFun : ∀ {e t n} ->
-      WrapFun , (e ⇒ (t , n)) AU↦ ((EFun (THole , New) ✔ ✔ ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , Old))) ⇒ (t , n))
-    ActWrapApOne : ∀ {e t n} ->
-      (WrapAp One) , (e ⇒ (t , n)) AU↦ ((EAp ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , Old)) ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old))) ⇒ (t , n))
-    ActWrapApTwo : ∀ {e t n} ->
-      (WrapAp Two) , (e ⇒ (t , n)) AU↦ ((EAp ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old)) ✔ ((e ⇒ (t , Old)) [ ✔ ]⇐ (■ THole , Old))) ⇒ (■ THole , New))
-    ActInsertVarWith : ∀ {syn x t m} ->
-      (InsertVarWith x t m) , (EHole ⇒ syn) AU↦ ((EVar x m) ⇒ (■ t , New))
-    ActWrapAsc : ∀ {e syn} ->
-      WrapAsc , (e ⇒ syn) AU↦ ((EAsc (THole , New) ((e ⇒ syn) [ ✔ ]⇐ (■ THole , New))) ⇒ (■ THole , New))
+  data _⊢_,_AU↦_ : BareCtx -> Action -> ExpUp -> ExpUp -> Set where 
+    ActInsertConst : ∀ {Γ syn} ->
+      Γ ⊢ InsertConst , (EHole ⇒ syn) AU↦ (EConst ⇒ (■ TBase , New))
+    ActWrapFun : ∀ {Γ x e e' t t' n n'} ->
+      VarsSynthesize? x THole (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
+      Γ ⊢ WrapFun x , (e ⇒ (t , n)) AU↦ ((EFun x (THole , New) ✔ ✔ ((e' ⇒ (t' , New)) [ ✔ ]⇐ (□ , Old))) ⇒ (t , n))
+    ActWrapApOne : ∀ {Γ e t n} ->
+      Γ ⊢ (WrapAp One) , (e ⇒ (t , n)) AU↦ ((EAp ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , Old)) ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old))) ⇒ (t , n))
+    ActWrapApTwo : ∀ {Γ e t n} ->
+      Γ ⊢ (WrapAp Two) , (e ⇒ (t , n)) AU↦ ((EAp ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old)) ✔ ((e ⇒ (t , Old)) [ ✔ ]⇐ (■ THole , Old))) ⇒ (■ THole , New))
+    ActInsertVar : ∀ {Γ syn x t m} ->
+      x , t ∈ Γ , m ->
+      Γ ⊢ (InsertVar x) , (EHole ⇒ syn) AU↦ ((EVar x m) ⇒ (■ t , New))
+    ActWrapAsc : ∀ {Γ e syn} ->
+      Γ ⊢ WrapAsc , (e ⇒ syn) AU↦ ((EAsc (THole , New) ((e ⇒ syn) [ ✔ ]⇐ (■ THole , New))) ⇒ (■ THole , New))
   -- ------------------------------------------------------------------------------
-    ActDelete : ∀ {e} ->
-      Delete , e AU↦ (EHole ⇒ (■ THole , New))
-    ActUnwrapFun : ∀ {asc m-ana m-ann e t n m-body ana syn} ->
-      (Unwrap One) , ((EFun asc m-ana m-ann ((e ⇒ (t , n)) [ m-body ]⇐ ana)) ⇒ syn) AU↦ (e ⇒ (t , New))
-    ActUnwrapApOne : ∀ {e t n m ana e-arg syn} ->
-      (Unwrap One) , ((EAp ((e ⇒ (t , n)) [ m ]⇐ ana) ✔ e-arg) ⇒ syn) AU↦ (e ⇒ (t , New))
-    ActUnwrapApTwo : ∀ {e t n m ana e-fun syn} ->
-      (Unwrap Two) , ((EAp e-fun ✔ ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) AU↦ (e ⇒ (t , New))
-    ActUnwrapAsc : ∀ {asc e t n m ana syn} ->
-      (Unwrap One) , ((EAsc asc ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) AU↦ (e ⇒ (t , New))
+    ActDelete : ∀ {Γ e} ->
+      Γ ⊢ Delete , e AU↦ (EHole ⇒ (■ THole , New))
+    ActUnwrapFunSome : ∀ {Γ x asc m-ana m-ann e e' t t' n n' tx m m-body ana syn} ->
+      x , tx ∈? Γ , m ->
+      VarsSynthesize? x tx (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
+      Γ ⊢ (Unwrap One) , ((EFun x asc m-ana m-ann ((e ⇒ (t , n)) [ m-body ]⇐ ana)) ⇒ syn) AU↦ (e' ⇒ (t' , New))
+    -- ActUnwrapFunNone : ∀ {Γ asc m-ana m-ann e t n m-body ana syn} ->
+    --   Γ ⊢ (Unwrap One) , ((EFun BHole asc m-ana m-ann ((e ⇒ (t , n)) [ m-body ]⇐ ana)) ⇒ syn) AU↦ (e ⇒ (t , New))
+    ActUnwrapApOne : ∀ {Γ e t n m ana e-arg syn} ->
+      Γ ⊢ (Unwrap One) , ((EAp ((e ⇒ (t , n)) [ m ]⇐ ana) ✔ e-arg) ⇒ syn) AU↦ (e ⇒ (t , New))
+    ActUnwrapApTwo : ∀ {Γ e t n m ana e-fun syn} ->
+      Γ ⊢ (Unwrap Two) , ((EAp e-fun ✔ ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) AU↦ (e ⇒ (t , New))
+    ActUnwrapAsc : ∀ {Γ asc e t n m ana syn} ->
+      Γ ⊢ (Unwrap One) , ((EAsc asc ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) AU↦ (e ⇒ (t , New))
 
+  mutual 
+    CtxOfLEnvUp : LEnvUp -> BareCtx -> BareCtx
+    CtxOfLEnvUp (LEnvUpRec ε _) Γ = CtxOfLEnvMid ε Γ 
 
-  -- for now I'm going to ignore correct types on variables, so that I can look at the proof obligation 
-  -- and see how best to implement the solution. 
-
-  -- mutual 
-  --   VarTypeLEnvUp : LEnvUp -> Action -> Action 
-  --   VarTypeLEnvUp (LEnvUpRec ε _) α = VarTypeLEnvMid ε α
-
-  --   VarTypeLEnvMid : LEnvMid -> Action -> Action 
-  --   VarTypeLEnvMid (LEnvAp1 ε _ _) α = VarTypeLEnvLow ε α 
-  --   VarTypeLEnvMid (LEnvAp2 _ _ ε) α = VarTypeLEnvLow ε α
-  --   VarTypeLEnvMid (LEnvAsc _ ε) α = VarTypeLEnvLow ε α
-  --   VarTypeLEnvMid (LEnvFun x x₁ x₂ x₃) (InsertVarWith x₄ x₅ x₆) = {!   !}
-  --   VarTypeLEnvMid (LEnvFun _ _ _ ε) α = VarTypeLEnvLow ε α
+    CtxOfLEnvMid : LEnvMid -> BareCtx -> BareCtx
+    CtxOfLEnvMid (LEnvAp1 ε _ _) Γ = CtxOfLEnvLow ε Γ  
+    CtxOfLEnvMid (LEnvAp2 _ _ ε) Γ = CtxOfLEnvLow ε Γ 
+    CtxOfLEnvMid (LEnvAsc _ ε) Γ = CtxOfLEnvLow ε Γ 
+    CtxOfLEnvMid (LEnvFun x (t , n) _ _ ε) Γ = CtxOfLEnvLow ε (x ∶ t ∷? Γ) 
     
-  --   VarTypeLEnvLow : LEnvLow -> Action -> Action 
-  --   VarTypeLEnvLow L⊙ α = α
-  --   VarTypeLEnvLow (LEnvLowRec ε _ _) α = VarTypeLEnvUp ε α
+    CtxOfLEnvLow : LEnvLow -> BareCtx -> BareCtx
+    CtxOfLEnvLow L⊙ Γ = Γ
+    CtxOfLEnvLow (LEnvLowRec ε _ _) Γ = CtxOfLEnvUp ε Γ 
 
-  -- mutual 
-  --   VarTypeUEnvUp : UEnvUp -> Action -> Action 
-  --   VarTypeUEnvUp U⊙ α = α
-  --   VarTypeUEnvUp (UEnvUpRec ε _) α = VarTypeUEnvMid ε α
+  mutual 
+    CtxOfUEnvUp : UEnvUp -> BareCtx -> BareCtx
+    CtxOfUEnvUp U⊙ Γ = Γ
+    CtxOfUEnvUp (UEnvUpRec ε _) Γ = CtxOfUEnvMid ε Γ 
 
-  --   VarTypeUEnvMid : UEnvMid -> Action -> Action 
-  --   VarTypeUEnvMid (UEnvFun x x₁ x₂ x₃) α = {!   !}
-  --   VarTypeUEnvMid (UEnvAp1 ε _ _) α = VarTypeUEnvLow ε α
-  --   VarTypeUEnvMid (UEnvAp2 _ _ ε) α = VarTypeUEnvLow ε α
-  --   VarTypeUEnvMid (UEnvAsc _ ε) α = VarTypeUEnvLow ε α
+    CtxOfUEnvMid : UEnvMid -> BareCtx -> BareCtx
+    CtxOfUEnvMid (UEnvFun x (t , n) _ _ ε) Γ = CtxOfUEnvLow ε (x ∶ t ∷? Γ)
+    CtxOfUEnvMid (UEnvAp1 ε _ _) Γ = CtxOfUEnvLow ε Γ 
+    CtxOfUEnvMid (UEnvAp2 _ _ ε) Γ = CtxOfUEnvLow ε Γ 
+    CtxOfUEnvMid (UEnvAsc _ ε) Γ = CtxOfUEnvLow ε Γ 
 
-  --   VarTypeUEnvLow : UEnvLow -> Action -> Action 
-  --   VarTypeUEnvLow (UEnvLowRec ε _ _) α = VarTypeUEnvUp ε α
+    CtxOfUEnvLow : UEnvLow -> BareCtx -> BareCtx
+    CtxOfUEnvLow (UEnvLowRec ε _ _) Γ = CtxOfUEnvUp ε Γ 
 
-  data _,_AL↦_ : Action -> ExpLow -> ExpLow -> Set where 
-    ActLow : ∀ {α e e' m t n} ->
-      α , e AU↦ e' ->
-      α , (e [ m ]⇐ (t , n)) AL↦ (e' [ m ]⇐ (t , New))
+  data _⊢_,_AL↦_ : BareCtx -> Action -> ExpLow -> ExpLow -> Set where 
+    ActLow : ∀ {Γ α e e' m t n} ->
+      Γ ⊢ α , e AU↦ e' ->
+      Γ ⊢ α , (e [ m ]⇐ (t , n)) AL↦ (e' [ m ]⇐ (t , New))
 
   data _,_AUp↦_ : (α : Action) -> (e e' : ExpUp) -> Set where
     AStepUp : ∀{α ε e e' e-in e-in'} ->
       ε L⟦ e-in ⟧Up== e ->
-      α , e-in AL↦ e-in' ->
+      (CtxOfLEnvUp ε ∅) ⊢ α , e-in AL↦ e-in' ->
       ε L⟦ e-in' ⟧Up== e' ->
       α , e AUp↦ e'
 
   data _,_ALow↦_ : (α : Action) -> (e e' : ExpLow) -> Set where
     AStepLow : ∀{α ε e e' e-in e-in'} ->
       ε L⟦ e-in ⟧Low== e ->
-      α , e-in AL↦ e-in' ->
+      (CtxOfLEnvLow ε ∅) ⊢ α , e-in AL↦ e-in' ->
       ε L⟦ e-in' ⟧Low== e' ->
       α , e ALow↦ e'
 

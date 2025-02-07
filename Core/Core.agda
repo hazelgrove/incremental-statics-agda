@@ -137,6 +137,23 @@ data Context (A : Set) : Set where
 _∶_∷?_ : {A : Set} -> Binding -> A -> Context A -> Context A
 BHole ∶ t ∷? Γ = Γ
 BVar x ∶ t ∷? Γ = x ∶ t ∷ Γ
+
+BareCtx : Set 
+BareCtx = Context Type
+
+data _,_∈_,_ : Var -> Type -> BareCtx -> Mark -> Set where 
+  InCtxEmpty : ∀ {x} ->
+    x , THole ∈ ∅ , ✖ 
+  InCtxFound : ∀ {Γ x t} ->
+    x , t ∈ (x ∶ t ∷ Γ) , ✔
+  InCtxSkip : ∀ {Γ t t' x x' m} -> 
+    ¬(x ≡ x') ->
+    (x , t ∈ Γ , m) -> 
+    (x , t ∈ (x' ∶ t' ∷ Γ) , m)
+
+_,_∈?_,_ : Binding -> Type -> BareCtx -> Mark -> Set
+BHole , t ∈? Γ , m = ⊤
+BVar x , t ∈? Γ , m = x , t ∈ Γ , m
   
 Ctx : Set 
 Ctx = Context NewType
