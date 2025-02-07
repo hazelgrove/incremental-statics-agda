@@ -66,10 +66,10 @@ module Core.ActionPreservation where
   PreservationStepAna ana (ActLow {t = t} (ActWrapApTwo {t = t'} {n = n'})) with ~N-dec (■ THole , New) (t , New) 
   ... | _ , (~N-pair consist) = AnaSubsume SubsumableAp (~N-pair consist) ▶New (SynAp (NTArrowC (DTArrowSome MArrowHole)) (▷Pair ▶Old) (▷Pair ▶Old) ▶Old (AnaSubsume SubsumableHole (~N-pair ~DVoidR) ▶Old (SynHole (▷Pair ▶Old))) {!   !})
   
-  PreservationStepAna ana (ActLow (ActUnwrapFun a b)) = {!   !}
-  PreservationStepAna ana (ActLow ActUnwrapApOne) = {!   !}
-  PreservationStepAna ana (ActLow ActUnwrapApTwo) = {!   !}
-  PreservationStepAna ana (ActLow ActUnwrapAsc) = {!   !}
+  PreservationStepAna (AnaSubsume subsumable consist-t consist-m (SynAp marrow consist-syn consist-ana consist-mark syn ana)) (ActLow ActUnwrapApOne) = {!   !}
+  PreservationStepAna (AnaSubsume subsumable consist-t consist-m (SynAp marrow consist-syn consist-ana consist-mark syn ana)) (ActLow ActUnwrapApTwo) = {!   !}
+  PreservationStepAna (AnaSubsume subsumable consist-t consist-m (SynAsc consist-syn consist-ana ana)) (ActLow ActUnwrapAsc) = {!   !}
+  PreservationStepAna (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (ActLow (ActUnwrapFun a b)) = {!   !}
 
   mutual 
 

@@ -339,9 +339,9 @@ module Core.Lemmas-Preservation where
   u-env-subsumable (FillUEnvAp2 _) (FillUEnvAp2 _) SubsumableAp = SubsumableAp
   u-env-subsumable (FillUEnvAsc _) (FillUEnvAsc _) SubsumableAsc = SubsumableAsc
 
-  oldify-syn : ∀ {Γ e t n} ->
+  oldify-syn : ∀ {Γ e t n n'} ->
     Γ ⊢ e ⇒ (t , n) ⇒ ->
-    Γ ⊢ e ⇒ (t , Old) ⇒
+    Γ ⊢ e ⇒ (t , n') ⇒
   oldify-syn (SynConst (▷Pair consist)) = SynConst (▷Pair consist) 
   oldify-syn (SynHole (▷Pair consist)) = SynHole (▷Pair consist)
   oldify-syn (SynAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana) = SynAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana
@@ -354,15 +354,35 @@ module Core.Lemmas-Preservation where
   oldify-syn-inner (AnaSubsume subsumable (~N-pair consist) consist-m syn) = AnaSubsume subsumable (~N-pair ~DVoidR) ▶Old (oldify-syn syn) 
   oldify-syn-inner (AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ x₅ x₆ x₇ syn) = AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ (beyond-▷-contra ◁▷C x₅) (~N-pair ~DVoidR) ▶Old syn
 
-  newify-ana : ∀ {Γ e m m' ana t} ->
-    Γ ⊢ e [ m ]⇐ ana ⇐ -> 
-    Γ ⊢ e [ m' ]⇐ (t , New) ⇐
-  newify-ana {t = t} (AnaSubsume {syn-all = syn-all} subsumable consist-t consist-m syn) with ~N-dec syn-all ((t , New)) 
-  ... | _ , consist-t' with new-through-~N-left consist-t' 
-  ... | _ , refl = AnaSubsume subsumable consist-t' ▶New syn
-  newify-ana {t = t-ana'} (AnaFun {syn-all = syn-all} {syn-body = syn-body , n-body} {t-asc = t-asc , n-asc} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ▸DTArrow-dec t-ana' | ~N-dec syn-all (t-ana' , New )
-  ... | t-in-ana' , t-out-ana' , m-ana-ana' , marrow' | _ , consist-syn' with ~D-dec (■ t-asc) t-in-ana' | new-through-~N-left consist-syn' 
-  ... | _ , consist' | _ , refl rewrite max-new (n-asc ⊓ n-body) = AnaFun (NTArrowC marrow') (■~N-pair (~N-pair consist')) (▷Pair ▶New) ▶New ▶New-max-r NUnless-new-▷ consist-syn' ▶New ana 
+  newify-ana : ∀ {Γ e n n' m m' ana t t'} ->
+    Γ ⊢ (e ⇒ (t , n)) [ m ]⇐ ana ⇐ -> 
+    Γ ⊢ (e ⇒ (t , n')) [ m' ]⇐ (t' , New) ⇐
+  newify-ana {n' = n'} {t = t} {t' = t'} (AnaSubsume {syn-all = syn-all} subsumable consist-t consist-m syn) with ~N-dec (t , n') (t' , New)
+  ... | _ , (~N-pair consist-t') = AnaSubsume subsumable (~N-pair consist-t') ▶New-max-r (oldify-syn syn)
+  newify-ana {t = t} {t' = t'} (AnaFun {syn-all = syn-all} {syn-body = syn-body , n-body} {t-asc = t-asc , n-asc} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ▸NTArrow-dec (t' , New)
+  ... | (t-in , New) , (t-out , New) , (m , New) , NTArrowC marrow with ~N-dec (■ t-asc , n-asc) (t-in , New) | ~N-dec (t , New) (t' , New)
+  ... | m' , consist | _ , ~N-pair consist' with new-through-~N-left consist 
+  ... | _ , refl = AnaFun (NTArrowC marrow) (■~N-pair consist) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair consist') ▶New-max-r ana
+
+  -- double-newify-ana : ∀ {Γ e n m m' ana t t'} ->
+  --   Γ ⊢ (e ⇒ (t , n)) [ m ]⇐ ana ⇐ -> 
+  --   Γ ⊢ (e ⇒ (t , New)) [ m' ]⇐ (t' , New) ⇐
+  -- double-newify-ana {t = t} {t' = t'} (AnaSubsume {syn-all = syn-all} subsumable consist-t consist-m syn) with ~N-dec (t , New) (t' , New)
+  -- ... | _ , (~N-pair consist-t') = AnaSubsume subsumable (~N-pair consist-t') ▶New (oldify-syn syn)
+  -- double-newify-ana {t = t} {t' = t'} (AnaFun {syn-all = syn-all} {syn-body = syn-body , n-body} {t-asc = t-asc , n-asc} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ▸NTArrow-dec (t' , New)
+  -- ... | (t-in , New) , (t-out , New) , (m , New) , NTArrowC marrow with ~N-dec (■ t-asc , n-asc) (t-in , New) | ~N-dec (t , New) (t' , New)
+  -- ... | m' , consist | _ , ~N-pair consist' with new-through-~N-left consist 
+  -- ... | _ , refl = AnaFun (NTArrowC marrow) (■~N-pair consist) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair consist') ▶New ana
+
+  -- newify-ana : ∀ {Γ e m m' ana t} ->
+  --   Γ ⊢ e [ m ]⇐ ana ⇐ -> 
+  --   Γ ⊢ e [ m' ]⇐ (t , New) ⇐
+  -- newify-ana {t = t} (AnaSubsume {syn-all = syn-all} subsumable consist-t consist-m syn) with ~N-dec syn-all ((t , New)) 
+  -- ... | _ , consist-t' with new-through-~N-left consist-t' 
+  -- ... | _ , refl = AnaSubsume subsumable consist-t' ▶New syn
+  -- newify-ana {t = t-ana'} (AnaFun {syn-all = syn-all} {syn-body = syn-body , n-body} {t-asc = t-asc , n-asc} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ▸DTArrow-dec t-ana' | ~N-dec syn-all (t-ana' , New )
+  -- ... | t-in-ana' , t-out-ana' , m-ana-ana' , marrow' | _ , consist-syn' with ~D-dec (■ t-asc) t-in-ana' | new-through-~N-left consist-syn' 
+  -- ... | _ , consist' | _ , refl rewrite max-new (n-asc ⊓ n-body) = AnaFun (NTArrowC marrow') (■~N-pair (~N-pair consist')) (▷Pair ▶New) ▶New ▶New-max-r NUnless-new-▷ consist-syn' ▶New ana 
 
   vars-syn-subsumable : ∀ {x t e e' syn syn'} ->
     VarsSynthesize x t (e ⇒ syn) (e' ⇒ syn') -> 
