@@ -103,11 +103,11 @@ module Core.Validity where
     validity-ana (AnaFun (NTArrowC (DTArrowSome marrow)) (■~N-pair (~N-pair (~DSome consist))) (▷Pair ▶Old) ▶Old ▶Old (▷Pair x₁) (~N-pair ~DVoidL) ▶Old ana) (SettledAnaAna (SettledAnaFun (SettledAnaAna settled))) (BarrenLow (BarrenUp (BarrenFun bare))) bare-ctx ctx-old refl 
       = MarkAnaFun marrow (validity-ana ana (SettledAnaAna settled) bare (BarrenCtxCons bare-ctx) (ConsAllOld ctx-old) refl) consist 
 
-  validity : ∀ {e e' b t n} ->
-    e ⇒ ->
-    SettledProgram e ->
-    BarrenProgram e b ->   
-    e ≡ Root (e' ⇒ ((■ t , n))) -> 
-    b ~> e ⇒ t   
-  validity (SynProg syn) (SettledRoot settled) (BarrenP bare) refl     
-    = MarkProgram (validity-syn syn settled bare BarrenCtxEmpty EmptyAllOld refl)      
+  validity : ∀ {p b e t n1 n2} ->
+    WellTypedProgram p ->
+    SettledProgram p ->
+    BarrenProgram p b ->   
+    p ≡ Root (e ⇒ (■ t , n1)) n2 -> 
+    b ~> p ⇒ t   
+  validity (WTProg (AnaSubsume _ _ _ syn)) (SettledRoot settled) (BarrenP (BarrenLow bare)) refl = MarkProgram (validity-syn syn settled bare BarrenCtxEmpty EmptyAllOld refl)
+  validity (WTProg (AnaFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ x₈)) (SettledRoot settled) (BarrenP (BarrenLow bare)) refl = MarkProgram (validity-indirect-syn (AnaFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ x₈) settled bare BarrenCtxEmpty EmptyAllOld refl)

@@ -1,5 +1,8 @@
 module Core where 
+  
   import Core.Core
+  import Core.Environment
+
   import Core.Marking
   import Core.WellTyped
   import Core.Settled
@@ -7,3 +10,5 @@ module Core where
   
   import Core.Update
   import Core.UpdatePreservation
+
+  import Core.Actions

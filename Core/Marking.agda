@@ -42,9 +42,9 @@ mutual
       BarrenExpLow (e [ m ]⇐ ana) b
 
 data BarrenProgram : Program -> BareProgram -> Set where 
-  BarrenP : ∀ {e b} ->
-    BarrenExpUp e b -> 
-    BarrenProgram (Root e) (BareRoot b)
+  BarrenP : ∀ {p b} ->
+    BarrenExpLow (ExpLowOfProgram p) b -> 
+    BarrenProgram p (BareRoot b)
 
 BareCtx : Set 
 BareCtx = Context Type
@@ -99,4 +99,4 @@ mutual
 data _~>_⇒_ : BareProgram -> Program -> Type -> Set where 
   MarkProgram : ∀ {b e t} ->
     ∅ ⊢ b ~> e ⇒ t -> 
-    (BareRoot b) ~> (Root e) ⇒ t 
+    (BareRoot b) ~> (Root e Old) ⇒ t 

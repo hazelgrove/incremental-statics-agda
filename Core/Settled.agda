@@ -11,6 +11,7 @@ open import Core.Core
 
 module Core.Settled where
 
+-- this would probably be nicer if it weren't bidirectional
 
 mutual 
 
@@ -51,12 +52,7 @@ mutual
       SettledSyn e ->
       SettledAnaUp e
 
--- data SettledSynExcept : ExpUp -> Set where 
---   SettledSynExceptSyn : ∀ {e t n} ->
---     SettledSynMid e -> 
---     SettledSynExcept (e ⇒ (■ (t , n)))
-
 data SettledProgram : Program -> Set where 
   SettledRoot : ∀ {e} ->
     SettledSyn e -> 
-    SettledProgram (Root e)
+    SettledProgram (Root e Old)

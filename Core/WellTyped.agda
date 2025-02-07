@@ -169,7 +169,7 @@ mutual
       (t-asc ∷ Γ) ⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ⇐ ->
       Γ ⊢ (((EFun t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐  
     
-data _⇒ : Program -> Set where 
-  SynProg : ∀ {e} ->
-    ∅ ⊢ e ⇒ ->
-    (Root e) ⇒
+data WellTypedProgram : Program -> Set where 
+  WTProg : ∀ {p} ->
+    ∅ ⊢ (ExpLowOfProgram p) ⇐ ->
+    WellTypedProgram p

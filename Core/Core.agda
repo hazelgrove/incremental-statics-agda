@@ -127,7 +127,10 @@ mutual
     _[_]⇐_ : ExpUp -> Mark -> NewData -> ExpLow
 
 data Program : Set where 
-    Root : ExpUp -> Program
+  Root : ExpUp -> Newness -> Program
+  
+ExpLowOfProgram : Program -> ExpLow  
+ExpLowOfProgram (Root e n) = (e [ ✔ ]⇐ (□ , n)) 
 
 data SubsumableMid : ExpMid -> Set where 
   SubsumableConst : SubsumableMid EConst
