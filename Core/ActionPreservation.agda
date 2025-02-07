@@ -62,13 +62,13 @@ module Core.ActionPreservation where
   PreservationStepAna ana (ActLow {t = t} ActWrapAsc) with ~N-dec (■ THole , New) (t , New) 
   ... | _ , (~N-pair consist) = AnaSubsume SubsumableAsc (~N-pair consist) ▶New (SynAsc (▷■Pair (▷Pair ▶New)) (▷■Pair (▷Pair ▶New)) (newify-ana ana))
   PreservationStepAna ana (ActLow {t = t} (ActWrapApOne {t = t'} {n = n'})) with ~N-dec (t' , n') (t , New) | ▸NTArrow-dec (t' , New) 
-  ... | _ , (~N-pair consist) | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist' = AnaSubsume SubsumableAp (~N-pair consist) ▶New-max-r (SynAp (NTArrowC consist') (▷Pair ▶New) (▷Pair ▶New) ▶New {!   !} (AnaSubsume SubsumableHole (~N-pair ~DVoidR) ▶Old (SynHole (▷Pair ▶Old))))
+  ... | _ , (~N-pair consist) | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist' = AnaSubsume SubsumableAp (~N-pair consist) ▶New-max-r (SynAp (NTArrowC consist') (▷Pair ▶New) (▷Pair ▶New) ▶New (newify-ana ana) (AnaSubsume SubsumableHole (~N-pair ~DVoidR) ▶Old (SynHole (▷Pair ▶Old))))
   PreservationStepAna ana (ActLow {t = t} (ActWrapApTwo {t = t'} {n = n'})) with ~N-dec (■ THole , New) (t , New) 
-  ... | _ , (~N-pair consist) = AnaSubsume SubsumableAp (~N-pair consist) ▶New (SynAp (NTArrowC (DTArrowSome MArrowHole)) (▷Pair ▶Old) (▷Pair ▶Old) ▶Old (AnaSubsume SubsumableHole (~N-pair ~DVoidR) ▶Old (SynHole (▷Pair ▶Old))) {!   !})
+  ... | _ , (~N-pair consist) = AnaSubsume SubsumableAp (~N-pair consist) ▶New (SynAp (NTArrowC (DTArrowSome MArrowHole)) (▷Pair ▶Old) (▷Pair ▶Old) ▶Old (AnaSubsume SubsumableHole (~N-pair ~DVoidR) ▶Old (SynHole (▷Pair ▶Old))) (newify-ana ana))
   
-  PreservationStepAna (AnaSubsume subsumable consist-t consist-m (SynAp marrow consist-syn consist-ana consist-mark syn ana)) (ActLow ActUnwrapApOne) = {!   !}
-  PreservationStepAna (AnaSubsume subsumable consist-t consist-m (SynAp marrow consist-syn consist-ana consist-mark syn ana)) (ActLow ActUnwrapApTwo) = {!   !}
-  PreservationStepAna (AnaSubsume subsumable consist-t consist-m (SynAsc consist-syn consist-ana ana)) (ActLow ActUnwrapAsc) = {!   !}
+  PreservationStepAna (AnaSubsume subsumable consist-t consist-m (SynAp marrow consist-syn consist-ana consist-mark syn ana)) (ActLow ActUnwrapApOne) = newify-ana syn
+  PreservationStepAna (AnaSubsume subsumable consist-t consist-m (SynAp marrow consist-syn consist-ana consist-mark syn ana)) (ActLow ActUnwrapApTwo) = newify-ana ana
+  PreservationStepAna (AnaSubsume subsumable consist-t consist-m (SynAsc consist-syn consist-ana ana)) (ActLow ActUnwrapAsc) = newify-ana ana
   PreservationStepAna (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (ActLow (ActUnwrapFun a b)) = {!   !}
 
   mutual 

@@ -364,25 +364,10 @@ module Core.Lemmas-Preservation where
   ... | m' , consist | _ , ~N-pair consist' with new-through-~N-left consist 
   ... | _ , refl = AnaFun (NTArrowC marrow) (■~N-pair consist) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair consist') ▶New-max-r ana
 
-  -- double-newify-ana : ∀ {Γ e n m m' ana t t'} ->
-  --   Γ ⊢ (e ⇒ (t , n)) [ m ]⇐ ana ⇐ -> 
-  --   Γ ⊢ (e ⇒ (t , New)) [ m' ]⇐ (t' , New) ⇐
-  -- double-newify-ana {t = t} {t' = t'} (AnaSubsume {syn-all = syn-all} subsumable consist-t consist-m syn) with ~N-dec (t , New) (t' , New)
-  -- ... | _ , (~N-pair consist-t') = AnaSubsume subsumable (~N-pair consist-t') ▶New (oldify-syn syn)
-  -- double-newify-ana {t = t} {t' = t'} (AnaFun {syn-all = syn-all} {syn-body = syn-body , n-body} {t-asc = t-asc , n-asc} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ▸NTArrow-dec (t' , New)
-  -- ... | (t-in , New) , (t-out , New) , (m , New) , NTArrowC marrow with ~N-dec (■ t-asc , n-asc) (t-in , New) | ~N-dec (t , New) (t' , New)
-  -- ... | m' , consist | _ , ~N-pair consist' with new-through-~N-left consist 
-  -- ... | _ , refl = AnaFun (NTArrowC marrow) (■~N-pair consist) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair consist') ▶New ana
-
-  -- newify-ana : ∀ {Γ e m m' ana t} ->
-  --   Γ ⊢ e [ m ]⇐ ana ⇐ -> 
-  --   Γ ⊢ e [ m' ]⇐ (t , New) ⇐
-  -- newify-ana {t = t} (AnaSubsume {syn-all = syn-all} subsumable consist-t consist-m syn) with ~N-dec syn-all ((t , New)) 
-  -- ... | _ , consist-t' with new-through-~N-left consist-t' 
-  -- ... | _ , refl = AnaSubsume subsumable consist-t' ▶New syn
-  -- newify-ana {t = t-ana'} (AnaFun {syn-all = syn-all} {syn-body = syn-body , n-body} {t-asc = t-asc , n-asc} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ▸DTArrow-dec t-ana' | ~N-dec syn-all (t-ana' , New )
-  -- ... | t-in-ana' , t-out-ana' , m-ana-ana' , marrow' | _ , consist-syn' with ~D-dec (■ t-asc) t-in-ana' | new-through-~N-left consist-syn' 
-  -- ... | _ , consist' | _ , refl rewrite max-new (n-asc ⊓ n-body) = AnaFun (NTArrowC marrow') (■~N-pair (~N-pair consist')) (▷Pair ▶New) ▶New ▶New-max-r NUnless-new-▷ consist-syn' ▶New ana 
+  small-newify-ana : ∀ {Γ e m m' ana t} ->
+    Γ ⊢ e [ m ]⇐ ana ⇐ -> 
+    Γ ⊢ e [ m' ]⇐ (t , New) ⇐
+  small-newify-ana {e = e ⇒ (t , n)} ana = newify-ana ana
 
   vars-syn-subsumable : ∀ {x t e e' syn syn'} ->
     VarsSynthesize x t (e ⇒ syn) (e' ⇒ syn') -> 
