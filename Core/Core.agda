@@ -48,10 +48,6 @@ data Newness : Set where
 _⊓_ : Newness -> Newness -> Newness 
 Old ⊓ n = n
 New ⊓ n = New
-
--- _⊔_ : Newness -> Newness -> Newness 
--- Old ⊔ n = Old
--- New ⊔ n = n
   
 data Mark : Set where 
   ✖ : Mark
@@ -90,9 +86,6 @@ data DATA (A : Set) : Set where
 Data : Set 
 Data = DATA Type
 
--- MData : Set 
--- MData = DATA Mark
-
 NEW : (A : Set) -> Set 
 NEW A = A × Newness 
 
@@ -104,20 +97,6 @@ NewData = NEW Data
 
 NewMark : Set 
 NewMark = NEW Mark
-
--- NewMData : Set 
--- NewMData = NEW MData
-
--- data ExpPointer : Set where 
---   Here : ExpPointer 
---   PFun : ExpPointer -> ExpPointer
---   PAp1 : ExpPointer -> ExpPointer
---   PAp2 : ExpPointer -> ExpPointer
---   PAsc : ExpPointer -> ExpPointer
-
--- data ExpPointerSet : Set where 
---   P∅ : ExpPointerSet
---   _P,_ : ExpPointer -> ExpPointerSet -> ExpPointerSet
 
 mutual 
 

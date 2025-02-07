@@ -113,7 +113,7 @@ module Core.Validity where
     validity-ana (AnaSubsume subsumable (~N-pair (~DSome consist)) ▶Old syn) (SettledAnaAna (SettledAnaSubsume settled-subsumable (SettledSynSyn settled))) (BarrenLow (BarrenUp bare)) bare-ctx ctx-old refl 
       = MarkSubsume (validity-syn syn (SettledSynSyn settled) (BarrenUp bare) bare-ctx ctx-old refl) (barren-subsumable settled-subsumable bare) consist
     validity-ana (AnaFun (NTArrowC (DTArrowSome marrow)) (■~N-pair (~N-pair (~DSome consist))) (▷Pair ▶Old) ▶Old ▶Old (▷Pair x₁) (~N-pair ~DVoidL) ▶Old ana) (SettledAnaAna (SettledAnaFun (SettledAnaAna settled))) (BarrenLow (BarrenUp (BarrenFun bare))) bare-ctx ctx-old refl 
-    = MarkAnaFun marrow (validity-ana ana (SettledAnaAna settled) bare (BarrenCtxCons? bare-ctx) (ConsAllOld? ctx-old) refl) consist 
+      = MarkAnaFun marrow (validity-ana ana (SettledAnaAna settled) bare (BarrenCtxCons? bare-ctx) (ConsAllOld? ctx-old) refl) consist 
 
   validity : ∀ {p b e t n1 n2} ->
     WellTypedProgram p ->

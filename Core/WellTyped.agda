@@ -11,11 +11,6 @@ open import Core.Core
 
 module Core.WellTyped where
 
--- Directed Newness Consistency Judgments:
--- Tests whether the first piece of data (which has been calculated 
--- from slightly upstream in the information flow) is consistent with the 
--- second (which is found as an annotation slghtly downstream). 
-
 data ▶ {A : Set} : NEW A -> A -> Set where 
   ▶New : ∀ {a a'} -> 
     ▶ (a , New) a' 
@@ -45,11 +40,6 @@ data _▸NTArrow_,_,_ : NewData -> NewData -> NewData -> NewMark -> Set where
   NTArrowC : ∀ {d n t1 t2 m} ->
     d ▸DTArrow t1 , t2 , m ->
     (d , n) ▸NTArrow (t1 , n) , (t2 , n) , (m , n)
-
-  -- SynArrowNone : □ ▸DTArrowNM (THole , New) , (THole , New) , Any
-  -- SynArrowSome : ∀ {t t1 t2 m} ->
-  --   t ▸TArrowNM t1 , t2 , m -> 
-  --   (■ t) ▸DTArrowNM t1 , t2 , m
 
 data _,_∈N_,_ : Var -> NewType -> Ctx -> Mark -> Set where 
   InCtxEmpty : ∀ {x} ->
@@ -100,17 +90,6 @@ NUnless : NewData -> NewData -> NewData
 NUnless (d , n1) (■ t , n2) = (□ , n2)
 NUnless (d , n1) (□ , n2) = (d , n1 ⊓ n2)
 
--- -- Legal arrangements of the synthesized, mark, and analyzed on a 
--- -- lambda in analytic position. Should be thought of as a predicate on 
--- -- syn and m as a function of ana. 
--- data AnaLamEdge : Data -> Mark -> Data -> Set where 
---   AnaLamVoid : ∀ {syn m n} ->
---     AnaLamEdge syn m (□ , n)
---   AnaLamNew : ∀ {syn m ana} ->
---     AnaLamEdge syn m (■ ana , New)
---   AnaLamOld : ∀ {ana} ->
---     AnaLamEdge □ ✔ (■ ana , Old)
-
 DArrow : Type -> Data -> Data
 DArrow t1 □ = □
 DArrow t1 (■ t2) = ■ (TArrow t1 t2)
@@ -132,17 +111,12 @@ mutual
     SynHole : ∀ {Γ syn-all} ->
       ▷ (■ THole , Old) syn-all ->
       Γ ⊢ (EHole ⇒ syn-all) ⇒
-    -- SynFun : ∀ {Γ e-body syn-all syn-body ana-body t-asc m-ana m-asc m-body} ->
-    --   ▷ (NArrow t-asc syn-body) syn-all ->
-    --   (t-asc ∷ Γ) ⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ⇐ ->
-    --   Γ ⊢ ((EFun t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) ⇒  
     SynAp : ∀ {Γ e-fun e-arg syn-all syn-fun ana-arg t-in-fun t-out-fun m-all m-fun m-arg n} ->
       syn-fun ▸NTArrow t-in-fun , t-out-fun , m-fun -> 
       ▷ t-out-fun syn-all -> 
       ▷ t-in-fun ana-arg -> 
       ▶ m-fun m-all -> 
       Γ ⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) ⇐ ->
-      -- Γ ⊢ (e-fun ⇒ syn-fun) ⇒ ->
       Γ ⊢ (e-arg [ m-arg ]⇐ ana-arg) ⇐ ->
       Γ ⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all) ⇒
     SynVar : ∀ {Γ x syn-all t-var m-var} ->
