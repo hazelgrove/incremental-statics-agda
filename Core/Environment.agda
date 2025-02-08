@@ -95,3 +95,42 @@ module Core.Environment where
       FillUEnvLowRec : ∀ {e e' ana m ε} ->
         ε U⟦ e ⟧Up== e' ->
         UEnvLowRec ε m ana U⟦ e ⟧Low== (e' [ m ]⇐ ana)
+
+  mutual 
+
+    ComposeULU : UEnvLow -> LEnvUp -> UEnvUp
+    ComposeULU ε1 (LEnvUpRec ε2 t) = UEnvUpRec (ComposeULM ε1 ε2) t
+    
+    ComposeULM : UEnvLow -> LEnvMid -> UEnvMid
+    ComposeULM ε1 (LEnvFun x t m1 m2 ε2) = UEnvFun x t m1 m2 (ComposeULL ε1 ε2)
+    ComposeULM ε1 (LEnvAp1 ε2 m e2) = UEnvAp1 (ComposeULL ε1 ε2) m e2
+    ComposeULM ε1 (LEnvAp2 e1 m ε2) = UEnvAp2 e1 m (ComposeULL ε1 ε2)
+    ComposeULM ε1 (LEnvAsc t ε2) = UEnvAsc t (ComposeULL ε1 ε2)
+
+    ComposeULL : UEnvLow -> LEnvLow -> UEnvLow 
+    ComposeULL ε1 L⊙ = ε1
+    ComposeULL ε1 (LEnvLowRec ε2 m ana) = UEnvLowRec (ComposeULU ε1 ε2) m ana
+
+  mutual 
+
+    FillULU : ∀ {ε1 ε2 e1 e2 e3} ->
+      ε1 U⟦ e1 ⟧Low== e2 -> 
+      ε2 L⟦ e2 ⟧Up== e3 ->
+      (ComposeULU ε1 ε2) U⟦ e1 ⟧Up== e3
+    FillULU fill1 (FillLEnvUpRec fill2) = FillUEnvUpRec (FillULM fill1 fill2)
+
+    FillULM : ∀ {ε1 ε2 e1 e2 e3} ->
+      ε1 U⟦ e1 ⟧Low== e2 -> 
+      ε2 L⟦ e2 ⟧Mid== e3 ->
+      (ComposeULM ε1 ε2) U⟦ e1 ⟧Mid== e3
+    FillULM fill1 (FillLEnvFun fill2) = FillUEnvFun (FillULL fill1 fill2)
+    FillULM fill1 (FillLEnvAp1 fill2) = FillUEnvAp1 (FillULL fill1 fill2)
+    FillULM fill1 (FillLEnvAp2 fill2) = FillUEnvAp2 (FillULL fill1 fill2)
+    FillULM fill1 (FillLEnvAsc fill2) = FillUEnvAsc (FillULL fill1 fill2)
+
+    FillULL : ∀ {ε1 ε2 e1 e2 e3} ->
+      ε1 U⟦ e1 ⟧Low== e2 -> 
+      ε2 L⟦ e2 ⟧Low== e3 -> 
+      (ComposeULL ε1 ε2) U⟦ e1 ⟧Low== e3
+    FillULL fill1 FillL⊙ = fill1 
+    FillULL fill1 (FillLEnvLowRec fill2) = FillUEnvLowRec (FillULU fill1 fill2)

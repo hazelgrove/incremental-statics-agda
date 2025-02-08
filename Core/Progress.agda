@@ -88,7 +88,7 @@ module Core.Progress where
   --   ProgressSyn (t , SynFun syn refl m) | Inr s | NArrow _ _ , _ , refl = {!   !}
   --   ProgressSyn (t , SynFun syn refl m) | Inr s | Old , _ , refl = {!   !}
   --   ProgressSyn (.(TArrow _ _ , New) , SynFunVoid syn) = {!   !}
-  --   ProgressSyn (t , SynAp syn mt mn ana m) with ProgressSyn (_ , syn) | ProgressAna ana 
+  --   ProgressSyn (t , SynAp syn mt mn ana m) with ProgressSyn (_ , syn) | ProgressLow ana 
   --   ProgressSyn (t , SynAp syn mt mn ana m) | Inl (_ , StepUp fill1 step fill2) | ssana = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill2))))
   --   ProgressSyn (t , SynAp syn mt mn ana m) | Inl (_ , StepLow fill1 step fill2) | ssana = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2))))
   --   ProgressSyn (t , SynAp syn mt mn ana m) | Inr s1 | Inl (_ , StepUp fill1 step fill2) = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvAp2 fill1)) step (FillUEnvUpRec (FillUEnvAp2 fill2)))
@@ -97,7 +97,7 @@ module Core.Progress where
   --   ProgressSyn (t , SynAp {e2 = (ELow _ _ _)} syn mt mn ana m) | Inr s1 | Inr s2 | New , _ , refl = Inl (_ , StepUp FillU⊙ (StepAp IsNewNew mt MNArrowNew) FillU⊙)
   --   ProgressSyn (t , SynAp {e2 = (ELow _ _ _)} syn mt mn ana m) | Inr s1 | Inr s2 | NArrow _ _ , _ , refl = Inl (_ , StepUp FillU⊙ (StepAp IsNewArrow mt MNArrowArrow) FillU⊙)
   --   ProgressSyn (t , SynAp syn mt mn ana m) | Inr s1 | Inr s2 | Old , _ , refl = Inr (SettledSynExceptAp (settle-no-except s1) s2)
-  --   ProgressSyn (t , SynApFail syn mt mn ana m) with ProgressSyn (_ , syn) | ProgressAna ana 
+  --   ProgressSyn (t , SynApFail syn mt mn ana m) with ProgressSyn (_ , syn) | ProgressLow ana 
   --   ProgressSyn (t , SynApFail syn mt mn ana m) | Inl (_ , StepUp fill1 step fill2) | ssana = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill2))))
   --   ProgressSyn (t , SynApFail syn mt mn ana m) | Inl (_ , StepLow fill1 step fill2) | ssana = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2))))
   --   ProgressSyn (t , SynApFail syn mt mn ana m) | Inr s1 | Inl (_ , StepUp fill1 step fill2) = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvAp2 fill1)) step (FillUEnvUpRec (FillUEnvAp2 fill2)))
@@ -110,18 +110,27 @@ module Core.Progress where
   --   ProgressSyn (t , SynVar {t = _ , NArrow n n₁} ctx _) = {!   !}
   --   ProgressSyn (t , SynVar {t = _ , Old} ctx _) = Inr (SettledSynExceptVar (Inl ctx))
   --   ProgressSyn (t , SynVarFail notin _) = Inr (SettledSynExceptVar {t1 = THole} (Inr notin)) 
-  --   ProgressSyn (t , SynAsc ana _) with ProgressAna ana
+  --   ProgressSyn (t , SynAsc ana _) with ProgressLow ana
   --   ProgressSyn (t , SynAsc ana _) | Inl (_ , StepUp fill1 step fill2) = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvAsc fill1)) step (FillUEnvUpRec (FillUEnvAsc fill2)))
   --   ProgressSyn (t , SynAsc ana _) | Inl (_ , StepLow fill1 step fill2) = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc fill2)))
   --   ProgressSyn (t , SynAsc {t = (_ , New)} {e = (ELow _ _ _)} ana _) | Inr sana = Inl (_ , StepUp FillU⊙ (StepAsc IsNewNew) FillU⊙)
   --   ProgressSyn (t , SynAsc {t = (_ , NArrow _ _)} {e = (ELow _ _ _)} ana _) | Inr sana = Inl (_ , StepUp FillU⊙ (StepAsc IsNewArrow) FillU⊙)
   --   ProgressSyn (t , SynAsc {t = (_ , Old)} ana _) | Inr sana = Inr (SettledSynExceptAsc sana)
-  
-    ProgressAna :  
+    
+    ProgressUp :  
+      ∀ {Γ e} ->
+      (Γ ⊢ e ⇒) ->      
+      (∃[ e' ] (e Up↦ e')) + (SettledUp e)
+    ProgressUp = {!   !}
+
+    ProgressLow :  
       ∀ {Γ e} ->
       (Γ ⊢ e ⇐) ->      
-      ∃[ e' ] (e Low↦ e') + (SettledAna e)
-    ProgressAna ana = {!   !}     
+      (∃[ e' ] (e Low↦ e')) + (SettledLow e)
+    ProgressLow (AnaSubsume subsumable consist m-consist syn) with ProgressUp syn 
+    ... | Inl (e' , step) = Inl (_ , {!   !})
+    ... | Inr y = {!   !}
+    ProgressLow (AnaFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ ana) = {!   !}     
 
   step-preserves-program : ∀ {p e} -> 
     ExpLowOfProgram p Low↦ e -> 
@@ -135,7 +144,7 @@ module Core.Progress where
   ProgressProgram : ∀ {p} ->
     WellTypedProgram p -> 
     (∃[ p' ] (p P↦ p')) + (SettledProgram p)
-  ProgressProgram (WTProg ana) with ProgressAna ana 
+  ProgressProgram (WTProg ana) with ProgressLow ana 
   ProgressProgram (WTProg ana) | Inl (e' , step) with step-preserves-program step 
   ProgressProgram (WTProg ana) | Inl (e' , step) | p' , refl = Inl (p' , (TopStep step)) 
-  ProgressProgram {p = Root e n} (WTProg ana) | Inr settled = Inr {! SettledRoot ?  !}
+  ProgressProgram {p = Root e n} (WTProg ana) | Inr settled = Inr (SettledRoot settled)
