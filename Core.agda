@@ -15,4 +15,4 @@ module Core where
   import Core.UpdatePreservation
 
   import Core.Actions
-  -- import Core.ActionPreservation
+  import Core.ActionPreservation

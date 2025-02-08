@@ -32,7 +32,7 @@ module Core.Actions where
       Γ ⊢ InsertConst , (EHole ⇒ syn) AU↦ (EConst ⇒ (■ TBase , New))
     ActWrapFun : ∀ {Γ x e e' t t' n n'} ->
       VarsSynthesize? x THole ✔ (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
-      Γ ⊢ WrapFun x , (e ⇒ (t , n)) AU↦ ((EFun x (THole , New) ✔ ✔ ((e' ⇒ (t' , New)) [ ✔ ]⇐ (□ , Old))) ⇒ (t , n))
+      Γ ⊢ WrapFun x , (e ⇒ (t , n)) AU↦ ((EFun x (THole , Old) ✔ ✔ ((e' ⇒ (t' , New)) [ ✔ ]⇐ (□ , New))) ⇒ (t , n))
     ActWrapApOne : ∀ {Γ e t n} ->
       Γ ⊢ (WrapAp One) , (e ⇒ (t , n)) AU↦ ((EAp ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old))) ⇒ (t , n))
     ActWrapApTwo : ∀ {Γ e t n} ->
