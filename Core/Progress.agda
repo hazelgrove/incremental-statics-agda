@@ -70,6 +70,19 @@ module Core.Progress where
   -- settle-no-except (SettledSynExceptVar inctx) = SettledSynVar inctx
   -- settle-no-except (SettledSynExceptAsc x) = SettledSynAsc x
 
+  new-ana-steps-inner : ∀ {e m t} ->
+    ∃[ e' ] (e [ m ]⇐ (t , New)) L↦ e' 
+  new-ana-steps-inner {EConst ⇒ _} = _ , {! StepNewAnaConsist  !}
+  new-ana-steps-inner {EHole ⇒ _} = {!   !}
+  new-ana-steps-inner {EAp _ _ _ ⇒ _} = {!   !}
+  new-ana-steps-inner {EVar _ _ ⇒ _} = {!   !}
+  new-ana-steps-inner {EAsc _ _ ⇒ _} = {!   !}
+  new-ana-steps-inner {EFun _ _ _ _ _ ⇒ _} = {!   !}
+
+  new-ana-steps : ∀ {e m t} ->
+    ∃[ e' ] (e [ m ]⇐ (t , New)) Low↦ e' 
+  new-ana-steps = {!   !}
+
 
   mutual 
     
@@ -127,9 +140,10 @@ module Core.Progress where
       ∀ {Γ e} ->
       (Γ ⊢ e ⇐) ->      
       (∃[ e' ] (e Low↦ e')) + (SettledLow e)
-    ProgressLow (AnaSubsume subsumable consist m-consist syn) with ProgressUp syn 
-    ... | Inl (e' , step) = Inl (_ , {!   !})
-    ... | Inr y = {!   !}
+    ProgressLow (AnaSubsume {ana-all = t , n} subsumable consist m-consist syn) with ProgressUp syn 
+    ProgressLow (AnaSubsume {ana-all = t , n} subsumable consist m-consist syn) | Inl (e' , step) = Inl (_ , StepUpLow (FillUEnvLowRec FillU⊙) step (FillUEnvLowRec FillU⊙))
+    ProgressLow (AnaSubsume {ana-all = t , Old} subsumable consist m-consist syn) | Inr settled = Inr (SettledLowC settled)
+    ProgressLow (AnaSubsume {ana-all = t , New} subsumable consist m-consist syn) | Inr settled = Inl (_ , StepLow FillL⊙ {!   !} FillL⊙)
     ProgressLow (AnaFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ ana) = {!   !}     
 
   step-preserves-program : ∀ {p e} -> 
@@ -142,7 +156,7 @@ module Core.Progress where
   step-preserves-program {p = Root e n} (StepLow FillL⊙ StepSynFun FillL⊙) = Root _ _ , refl
 
   ProgressProgram : ∀ {p} ->
-    WellTypedProgram p -> 
+    WellTypedProgram p ->  
     (∃[ p' ] (p P↦ p')) + (SettledProgram p)
   ProgressProgram (WTProg ana) with ProgressLow ana 
   ProgressProgram (WTProg ana) | Inl (e' , step) with step-preserves-program step 
