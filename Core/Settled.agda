@@ -41,7 +41,7 @@ mutual
   data SettledAna : ExpLow -> Set where 
     SettledAnaAna : ∀ {t e m} ->
       SettledAnaUp e ->
-      SettledAna (e [ m ]⇐ ((■ t , Old)))
+      SettledAna (e [ m ]⇐ ((t , Old)))
   
   data SettledAnaUp : ExpUp -> Set where 
     SettledAnaFun : ∀ {x t m1 m2 e} ->
