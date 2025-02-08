@@ -12,6 +12,7 @@ open import Core.Core
 open import Core.WellTyped
 open import Core.Environment
 open import Core.Lemmas-Preservation
+open import Core.VarsSynthesize
 open import Core.Update
 open import Core.Settled
 
@@ -88,6 +89,39 @@ module Core.Progress where
   new-ana-steps syn subsumable with new-ana-steps-inner syn subsumable 
   ... | e' , step = e' , (StepLow FillL⊙ step FillL⊙)
 
+  _≡B?_ : (x y : Binding) -> Dec (x ≡ y) 
+  BHole ≡B? BHole = yes refl
+  BHole ≡B? BVar x = no (λ ())
+  BVar x ≡B? BHole = no (λ ())
+  BVar x ≡B? BVar y with x ≡? y 
+  ... | yes refl = yes refl 
+  ... | no neq = no (λ eq → neq (helper eq))
+    where 
+    helper : BVar x ≡ BVar y -> x ≡ y
+    helper refl = refl 
+
+  vars-syn-dec : ∀ {e x t m} ->
+    ∃[ e' ] (VarsSynthesize x t m e e')
+  vars-syn-dec {EConst ⇒ x₁} = (EConst ⇒ x₁) , VSConst
+  vars-syn-dec {EHole ⇒ x₁} = (EHole ⇒ x₁) , VSHole
+  vars-syn-dec {EAp (x [ x₄ ]⇐ x₅) x₂ (x₃ [ x₆ ]⇐ x₇) ⇒ x₁} = _ , (VSAp (proj₂ vars-syn-dec) (proj₂ vars-syn-dec))
+  vars-syn-dec {EAsc x (x₂ [ x₃ ]⇐ x₄) ⇒ x₁} = _ , (VSAsc (proj₂ vars-syn-dec))
+  vars-syn-dec {EFun x x₂ x₃ x₄ (x₅ [ x₆ ]⇐ x₇) ⇒ x₁} {y} with ((BVar y) ≡B? x) 
+  ... | yes refl = _ , VSFunEq 
+  ... | no neq = _ , VSFunNeq neq (proj₂ vars-syn-dec)
+  vars-syn-dec {EVar x x₂ ⇒ x₁} {y} with (y ≡? x) 
+  ... | yes refl = _ , VSVarEq 
+  ... | no neq = _ , VSVarNeq neq
+
+  vars-syn?-dec : ∀ {x e t m} ->
+    ∃[ e' ] (VarsSynthesize? x t m e e')
+  vars-syn?-dec {BHole} = _ , refl
+  vars-syn?-dec {BVar x} = vars-syn-dec
+
+  vars-syn?-dec-elaborate : ∀ {x e t m} ->
+    ∃[ e' ] ∃[ t' ] ∃[ n' ] (VarsSynthesize? x t m e (e' ⇒ (t' , n')))
+  vars-syn?-dec-elaborate {x} {e} {t} {m} with vars-syn?-dec {x} {e} {t} {m} 
+  ... | e' ⇒ (t' , n') , vars-syn = e' , t' , n' , vars-syn
 
   mutual 
     
@@ -152,8 +186,8 @@ module Core.Progress where
     ProgressLow (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) with ProgressLow ana 
     ProgressLow (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) | Inl (e' , step) = Inl (_ , StepLowLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))) step (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))))
     ProgressLow (AnaFun {ana-all = t , New} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (SettledLowC (SettledUpC settled)) = Inl (_ , StepLow FillL⊙ (StepAnaFun marrow (■~D-pair consist)) FillL⊙)     
-    ProgressLow (AnaFun {syn-all = syn-all , New} {ana-all = ana-all , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (SettledLowC (SettledUpC settled)) = Inr (SettledLowC {!  SettledUpC ?  !})     
-    ProgressLow (AnaFun {syn-all = syn-all , Old} {ana-all = ana-all , Old} {t-asc = t-asc , New} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (SettledLowC (SettledUpC settled)) = Inr (SettledLowC (SettledUpC {! SettledFun ?  !}))     
+    ProgressLow (AnaFun {ana-all = ana-all , Old} {t-asc = t-asc , New} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (SettledLowC (SettledUpC settled)) = Inl (_ , StepLow FillL⊙ (StepNewAnnFun marrow (■~D-pair consist) (proj₂ (proj₂ (proj₂ vars-syn?-dec-elaborate)))) FillL⊙)   
+    ProgressLow (AnaFun {syn-all = syn-all , New} {ana-all = ana-all , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (SettledLowC (SettledUpC settled)) = Inr (SettledLowC {! SettledFun ?  !})    
     ProgressLow (AnaFun {syn-all = syn-all , Old} {ana-all = ana-all , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (SettledLowC (SettledUpC settled)) = Inr (SettledLowC (SettledUpC (SettledFun (SettledLowC (SettledUpC settled)))))     
 
   step-preserves-program : ∀ {p e} -> 
@@ -163,14 +197,14 @@ module Core.Progress where
   step-preserves-program {p = Root e n} (StepLow (FillLEnvLowRec x) step (FillLEnvLowRec x₁)) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepNewAnaConsist x consist) FillL⊙) with ~DVoid-left consist 
   ... | refl = Root _ _ , refl
-  step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepAnaFun x x₁) FillL⊙) = Root _ _ , refl
-  step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepNewAnnFun x) FillL⊙) = Root _ _ , refl
+  step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepAnaFun _ _) FillL⊙) = Root _ _ , refl
+  step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepNewAnnFun _ _ _) FillL⊙) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillL⊙ StepSynFun FillL⊙) = Root _ _ , refl
 
   ProgressProgram : ∀ {p} ->
-    WellTypedProgram p ->  
+    WellTypedProgram p ->   
     (∃[ p' ] (p P↦ p')) + (SettledProgram p)  
-  ProgressProgram (WTProg ana) with ProgressLow ana 
+  ProgressProgram (WTProg ana) with ProgressLow ana  
   ProgressProgram (WTProg ana) | Inl (e' , step) with step-preserves-program step 
   ProgressProgram (WTProg ana) | Inl (e' , step) | p' , refl = Inl (p' , (TopStep step)) 
-  ProgressProgram {p = Root e n} (WTProg ana) | Inr settled = Inr (SettledRoot settled)
+  ProgressProgram {p = Root e n} (WTProg ana) | Inr settled = Inr (SettledRoot settled) 
