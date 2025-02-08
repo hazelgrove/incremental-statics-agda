@@ -143,7 +143,7 @@ module Core.Progress where
     ProgressLow (AnaSubsume {ana-all = t , n} subsumable consist m-consist syn) with ProgressUp syn 
     ProgressLow (AnaSubsume {ana-all = t , n} subsumable consist m-consist syn) | Inl (e' , step) = Inl (_ , StepUpLow (FillUEnvLowRec FillU⊙) step (FillUEnvLowRec FillU⊙))
     ProgressLow (AnaSubsume {ana-all = t , Old} subsumable consist m-consist syn) | Inr settled = Inr (SettledLowC settled)
-    ProgressLow (AnaSubsume {ana-all = t , New} subsumable consist m-consist syn) | Inr settled = Inl (_ , StepLow FillL⊙ {!   !} FillL⊙)
+    ProgressLow (AnaSubsume {ana-all = t , New} subsumable consist m-consist syn) | Inr settled = Inl (_ , {!   !})
     ProgressLow (AnaFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ ana) = {!   !}     
 
   step-preserves-program : ∀ {p e} -> 
