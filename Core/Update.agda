@@ -24,9 +24,9 @@ module Core.Update where
       (e-all ⇒ ((■ t-syn , Old))) [ m-all' ]⇐ (■ t-ana , Old)
     StepNewAnaConsist : ∀ {e-all t-syn t-ana n-syn m-all m-all'} ->
       SubsumableMid e-all -> 
-      (■ t-syn) ~D t-ana , m-all' ->
-      (e-all ⇒ ((■ t-syn , n-syn))) [ m-all ]⇐ (t-ana , New) L↦
-      (e-all ⇒ ((■ t-syn , n-syn))) [ m-all' ]⇐ (t-ana , Old) 
+      t-syn ~D t-ana , m-all' ->
+      (e-all ⇒ (t-syn , n-syn)) [ m-all ]⇐ (t-ana , New) L↦
+      (e-all ⇒ (t-syn , n-syn)) [ m-all' ]⇐ (t-ana , Old) 
     StepAnaFun : ∀ {x e-body n-asc syn-all ana-body t-ana t-asc t-in-ana t-out-ana t-body n-body m-ana m-asc m-body m-all m-ana' m-asc'} ->
       t-ana ▸DTArrow t-in-ana , t-out-ana , m-ana' ->
       t-asc ■~D t-in-ana , m-asc' ->

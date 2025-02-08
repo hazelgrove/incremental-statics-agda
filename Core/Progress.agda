@@ -75,9 +75,9 @@ module Core.Progress where
     ∃[ e' ] ∃[ t ] ∃[ n ] (e ≡ e' ⇒ (■ t , n))
   syn-has-syn (SynConst (▷Pair ▶Old)) = _ , _ , _ , refl
   syn-has-syn (SynHole (▷Pair ▶Old)) = _ , _ , _ , refl
-  syn-has-syn (SynVar x x₁) = {!   !}
+  syn-has-syn (SynVar _ _) = _ , _ , _ , refl
+  syn-has-syn (SynAsc _ _ _) = _ , _ , _ , refl
   syn-has-syn (SynAp x x₁ x₂ x₃ x₄ x₅) = {!   !}  
-  syn-has-syn (SynAsc x x₁ x₂) = {!   !}
 
   new-ana-steps-inner : ∀ {Γ e m t} ->
     Γ ⊢ e ⇒ ->

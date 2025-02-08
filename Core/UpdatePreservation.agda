@@ -67,6 +67,7 @@ module Core.UpdatePreservation where
   void-ana-step-same : ∀ {e n e' m t n'} ->
     (e [ ✔ ]⇐ (□ , n)) L↦ (e' [ m ]⇐ (t , n')) -> 
     (m ≡ ✔) × (t ≡ □)
+  void-ana-step-same (StepNewAnaConsist x ~DVoidL) = refl , refl
   void-ana-step-same (StepNewAnaConsist x ~DVoidR) = refl , refl
   void-ana-step-same (StepAnaFun x x₁) = refl , refl
   void-ana-step-same (StepNewAnnFun x) = refl , refl
