@@ -90,8 +90,5 @@ module Core.Update where
     e-in Low↦ e-in' ->
     ε L⟦ e-in' ⟧Low== e' ->
     e Low↦ e'
-  StepLowLow fill1 (StepUp fill2 step fill3) fill4 = StepUp {!   !} step {!   !}
-  StepLowLow fill1 (StepLow fill2 step fill3) fill4 = {!   !}
-  -- StepLowLow FillL⊙ step FillL⊙ = step 
-  -- StepLowLow (FillLEnvLowRec fill1) (StepUp fill3 step fill4) (FillLEnvLowRec fill2) = StepUp (FillUEnvLowRec {!   !}) step {!   !}
-  -- StepLowLow (FillLEnvLowRec fill1) (StepLow fill3 step fill4) (FillLEnvLowRec fill2) = StepLow {!   !} step {!   !} 
+  StepLowLow fill1 (StepUp fill2 step fill3) fill4 = StepUp (FillULL fill2 fill1) step (FillULL fill3 fill4)
+  StepLowLow fill1 (StepLow fill2 step fill3) fill4 = StepLow {!   !} step {!   !}
