@@ -162,5 +162,6 @@ module Core.UpdatePreservation where
     (WellTypedProgram p) ->
     (p P↦ p') ->   
     (WellTypedProgram p')
-  PreservationProgram (WTProg ana) (TopStep step) = WTProg (PreservationAna ana step)
+  PreservationProgram (WTProg ana) (InsideStep step) = WTProg (PreservationAna ana step)
+  PreservationProgram (WTProg ana) TopStep = WTProg (oldify-syn-inner ana)
    

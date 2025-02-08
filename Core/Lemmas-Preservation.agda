@@ -348,11 +348,11 @@ module Core.Lemmas-Preservation where
   oldify-syn (SynVar in-ctx (▷Pair consist)) = SynVar in-ctx (▷Pair consist)
   oldify-syn (SynAsc (▷Pair consist-syn) consist-ana ana) = SynAsc (▷Pair consist-syn) consist-ana ana
 
-  oldify-syn-inner : ∀ {Γ e t m n} ->
-    Γ ⊢ ((e ⇒ (t , n)) [ m ]⇐ (□ , Old)) ⇐ ->
-    Γ ⊢ ((e ⇒ (t , Old)) [ ✔ ]⇐ (□ , Old)) ⇐
-  oldify-syn-inner (AnaSubsume subsumable (~N-pair consist) consist-m syn) = AnaSubsume subsumable (~N-pair ~DVoidR) ▶Old (oldify-syn syn) 
-  oldify-syn-inner (AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ x₅ x₆ x₇ syn) = AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ (beyond-▷-contra ◁▷C x₅) (~N-pair ~DVoidR) ▶Old syn
+  oldify-syn-inner : ∀ {Γ e t m n n'} ->
+    Γ ⊢ ((e ⇒ (t , n)) [ m ]⇐ (□ , n')) ⇐ ->
+    Γ ⊢ ((e ⇒ (t , Old)) [ ✔ ]⇐ (□ , n')) ⇐
+  oldify-syn-inner (AnaSubsume subsumable (~N-pair consist) consist-m syn) = AnaSubsume subsumable (~N-pair ~DVoidR) ▶Same (oldify-syn syn)
+  oldify-syn-inner (AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ x₅ x₆ x₇ syn)  = AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ (beyond-▷-contra ◁▷C x₅) (~N-pair ~DVoidR) ▶Same syn
 
   -- new-oldify : ∀ {Γ e t n m ana} ->
   --   Γ ⊢ (e ⇒ (t , n)) [ m ]⇐ ana ⇐ ->

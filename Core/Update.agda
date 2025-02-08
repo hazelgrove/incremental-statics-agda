@@ -82,9 +82,11 @@ module Core.Update where
       e Low↦ e'
 
   data _P↦_ : (p p' : Program) -> Set where
-    TopStep : ∀{p p'} ->
+    InsideStep : ∀{p p'} ->
       (ExpLowOfProgram p) Low↦ (ExpLowOfProgram p') ->
       p P↦ p'
+    TopStep : ∀ {e t n} ->
+      (Root (e ⇒ (t , New)) n) P↦ (Root (e ⇒ (t , Old)) n)
 
   StepUpLow : ∀{ε e e' e-in e-in'} ->
     ε U⟦ e-in ⟧Low== e ->
