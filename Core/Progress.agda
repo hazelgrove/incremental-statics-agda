@@ -162,3 +162,48 @@ module Core.Progress where
   ProgressProgram (WTProg ana) | Inl (e' , step) | p' , refl = Inl (p' , (InsideStep step)) 
   ProgressProgram {p = Root e n} (WTProg ana) | Inr (AlmostSettledLowC (AlmostSettledUpC {Old} settled)) = Inr (SettledRoot (SettledLowC (SettledUpC settled))) 
   ProgressProgram {p = Root e n} (WTProg ana) | Inr (AlmostSettledLowC (AlmostSettledUpC {New} settled)) = Inl (_ , TopStep) 
+
+  mutual 
+    
+    UnProgressUp : ∀ {Γ e e'} ->
+      (Γ ⊢ e ⇒) ->  
+      (e Up↦ e') -> 
+      (SettledUp e) ->
+      ⊥ 
+    UnProgressUp (SynConst x) (StepUp FillU⊙ () FillU⊙) settled
+    UnProgressUp (SynHole x) (StepUp FillU⊙ () FillU⊙) settled
+    UnProgressUp (SynVar x x₁) (StepUp FillU⊙ () FillU⊙) settled
+    UnProgressUp (SynAp _ _ _ _ _ _) (StepUp FillU⊙ (StepAp _) FillU⊙) (SettledUpC (SettledAp (SettledLowC ()) _))
+    UnProgressUp (SynAsc _ _ ana) (StepUp FillU⊙ StepAsc FillU⊙) (SettledUpC ())
+    UnProgressUp (SynConst x) (StepUp (FillUEnvUpRec ()) step (FillUEnvUpRec x₁)) settled
+    UnProgressUp (SynHole x) (StepUp (FillUEnvUpRec ()) step (FillUEnvUpRec x₁)) settled
+    UnProgressUp (SynVar _ _) (StepUp (FillUEnvUpRec ()) step (FillUEnvUpRec x₁)) settled
+    UnProgressUp (SynAp _ _ _ _ syn ana) (StepUp (FillUEnvUpRec (FillUEnvAp1 fill1)) step (FillUEnvUpRec (FillUEnvAp1 fill2))) (SettledUpC (SettledAp settled _)) = UnProgressLow syn (StepUp fill1 step fill2) settled
+    UnProgressUp (SynAp _ _ _ _ syn ana) (StepUp (FillUEnvUpRec (FillUEnvAp2 fill1)) step (FillUEnvUpRec (FillUEnvAp2 fill2))) (SettledUpC (SettledAp _ settled)) = UnProgressLow ana (StepUp fill1 step fill2) settled
+    UnProgressUp (SynAsc _ _ ana) (StepUp (FillUEnvUpRec (FillUEnvAsc fill1)) step (FillUEnvUpRec (FillUEnvAsc fill2))) (SettledUpC (SettledAsc settled)) = UnProgressLow ana (StepUp fill1 step fill2) settled
+    
+    UnProgressUp (SynConst x) (StepLow (FillLEnvUpRec ()) step (FillLEnvUpRec fill2)) (SettledUpC settled)
+    UnProgressUp (SynHole x) (StepLow (FillLEnvUpRec ()) step (FillLEnvUpRec fill2)) (SettledUpC settled)
+    UnProgressUp (SynVar _ _) (StepLow (FillLEnvUpRec ()) step (FillLEnvUpRec fill2)) (SettledUpC settled)
+    UnProgressUp (SynAp _ _ _ _ syn ana) (StepLow (FillLEnvUpRec (FillLEnvAp1 fill1)) step (FillLEnvUpRec (FillLEnvAp1 fill2))) (SettledUpC (SettledAp settled _)) = UnProgressLow syn (StepLow fill1 step fill2) settled
+    UnProgressUp (SynAp _ _ _ _ syn ana) (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) (SettledUpC (SettledAp _ settled)) = UnProgressLow ana (StepLow fill1 step fill2) settled
+    UnProgressUp (SynAsc _ _ ana) (StepLow (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc fill2))) (SettledUpC (SettledAsc settled)) = UnProgressLow ana (StepLow fill1 step fill2) settled
+
+    UnProgressLow : ∀ {Γ e e'} ->
+      (Γ ⊢ e ⇐) ->  
+      (e Low↦ e') -> 
+      (SettledLow e) ->
+      ⊥ 
+    UnProgressLow (AnaSubsume _ _ _ syn) (StepLow FillL⊙ (StepNewSynConsist _) FillL⊙) (SettledLowC ())
+    UnProgressLow (AnaSubsume _ _ _ syn) (StepLow (FillLEnvLowRec fill1) step (FillLEnvLowRec fill2)) (SettledLowC settled) = UnProgressUp syn (StepLow fill1 step fill2) settled
+    UnProgressLow (AnaSubsume _ _ _ syn) (StepUp (FillUEnvLowRec fill1) step (FillUEnvLowRec fill2)) (SettledLowC settled) = UnProgressUp syn (StepUp fill1 step fill2) settled
+    UnProgressLow (AnaFun _ _ _ _ _ _ _ _ ana) (StepLow FillL⊙ StepSynFun FillL⊙) (SettledLowC (SettledUpC (SettledFun (SettledLowC ()))))
+    UnProgressLow (AnaFun _ _ _ _ _ _ _ _ ana) (StepUp (FillUEnvLowRec (FillUEnvUpRec (FillUEnvFun fill1))) step (FillUEnvLowRec (FillUEnvUpRec (FillUEnvFun fill2)))) (SettledLowC (SettledUpC (SettledFun settled))) = UnProgressLow ana (StepUp fill1 step fill2) settled
+    UnProgressLow (AnaFun _ _ _ _ _ _ _ _ ana) (StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun fill1))) step (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun fill2)))) (SettledLowC (SettledUpC (SettledFun settled))) = UnProgressLow ana (StepLow fill1 step fill2) settled
+
+  UnProgressProgram : ∀ {p p'} ->  
+    WellTypedProgram p ->   
+    (p P↦ p') ->   
+    (SettledProgram p) ->
+    ⊥       
+  UnProgressProgram {p = Root e .Old} (WTProg ana) (InsideStep step) (SettledRoot (SettledLowC settled)) = UnProgressLow ana step (SettledLowC settled)   
