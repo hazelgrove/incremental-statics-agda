@@ -49,10 +49,10 @@ module Core.Update where
       (((EFun x (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (t-body , Old)) [ ✔ ]⇐ (□ , Old) )) ⇒ (DArrow t-asc t-body , New)) [ ✔ ]⇐ (□ , Old))
     
   data _U↦_ : ExpUp -> ExpUp -> Set where 
-    StepAp : ∀ {e-fun e-arg t-fun t-in-fun t-out-fun m-all m-arg m-fun syn-all ana-arg} ->
-      t-fun ▸TArrow t-in-fun , t-out-fun , m-fun -> 
-      (EAp ((e-fun ⇒ (■ t-fun , New)) [ ✔ ]⇐ (□ , Old)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all U↦
-      (EAp ((e-fun ⇒ (■ t-fun , Old)) [ ✔ ]⇐ (□ , Old)) m-fun (e-arg [ m-arg ]⇐ (■ t-in-fun , New))) ⇒ (■ t-out-fun , New)
+    StepAp : ∀ {e-fun e-arg t-fun t-in-fun t-out-fun m-all m-arg m-fun n-fun syn-all ana-arg} ->
+      t-fun ▸DTArrow t-in-fun , t-out-fun , m-fun -> 
+      (EAp ((e-fun ⇒ (t-fun , New)) [ ✔ ]⇐ (□ , n-fun)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all U↦
+      (EAp ((e-fun ⇒ (t-fun , Old)) [ ✔ ]⇐ (□ , n-fun)) m-fun (e-arg [ m-arg ]⇐ (t-in-fun , New))) ⇒ (t-out-fun , New)
     StepAsc : ∀ {e-body t-asc m-body syn-all ana-body} ->
       (EAsc (t-asc , New) (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all  U↦
       (EAsc (t-asc , Old) (e-body [ m-body ]⇐ (■ t-asc , New))) ⇒ (■ t-asc , New)
