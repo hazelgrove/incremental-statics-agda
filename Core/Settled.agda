@@ -11,48 +11,37 @@ open import Core.Core
 
 module Core.Settled where
 
--- this would probably be nicer if it weren't bidirectional
-
 mutual 
 
-  data SettledSyn : ExpUp -> Set where 
-    SettledSynSyn : ∀ {e t} ->
-      SettledSynMid e -> 
-      SettledSyn (e ⇒ ((■ t , Old)))
+  data SettledUp : ExpUp -> Set where 
+    SettledUpC : ∀ {e t} ->
+      SettledMid e -> 
+      SettledUp (e ⇒ (t , Old))
 
-  data SettledSynMid : ExpMid -> Set where 
-    SettledSynConst :
-      SettledSynMid EConst
-    SettledSynHole : 
-      SettledSynMid (EHole)
-    SettledSynFun : ∀ {x t e} ->
-      SettledSyn e ->
-      SettledSynMid ((EFun x (t , Old) ✔ ✔ (e [ ✔ ]⇐ (□ , Old))))
-    SettledSynAp : ∀ {m e1 e2} ->
-      SettledSyn e1 -> 
-      SettledAna e2 -> 
-      SettledSynMid ((EAp (e1 [ ✔ ]⇐ (□ , Old)) m e2))
-    SettledSynVar : ∀ {x m} ->
-      SettledSynMid ((EVar x m))
-    SettledSynAsc : ∀ {t e} ->
-      SettledAna e -> 
-      SettledSynMid ((EAsc (t , Old) e))
+  data SettledMid : ExpMid -> Set where 
+    SettledConst :
+      SettledMid EConst
+    SettledHole : 
+      SettledMid (EHole)
+    SettledFun : ∀ {x t e m1 m2} ->
+      SettledLow e ->
+      SettledMid ((EFun x (t , Old) m1 m2 e))
+    SettledAp : ∀ {m e1 e2} ->
+      SettledLow e1 -> 
+      SettledLow e2 -> 
+      SettledMid ((EAp e1 m e2))
+    SettledVar : ∀ {x m} ->
+      SettledMid (EVar x m)
+    SettledAsc : ∀ {t e} ->
+      SettledLow e -> 
+      SettledMid (EAsc (t , Old) e)
 
-  data SettledAna : ExpLow -> Set where 
-    SettledAnaAna : ∀ {t e m} ->
-      SettledAnaUp e ->
-      SettledAna (e [ m ]⇐ ((t , Old)))
-  
-  data SettledAnaUp : ExpUp -> Set where 
-    SettledAnaFun : ∀ {x t m1 m2 e} ->
-      SettledAna e ->
-      SettledAnaUp ((EFun x (t , Old) m1 m2 e) ⇒ (□ , Old))
-    SettledAnaSubsume : ∀ {e} ->
-      Subsumable e ->
-      SettledSyn e ->
-      SettledAnaUp e
+  data SettledLow : ExpLow -> Set where 
+    SettledLowC : ∀ {t e m} ->
+      SettledUp e ->
+      SettledLow (e [ m ]⇐ (t , Old))
 
 data SettledProgram : Program -> Set where 
-  SettledRoot : ∀ {e} ->
-    SettledSyn e -> 
-    SettledProgram (Root e Old)
+  SettledRoot : ∀ {p} ->
+    SettledLow (ExpLowOfProgram p) -> 
+    SettledProgram p
