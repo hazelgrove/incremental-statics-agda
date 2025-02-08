@@ -52,7 +52,7 @@ module Core.ActionPreservation where
     (Γ ⊢ e' ⇐)
   PreservationStepAna (AnaSubsume x x₁ x₂ x₃) (ActLow ActInsertConst) = AnaSubsume SubsumableConst (proj₂ (~N-dec _ _)) ▶New (SynConst (▷Pair ▶Old))
   PreservationStepAna (AnaSubsume {ana-all = (ana , n)} x x₁ x₂ x₃) (ActLow (ActInsertVar {t = t} in-ctx)) with ~N-dec (■ t , New) (ana , New) 
-  ... | m , ~N-pair consist' = AnaSubsume SubsumableVar (~N-pair consist') ▶New (SynVar in-ctx (▷■Pair (▷Pair ▶Same)))
+  ... | m , ~N-pair consist' = AnaSubsume SubsumableVar (~N-pair consist') ▶New (SynVar in-ctx (▷Pair ▶Same))
   
   PreservationStepAna ana (ActLow {t = t} {n = n} (ActWrapFun {t = t'} {n = n'} vars-syn)) with ▸NTArrow-dec (t , New) | ~N-dec (t' , n') (t , New)
   ... | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist | m' , consist-syn with ~N-dec (■ THole , New) (t-in , New) | new-through-~N-left consist-syn
@@ -61,7 +61,7 @@ module Core.ActionPreservation where
   PreservationStepAna ana (ActLow {t = t} ActDelete) with ~N-dec (■ THole , New) (t , New) 
   ... | _ , (~N-pair consist) = AnaSubsume SubsumableHole (~N-pair consist) ▶New (SynHole (▷Pair ▶Old))
   PreservationStepAna ana (ActLow {t = t} ActWrapAsc) with ~N-dec (■ THole , New) (t , New) 
-  ... | _ , (~N-pair consist) = AnaSubsume SubsumableAsc (~N-pair consist) ▶New (SynAsc (▷■Pair (▷Pair ▶New)) (▷■Pair (▷Pair ▶New)) (newify-ana ana))
+  ... | _ , (~N-pair consist) = AnaSubsume SubsumableAsc (~N-pair consist) ▶New (SynAsc (▷Pair ▶New) (▷Pair ▶New) (newify-ana ana))
   PreservationStepAna ana (ActLow {t = t} (ActWrapApOne {t = t'} {n = n'})) with ~N-dec (t' , n') (t , New) | ▸NTArrow-dec (t' , New) 
   ... | _ , (~N-pair consist) | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist' = AnaSubsume SubsumableAp (~N-pair consist) ▶New-max-r (SynAp (NTArrowC consist') (▷Pair ▶New) (▷Pair ▶New) ▶New (newify-ana ana) (AnaSubsume SubsumableHole (~N-pair ~DVoidR) ▶Old (SynHole (▷Pair ▶Old))))
   PreservationStepAna ana (ActLow {t = t} (ActWrapApTwo {t = t'} {n = n'})) with ~N-dec (■ THole , New) (t , New) 
@@ -82,7 +82,8 @@ module Core.ActionPreservation where
     PreservationSyn (SynConst _) (AStepUp (FillLEnvUpRec ()) _ (FillLEnvUpRec _))
     PreservationSyn (SynHole _) (AStepUp (FillLEnvUpRec ()) _ (FillLEnvUpRec _))    
     PreservationSyn (SynVar _ _) (AStepUp (FillLEnvUpRec ()) _ (FillLEnvUpRec _))
-    PreservationSyn (SynAsc consist-syn consist-ana ana) (AStepUp (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc {e' = e' [ m' ]⇐ ana'} fill2))) = SynAsc consist-syn (beyond-▷■-contra (beyond-AL↦-env step fill1 fill2) consist-ana) (PreservationAna ana (AStepLow fill1 step fill2))
+    PreservationSyn (SynAsc consist-syn consist-ana ana) (AStepUp (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc {e' = e' [ m' ]⇐ ana'} fill2))) with beyond-AL↦-env step fill1 fill2 
+    ... | ◁▷C = SynAsc consist-syn (beyond-▷-contra ◁▷C consist-ana) (PreservationAna ana (AStepLow fill1 step fill2))
     PreservationSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (AStepUp (FillLEnvUpRec (FillLEnvAp1 FillL⊙)) (ActLow step) (FillLEnvUpRec (FillLEnvAp1 {e' = (e-fun' ⇒ syn-fun') [ ✔ ]⇐ (□ , New)} FillL⊙))) with ▸NTArrow-dec syn-fun' 
     ... | t-in-fun' , t-out-fun' , m-fun' , marrow' with beyond-▸NTArrow (beyond-AU↦ step) marrow marrow' 
     ... | t-in-beyond , t-out-beyond , m-beyond = SynAp marrow' (beyond-▷ t-out-beyond consist-syn) (beyond-▷ t-in-beyond consist-ana) (beyond-▶ m-beyond consist-mark) (PreservationAna syn (AStepLow FillL⊙ (ActLow step) FillL⊙)) ana

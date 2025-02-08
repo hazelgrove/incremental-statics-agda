@@ -123,15 +123,15 @@ mutual
       Γ ⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) ⇐ ->
       Γ ⊢ (e-arg [ m-arg ]⇐ ana-arg) ⇐ ->
       Γ ⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all) ⇒
-    SynVar : ∀ {Γ x syn-all t-var m-var} ->
+    SynVar : ∀ {Γ x syn-all t-var m-var n-syn} ->
       x , t-var ∈N Γ , m-var ->
-      ▷■ t-var syn-all ->
-      Γ ⊢ ((EVar x m-var) ⇒ syn-all) ⇒
-    SynAsc : ∀ {Γ e-body syn-all ana-body t-asc m-body} ->
-      ▷■ (t-asc) syn-all -> 
-      ▷■ (t-asc) ana-body -> 
-      Γ ⊢ (e-body [ m-body ]⇐ ana-body) ⇐ ->
-      Γ ⊢ ((EAsc t-asc (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all) ⇒
+      ▷ t-var (syn-all , n-syn) ->
+      Γ ⊢ ((EVar x m-var) ⇒ (■ syn-all , n-syn)) ⇒
+    SynAsc : ∀ {Γ e-body syn-all ana-body t-asc m-body n-syn n-ana} ->
+      ▷ t-asc (syn-all , n-syn) -> 
+      ▷ t-asc (ana-body , n-ana) -> 
+      Γ ⊢ (e-body [ m-body ]⇐ (■ ana-body , n-ana)) ⇐ ->
+      Γ ⊢ ((EAsc t-asc (e-body [ m-body ]⇐ (■ ana-body , n-ana))) ⇒ (■ syn-all , n-syn)) ⇒
 
   data _⊢_⇐ : (Γ : Ctx) (e : ExpLow) -> Set where 
     AnaSubsume : ∀ {Γ e-all syn-all ana-all m-all m-consist} ->

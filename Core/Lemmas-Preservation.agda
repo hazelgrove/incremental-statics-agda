@@ -345,8 +345,8 @@ module Core.Lemmas-Preservation where
   oldify-syn (SynConst (▷Pair consist)) = SynConst (▷Pair consist) 
   oldify-syn (SynHole (▷Pair consist)) = SynHole (▷Pair consist)
   oldify-syn (SynAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana) = SynAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana
-  oldify-syn (SynVar in-ctx (▷■Pair (▷Pair consist))) = SynVar in-ctx (▷■Pair (▷Pair consist)) 
-  oldify-syn (SynAsc (▷■Pair (▷Pair consist-syn)) consist-ana ana) = SynAsc (▷■Pair (▷Pair consist-syn)) consist-ana ana
+  oldify-syn (SynVar in-ctx (▷Pair consist)) = SynVar in-ctx (▷Pair consist)
+  oldify-syn (SynAsc (▷Pair consist-syn) consist-ana ana) = SynAsc (▷Pair consist-syn) consist-ana ana
 
   oldify-syn-inner : ∀ {Γ e t m n} ->
     Γ ⊢ ((e ⇒ (t , n)) [ m ]⇐ (□ , Old)) ⇐ ->
@@ -600,7 +600,7 @@ module Core.Lemmas-Preservation where
     preservation-vars-syn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (VSAp {e1' = e-fun' ⇒ syn-fun'} vars-syn-fun vars-syn-arg) ctx-inv with ▸NTArrow-dec syn-fun' 
     ... | t-in-fun' , t-out-fun' , m-fun' , marrow' with beyond-▸NTArrow (vars-syn-beyond vars-syn-fun) marrow marrow' 
     ... | t-in-beyond , t-out-beyond , m-beyond = SynAp marrow' (beyond-▷ t-out-beyond consist-syn) (beyond-▷ t-in-beyond consist-ana) (beyond-▶ m-beyond consist-mark) (preservation-vars-ana syn vars-syn-fun ctx-inv) (preservation-vars-ana ana vars-syn-arg ctx-inv)
-    preservation-vars-syn {t = t} (SynVar in-ctx consist) VSVarEq ctx-inv = SynVar (ctx-inv-access-eq ctx-inv) (▷■Pair (▷Pair ▶Old)) 
+    preservation-vars-syn {t = t} (SynVar in-ctx consist) VSVarEq ctx-inv = SynVar (ctx-inv-access-eq ctx-inv) (▷Pair ▶Old) 
     preservation-vars-syn (SynVar in-ctx consist) (VSVarNeq neq) ctx-inv = SynVar (ctx-inv-access-neq ctx-inv (λ eq → neq (sym eq)) in-ctx) consist
     preservation-vars-syn (SynAsc consist-syn consist-ana ana) (VSAsc vars-syn) ctx-inv = SynAsc consist-syn consist-ana (preservation-vars-ana ana vars-syn ctx-inv)
 
@@ -655,7 +655,7 @@ module Core.Lemmas-Preservation where
     preservation-vars-unwrap-syn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (VSAp {e1' = e-fun' ⇒ syn-fun'} vars-syn-fun vars-syn-arg) ctx-inv with ▸NTArrow-dec syn-fun' 
     ... | t-in-fun' , t-out-fun' , m-fun' , marrow' with beyond-▸NTArrow (vars-syn-beyond vars-syn-fun) marrow marrow' 
     ... | t-in-beyond , t-out-beyond , m-beyond = SynAp marrow' (beyond-▷ t-out-beyond consist-syn) (beyond-▷ t-in-beyond consist-ana) (beyond-▶ m-beyond consist-mark) (preservation-vars-unwrap-ana syn vars-syn-fun ctx-inv) (preservation-vars-unwrap-ana ana vars-syn-arg ctx-inv)
-    preservation-vars-unwrap-syn {t = t} (SynVar in-ctx consist) VSVarEq ctx-inv = SynVar (proj₂ (unwrap-inv-access-eq ctx-inv)) (▷■Pair (▷Pair ▶Same))
+    preservation-vars-unwrap-syn {t = t} (SynVar in-ctx consist) VSVarEq ctx-inv = SynVar (proj₂ (unwrap-inv-access-eq ctx-inv)) (▷Pair ▶Same)
     preservation-vars-unwrap-syn (SynVar in-ctx consist) (VSVarNeq neq) ctx-inv = SynVar (unwrap-inv-access-neq ctx-inv neq in-ctx) consist
     preservation-vars-unwrap-syn (SynAsc consist-syn consist-ana ana) (VSAsc vars-syn) ctx-inv = SynAsc consist-syn consist-ana (preservation-vars-unwrap-ana ana vars-syn ctx-inv)
 
