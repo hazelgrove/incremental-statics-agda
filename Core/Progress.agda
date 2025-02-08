@@ -18,76 +18,55 @@ open import Core.Settled
 
 module Core.Progress where
 
+  mutual 
 
-  -- -- ProgressLow : (e : ExpLow) ->
-  -- --   ∃[ e' ] (e L↦ e') + (Settled e)
-  -- -- ProgressLow
+    productive-syn-syn : ∀{Γ e t n} ->
+      SubsumableMid e ->
+      SettledMid e -> 
+      Γ ⊢ (e ⇒ (t , n)) ⇒ ->
+      ∃[ t' ] (t ≡ ■ t') 
+    productive-syn-syn SubsumableConst SettledConst (SynConst (▷Pair ▶Old)) = _ , refl
+    productive-syn-syn SubsumableHole SettledHole (SynHole (▷Pair ▶Old)) = _ , refl
+    productive-syn-syn SubsumableVar SettledVar (SynVar x x₁) = _ , refl
+    productive-syn-syn SubsumableAsc (SettledAsc x) (SynAsc x₁ x₂ x₃) = _ , refl
+    productive-syn-syn SubsumableAp (SettledAp (SettledLowC (SettledUpC settled)) _) (SynAp marrow consist x₄ x₅ syn ana)  with productive-syn-ana settled syn | marrow | consist
+    ... | _ , refl | NTArrowC (DTArrowSome x) | ▷Pair ▶Old = _ , refl
 
-  -- settled-syn-old : ∀ {Γ e t n} ->
-  --   Γ ⊢ e ⇒ (t , n) ->
-  --   SettledSyn Γ e ->
-  --   n ≡ Old
-  -- settled-syn-old (SynConst MergeInfoOld) SettledSynConst = refl
-  -- settled-syn-old (SynHole MergeInfoOld) SettledSynHole = refl
-  -- settled-syn-old (SynFun syn refl m) (SettledSynFun s) rewrite settled-syn-old syn s with m 
-  -- ... | MergeInfoOld = refl
-  -- settled-syn-old (SynFunVoid syn) ()
-  -- settled-syn-old (SynAp syn _ mn _ m) (SettledSynAp s _) rewrite settled-syn-old syn s with mn | m 
-  -- ... | MNArrowOld | MergeInfoOld = refl
-  -- settled-syn-old (SynApFail syn _ mn _ m) (SettledSynAp s x₄) rewrite settled-syn-old syn s with mn | m 
-  -- ... | MNArrowOld | MergeInfoOld = refl
-  -- settled-syn-old (SynVar {info = t , Old} ctx1 m) (SettledSynVar (Inl ctx2)) rewrite (ctx-unique ctx1 ctx2) with m 
-  -- ... | MergeInfoOld = refl 
-  -- settled-syn-old (SynVar {info = t , Old} ctx _) (SettledSynVar (Inr notin)) = ⊥-elim (notin ctx)
-  -- settled-syn-old (SynVarFail x MergeInfoOld) (SettledSynVar inctx) = refl
-  -- settled-syn-old (SynAsc x MergeInfoOld) (SettledSynAsc x₂) = refl
+    productive-syn-ana : ∀{Γ e t m n} ->
+      SettledMid e -> 
+      Γ ⊢ (e ⇒ (t , n)) [ m ]⇐ (□ , Old) ⇐ ->
+      ∃[ t' ] (t ≡ ■ t') 
+    productive-syn-ana settled (AnaSubsume x x₁ x₂ x₃) = productive-syn-syn x settled x₃
+    productive-syn-ana (SettledFun (SettledLowC (SettledUpC settled))) (AnaFun (NTArrowC DTArrowNone) a2 (▷Pair ▶Old) a4 a5 a6 a7 a8 ana) with productive-syn-ana settled ana | a6
+    ... | t , refl | ▷Pair ▶Old = _ , refl
 
-  -- syn-child : ∀ {Γ e t n} ->
-  --   Γ ⊢ e ⇒ (t , n) -> 
-  --   SettledSynExcept Γ e ->
-  --   ∃[ n' ] ∃[ e' ] e ≡ EUp (⇑ (t , n')) e'
-  -- syn-child (SynConst MergeInfoOld) s = _ , _ , refl
-  -- syn-child (SynHole MergeInfoOld) s = _ , _ , refl
-  -- syn-child (SynFun syn eq m) (SettledSynExceptFun s) rewrite (settled-syn-old syn s) rewrite (sym eq) with m 
-  -- ... | MergeInfoOld = _ , _ , refl
-  -- syn-child (SynAp syn x mn x₂ m) (SettledSynExceptAp s _) rewrite (settled-syn-old syn s) with mn | m
-  -- ... | MNArrowOld | MergeInfoOld = _ , _ , refl
-  -- syn-child (SynApFail syn x mn x₂ m) (SettledSynExceptAp s _) rewrite (settled-syn-old syn s) with mn | m
-  -- ... | MNArrowOld | MergeInfoOld = _ , _ , refl
-  -- syn-child (SynVar ctx1 m) (SettledSynExceptVar (Inl ctx2)) rewrite (ctx-unique ctx1 ctx2) with m 
-  -- ... | MergeInfoOld = _ , _ , refl
-  -- syn-child (SynVar ctx _) (SettledSynExceptVar (Inr notin)) = ⊥-elim (notin ctx)
-  -- syn-child (SynVarFail x m) s with m 
-  -- ... | MergeInfoOld = _ , _ , refl
-  -- syn-child (SynAsc x m) (SettledSynExceptAsc x₂) with m 
-  -- ... | MergeInfoOld = _ , _ , refl
+  new-ana-steps-syn-inner : ∀ {Γ e m t} ->
+    Γ ⊢ e ⇒ ->
+    ∃[ e' ] (e [ m ]⇐ (t , New)) L↦ e' 
+  new-ana-steps-syn-inner (SynConst (▷Pair x)) = _ , StepNewAnaConsist SubsumableConst (proj₂ (~D-dec _ _)) 
+  new-ana-steps-syn-inner (SynHole x) = _ , StepNewAnaConsist SubsumableHole (proj₂ (~D-dec _ _)) 
+  new-ana-steps-syn-inner (SynAp x x₁ x₂ x₃ x₄ x₅) = _ , StepNewAnaConsist SubsumableAp (proj₂ (~D-dec _ _)) 
+  new-ana-steps-syn-inner (SynVar x x₁) = _ , StepNewAnaConsist SubsumableVar  (proj₂ (~D-dec _ _)) 
+  new-ana-steps-syn-inner (SynAsc x x₁ x₂) = _ , StepNewAnaConsist SubsumableAsc (proj₂ (~D-dec _ _)) 
 
-  -- settle-no-except : ∀ {Γ t e} ->
-  --   SettledSynExcept Γ (EUp (⇑ (t , Old)) e) ->
-  --   SettledSyn Γ (EUp (⇑ (t , Old)) e) 
-  -- settle-no-except SettledSynExceptConst = SettledSynConst
-  -- settle-no-except SettledSynExceptHole = SettledSynHole
-  -- settle-no-except (SettledSynExceptFun x) = SettledSynFun x
-  -- settle-no-except (SettledSynExceptAp x x₁) = SettledSynAp x x₁
-  -- settle-no-except (SettledSynExceptVar inctx) = SettledSynVar inctx
-  -- settle-no-except (SettledSynExceptAsc x) = SettledSynAsc x
+  new-ana-steps-syn : ∀ {Γ e m t} ->
+    Γ ⊢ e ⇒ ->
+    ∃[ e' ] (e [ m ]⇐ (t , New)) Low↦ e' 
+  new-ana-steps-syn syn with new-ana-steps-syn-inner syn 
+  ... | e' , step = e' , (StepLow FillL⊙ step FillL⊙)
 
   new-ana-steps-inner : ∀ {Γ e m t} ->
-    Γ ⊢ e ⇒ ->
-    Subsumable e ->
+    Γ ⊢ (e [ m ]⇐ (t , New)) ⇐ ->
     ∃[ e' ] (e [ m ]⇐ (t , New)) L↦ e' 
-  new-ana-steps-inner (SynConst (▷Pair x)) subsumable = _ , StepNewAnaConsist subsumable (proj₂ (~D-dec _ _)) 
-  new-ana-steps-inner (SynHole x) subsumable = _ , StepNewAnaConsist subsumable (proj₂ (~D-dec _ _)) 
-  new-ana-steps-inner (SynAp x x₁ x₂ x₃ x₄ x₅) subsumable = _ , StepNewAnaConsist subsumable (proj₂ (~D-dec _ _)) 
-  new-ana-steps-inner (SynVar x x₁) subsumable = _ , StepNewAnaConsist subsumable (proj₂ (~D-dec _ _)) 
-  new-ana-steps-inner (SynAsc x x₁ x₂) subsumable = _ , StepNewAnaConsist subsumable (proj₂ (~D-dec _ _)) 
+  new-ana-steps-inner (AnaSubsume x x₁ x₂ syn) = new-ana-steps-syn-inner syn
+  new-ana-steps-inner (AnaFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ ana) = _ , (StepAnaFun (proj₂ (proj₂ (proj₂ (▸DTArrow-dec _)))) (■~D-pair (proj₂ (~D-dec _ _))))
 
   new-ana-steps : ∀ {Γ e m t} ->
-    Γ ⊢ e ⇒ ->
-    Subsumable e ->
+    Γ ⊢ (e [ m ]⇐ (t , New)) ⇐ ->
     ∃[ e' ] (e [ m ]⇐ (t , New)) Low↦ e' 
-  new-ana-steps syn subsumable with new-ana-steps-inner syn subsumable 
+  new-ana-steps ana with new-ana-steps-inner ana 
   ... | e' , step = e' , (StepLow FillL⊙ step FillL⊙)
+
 
   _≡B?_ : (x y : Binding) -> Dec (x ≡ y) 
   BHole ≡B? BHole = yes refl
@@ -125,77 +104,51 @@ module Core.Progress where
 
   mutual 
     
-  --   ProgressSyn : 
-  --     ∀ {Γ e} ->
-  --     -- AllOld Γ ->
-  --     ∃[ t ] (Γ ⊢ e ⇒ t) ->
-  --     ∃[ e' ] (e Up↦ e') + (SettledSynExcept Γ e)
-  --   ProgressSyn (t , SynConst _) = Inr SettledSynExceptConst
-  --   ProgressSyn (t , SynHole _) = Inr SettledSynExceptHole
-  --   ProgressSyn (t , SynFun syn refl m) with ProgressSyn (_ , syn) 
-  --   ProgressSyn (t , SynFun syn refl m) | Inl (_ , StepUp fill1 step fill2) = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvFun (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvFun (FillUEnvLowRec fill2))))
-  --   ProgressSyn (t , SynFun syn refl m) | Inl (_ , StepLow fill1 step fill2) = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvFun (FillLEnvLowRec fill2))))
-  --   ProgressSyn (t , SynFun syn refl m) | Inr s with syn-child syn s 
-  --   ProgressSyn (t , SynFun syn refl m) | Inr s | New , _ , refl = {! Inl (_ , StepUp FillU⊙ (StepAp IsNewNew mt MNArrowNew) FillU⊙)  !}
-  --   ProgressSyn (t , SynFun syn refl m) | Inr s | NArrow _ _ , _ , refl = {!   !}
-  --   ProgressSyn (t , SynFun syn refl m) | Inr s | Old , _ , refl = {!   !}
-  --   ProgressSyn (.(TArrow _ _ , New) , SynFunVoid syn) = {!   !}
-  --   ProgressSyn (t , SynAp syn mt mn ana m) with ProgressSyn (_ , syn) | ProgressLow ana 
-  --   ProgressSyn (t , SynAp syn mt mn ana m) | Inl (_ , StepUp fill1 step fill2) | ssana = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill2))))
-  --   ProgressSyn (t , SynAp syn mt mn ana m) | Inl (_ , StepLow fill1 step fill2) | ssana = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2))))
-  --   ProgressSyn (t , SynAp syn mt mn ana m) | Inr s1 | Inl (_ , StepUp fill1 step fill2) = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvAp2 fill1)) step (FillUEnvUpRec (FillUEnvAp2 fill2)))
-  --   ProgressSyn (t , SynAp syn mt mn ana m) | Inr s1 | Inl (_ , StepLow fill1 step fill2) = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2)))
-  --   ProgressSyn (t , SynAp syn mt mn ana m) | Inr s1 | Inr s2 with syn-child syn s1 
-  --   ProgressSyn (t , SynAp {e2 = (ELow _ _ _)} syn mt mn ana m) | Inr s1 | Inr s2 | New , _ , refl = Inl (_ , StepUp FillU⊙ (StepAp IsNewNew mt MNArrowNew) FillU⊙)
-  --   ProgressSyn (t , SynAp {e2 = (ELow _ _ _)} syn mt mn ana m) | Inr s1 | Inr s2 | NArrow _ _ , _ , refl = Inl (_ , StepUp FillU⊙ (StepAp IsNewArrow mt MNArrowArrow) FillU⊙)
-  --   ProgressSyn (t , SynAp syn mt mn ana m) | Inr s1 | Inr s2 | Old , _ , refl = Inr (SettledSynExceptAp (settle-no-except s1) s2)
-  --   ProgressSyn (t , SynApFail syn mt mn ana m) with ProgressSyn (_ , syn) | ProgressLow ana 
-  --   ProgressSyn (t , SynApFail syn mt mn ana m) | Inl (_ , StepUp fill1 step fill2) | ssana = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill1))) step (FillUEnvUpRec (FillUEnvAp1 (FillUEnvLowRec fill2))))
-  --   ProgressSyn (t , SynApFail syn mt mn ana m) | Inl (_ , StepLow fill1 step fill2) | ssana = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill1))) step (FillLEnvUpRec (FillLEnvAp1 (FillLEnvLowRec fill2))))
-  --   ProgressSyn (t , SynApFail syn mt mn ana m) | Inr s1 | Inl (_ , StepUp fill1 step fill2) = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvAp2 fill1)) step (FillUEnvUpRec (FillUEnvAp2 fill2)))
-  --   ProgressSyn (t , SynApFail syn mt mn ana m) | Inr s1 | Inl (_ , StepLow fill1 step fill2) = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2)))
-  --   ProgressSyn (t , SynApFail syn mt mn ana m) | Inr s1 | Inr s2 with syn-child syn s1 
-  --   ProgressSyn (t , SynApFail {e2 = (ELow _ _ _)} syn mt mn ana m) | Inr s1 | Inr s2 | New , _ , refl = Inl (_ , StepUp FillU⊙ (StepApFail IsNewNew mt MNArrowNew) FillU⊙)
-  --   ProgressSyn (t , SynApFail {e2 = (ELow _ _ _)} syn mt mn ana m) | Inr s1 | Inr s2 | NArrow n n₁ , _ , refl = Inl (_ , StepUp FillU⊙ (StepApFail IsNewArrow mt MNArrowArrow) FillU⊙)
-  --   ProgressSyn (t , SynApFail syn mt mn ana m) | Inr s1 | Inr s2 | Old , _ , refl = Inr (SettledSynExceptAp (settle-no-except s1) s2)
-  --   ProgressSyn (t , SynVar {t = _ , New} ctx _) = {!   !}
-  --   ProgressSyn (t , SynVar {t = _ , NArrow n n₁} ctx _) = {!   !}
-  --   ProgressSyn (t , SynVar {t = _ , Old} ctx _) = Inr (SettledSynExceptVar (Inl ctx))
-  --   ProgressSyn (t , SynVarFail notin _) = Inr (SettledSynExceptVar {t1 = THole} (Inr notin)) 
-  --   ProgressSyn (t , SynAsc ana _) with ProgressLow ana
-  --   ProgressSyn (t , SynAsc ana _) | Inl (_ , StepUp fill1 step fill2) = Inl (_ , StepUp (FillUEnvUpRec (FillUEnvAsc fill1)) step (FillUEnvUpRec (FillUEnvAsc fill2)))
-  --   ProgressSyn (t , SynAsc ana _) | Inl (_ , StepLow fill1 step fill2) = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc fill2)))
-  --   ProgressSyn (t , SynAsc {t = (_ , New)} {e = (ELow _ _ _)} ana _) | Inr sana = Inl (_ , StepUp FillU⊙ (StepAsc IsNewNew) FillU⊙)
-  --   ProgressSyn (t , SynAsc {t = (_ , NArrow _ _)} {e = (ELow _ _ _)} ana _) | Inr sana = Inl (_ , StepUp FillU⊙ (StepAsc IsNewArrow) FillU⊙)
-  --   ProgressSyn (t , SynAsc {t = (_ , Old)} ana _) | Inr sana = Inr (SettledSynExceptAsc sana)
-    
     ProgressUp :  
       ∀ {Γ e} ->
       (Γ ⊢ e ⇒) ->      
-      (∃[ e' ] (e Up↦ e')) + (SettledUp e)
-    ProgressUp = {!   !}
+      (∃[ e' ] (e Up↦ e')) + (AlmostSettledUp e)
+    ProgressUp (SynConst consist) = Inr (AlmostSettledUpC SettledConst)
+    ProgressUp (SynHole consist) = Inr (AlmostSettledUpC SettledHole)
+    ProgressUp (SynAp marrow x₁ x₂ x₃ syn ana) with ProgressLow syn | ProgressLow ana 
+    ProgressUp (SynAp marrow x₁ x₂ x₃ syn ana) | Inl (e' , step) | progress = Inl (_ , StepLowUp (FillLEnvUpRec (FillLEnvAp1 FillL⊙)) step (FillLEnvUpRec (FillLEnvAp1 FillL⊙)))
+    ProgressUp (SynAp marrow x₁ x₂ x₃ syn ana) | Inr (AlmostSettledLowC (AlmostSettledUpC {New} settled1)) | progress = Inl (_ , StepUp FillU⊙ (StepAp (proj₂ (proj₂ (proj₂ (▸DTArrow-dec _))))) FillU⊙)
+    ProgressUp (SynAp marrow x₁ x₂ x₃ syn ana) | Inr (AlmostSettledLowC (AlmostSettledUpC {Old} settled1)) | Inl (e' , step) = Inl (_ , StepLowUp (FillLEnvUpRec (FillLEnvAp2 FillL⊙)) step (FillLEnvUpRec (FillLEnvAp2 FillL⊙)))
+    ProgressUp (SynAp marrow x₁ x₂ x₃ syn ana) | Inr (AlmostSettledLowC (AlmostSettledUpC {Old} settled1)) | Inr (AlmostSettledLowC (AlmostSettledUpC {n} settled2)) with productive-syn-ana settled1 syn | marrow | x₂
+    ProgressUp (SynAp marrow x₁ x₂ x₃ syn ana) | Inr (AlmostSettledLowC (AlmostSettledUpC {.Old} settled1)) | Inr (AlmostSettledLowC (AlmostSettledUpC {New} settled2)) | t , refl | NTArrowC (DTArrowSome x) | ▷Pair ▶Old = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAp2 FillL⊙)) (StepNewSynConsist (proj₂ (~D-dec _ _))) (FillLEnvUpRec (FillLEnvAp2 FillL⊙))) 
+    ProgressUp (SynAp marrow x₁ x₂ x₃ syn ana) | Inr (AlmostSettledLowC (AlmostSettledUpC {.Old} settled1)) | Inr (AlmostSettledLowC (AlmostSettledUpC {Old} settled2)) | t , refl | NTArrowC (DTArrowSome x) | ▷Pair ▶Old = Inr (AlmostSettledUpC (SettledAp (SettledLowC (SettledUpC settled1)) (SettledLowC (SettledUpC settled2)))) 
+    ProgressUp (SynVar x x₁) = Inr (AlmostSettledUpC SettledVar)
+    ProgressUp (SynAsc {t-asc = (t-asc , New)} x x₁ ana) = Inl (_ , StepUp FillU⊙ StepAsc FillU⊙) 
+    ProgressUp (SynAsc {t-asc = (t-asc , Old)} x x₁ ana) with ProgressLow ana 
+    ... | Inl (e' , step) = Inl (_ , StepLowUp (FillLEnvUpRec (FillLEnvAsc FillL⊙)) step (FillLEnvUpRec (FillLEnvAsc FillL⊙))) 
+    ... | Inr (AlmostSettledLowC (AlmostSettledUpC {New} settled)) = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAsc FillL⊙)) (StepNewSynConsist (proj₂ (~D-dec _ _))) (FillLEnvUpRec (FillLEnvAsc FillL⊙))) 
+    ... | Inr (AlmostSettledLowC (AlmostSettledUpC {Old} settled)) = Inr (AlmostSettledUpC (SettledAsc (SettledLowC (SettledUpC settled)))) 
 
     ProgressLow :  
       ∀ {Γ e} ->
       (Γ ⊢ e ⇐) ->      
-      (∃[ e' ] (e Low↦ e')) + (SettledLow e)
+      (∃[ e' ] (e Low↦ e')) + (AlmostSettledLow e)
     ProgressLow (AnaSubsume subsumable consist m-consist syn) with ProgressUp syn 
     ProgressLow (AnaSubsume subsumable consist m-consist syn) | Inl (e' , step) = Inl (_ , StepUpLow (FillUEnvLowRec FillU⊙) step (FillUEnvLowRec FillU⊙))
-    ProgressLow (AnaSubsume {ana-all = t , New} subsumable consist m-consist syn) | Inr settled = Inl (new-ana-steps syn subsumable)
-    ProgressLow (AnaSubsume {ana-all = t , Old} subsumable consist m-consist syn) | Inr settled = Inr (SettledLowC settled)
-    ProgressLow (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) with ProgressLow ana 
-    ProgressLow (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) | Inl (e' , step) = Inl (_ , StepLowLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))) step (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))))
-    ProgressLow (AnaFun {ana-all = t , New} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (SettledLowC (SettledUpC settled)) = Inl (_ , StepLow FillL⊙ (StepAnaFun marrow (■~D-pair consist)) FillL⊙)     
-    ProgressLow (AnaFun {ana-all = ana-all , Old} {t-asc = t-asc , New} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (SettledLowC (SettledUpC settled)) = Inl (_ , StepLow FillL⊙ (StepNewAnnFun marrow (■~D-pair consist) (proj₂ (proj₂ (proj₂ vars-syn?-dec-elaborate)))) FillL⊙)   
-    ProgressLow (AnaFun {syn-all = syn-all , New} {ana-all = ana-all , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (SettledLowC (SettledUpC settled)) = Inr (SettledLowC {! SettledFun ?  !})    
-    ProgressLow (AnaFun {syn-all = syn-all , Old} {ana-all = ana-all , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (SettledLowC (SettledUpC settled)) = Inr (SettledLowC (SettledUpC (SettledFun (SettledLowC (SettledUpC settled)))))     
+    ProgressLow (AnaSubsume {ana-all = t , New} subsumable consist m-consist syn) | Inr settled = Inl (new-ana-steps-syn syn)
+    ProgressLow (AnaSubsume {ana-all = t , Old}  subsumable consist m-consist syn) | Inr settled = Inr (AlmostSettledLowC settled)
+    ProgressLow (AnaFun {ana-all = t , New} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) = Inl (_ , StepLow FillL⊙ (StepAnaFun marrow (■~D-pair consist)) FillL⊙) 
+    ProgressLow (AnaFun {ana-all = ana-all , Old} {t-asc = t-asc , New} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) = Inl (_ , StepLow FillL⊙ (StepNewAnnFun marrow (■~D-pair consist) (proj₂ (proj₂ (proj₂ vars-syn?-dec-elaborate)))) FillL⊙)
+    
+    ProgressLow (AnaFun {ana-all = ana-all , Old} {ana-body = ana-body , New} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) = Inl (_ , StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))) (proj₂ (new-ana-steps-inner ana)) (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))))
+    ProgressLow (AnaFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ProgressLow ana  
+    ProgressLow (AnaFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inl (e' , step) = Inl (_ , StepLowLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))) step (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))))
+    ProgressLow (AnaFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (AlmostSettledLowC (AlmostSettledUpC {New} settled)) with ana-body 
+    ProgressLow (AnaFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (AlmostSettledLowC (AlmostSettledUpC {New} settled)) | □ = Inl (_ , StepLow FillL⊙ StepSynFun FillL⊙)
+    ProgressLow (AnaFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (AlmostSettledLowC (AlmostSettledUpC {New} settled)) | ■ _ = Inl (_ , StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))) (StepNewSynConsist (proj₂ (~D-dec _ _))) (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙)))) 
+    ProgressLow (AnaFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (AlmostSettledLowC (AlmostSettledUpC {Old} settled)) = Inr (AlmostSettledLowC (AlmostSettledUpC (SettledFun (SettledLowC (SettledUpC settled)))))
 
   step-preserves-program : ∀ {p e} -> 
     ExpLowOfProgram p Low↦ e -> 
     ∃[ p' ] (e ≡ ExpLowOfProgram p')
   step-preserves-program {p = Root e n} (StepUp (FillUEnvLowRec x) step (FillUEnvLowRec x₁)) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow (FillLEnvLowRec x) step (FillLEnvLowRec x₁)) = Root _ _ , refl
-  step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepNewAnaConsist x consist) FillL⊙) with ~DVoid-left consist 
+  step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepNewAnaConsist x consist) FillL⊙) with ~DVoid-right consist 
   ... | refl = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepAnaFun _ _) FillL⊙) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepNewAnnFun _ _ _) FillL⊙) = Root _ _ , refl
@@ -203,8 +156,9 @@ module Core.Progress where
 
   ProgressProgram : ∀ {p} ->
     WellTypedProgram p ->   
-    (∃[ p' ] (p P↦ p')) + (SettledProgram p)  
-  ProgressProgram (WTProg ana) with ProgressLow ana  
+    (∃[ p' ] (p P↦ p')) + (SettledProgram p)   
+  ProgressProgram (WTProg ana) with ProgressLow ana   
   ProgressProgram (WTProg ana) | Inl (e' , step) with step-preserves-program step 
-  ProgressProgram (WTProg ana) | Inl (e' , step) | p' , refl = Inl (p' , (TopStep step)) 
-  ProgressProgram {p = Root e n} (WTProg ana) | Inr settled = Inr (SettledRoot settled) 
+  ProgressProgram (WTProg ana) | Inl (e' , step) | p' , refl = Inl (p' , (InsideStep step)) 
+  ProgressProgram {p = Root e n} (WTProg ana) | Inr (AlmostSettledLowC (AlmostSettledUpC {Old} settled)) = Inr (SettledRoot (SettledLowC (SettledUpC settled))) 
+  ProgressProgram {p = Root e n} (WTProg ana) | Inr (AlmostSettledLowC (AlmostSettledUpC {New} settled)) = Inl (_ , TopStep) 

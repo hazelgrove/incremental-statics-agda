@@ -16,3 +16,5 @@ module Core where
 
   import Core.Actions
   import Core.ActionPreservation
+
+  import Core.Progress

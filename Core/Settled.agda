@@ -41,6 +41,16 @@ mutual
       SettledUp e ->
       SettledLow (e [ m ]⇐ (t , Old))
 
+data AlmostSettledUp : ExpUp -> Set where 
+  AlmostSettledUpC : ∀ {n e t} ->
+    SettledMid e -> 
+    AlmostSettledUp (e ⇒ (t , n))
+
+data AlmostSettledLow : ExpLow -> Set where 
+  AlmostSettledLowC : ∀ {t e m} ->
+    AlmostSettledUp e ->
+    AlmostSettledLow (e [ m ]⇐ (t , Old))
+
 data SettledProgram : Program -> Set where 
   SettledRoot : ∀ {p} ->
     SettledLow (ExpLowOfProgram p) -> 

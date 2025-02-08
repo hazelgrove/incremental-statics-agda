@@ -80,6 +80,10 @@ module Core.UpdatePreservation where
   step-subsumable (StepAp _) SubsumableAp = SubsumableAp
   step-subsumable StepAsc SubsumableAsc = SubsumableAsc
 
+  random-helper : ∀ {t t' d n n'} -> ▷ (NUnless (NArrow (t , Old) (t' , n)) (d , n')) (DUnless (DArrow t t') d , New)
+  random-helper {d = □} = ▷Pair ▶Same
+  random-helper {d = ■ x} = ▷Pair ▶Same
+
   PreservationStepSyn :  
     ∀ {Γ e e'} ->
     (Γ ⊢ e ⇒) ->
@@ -97,19 +101,16 @@ module Core.UpdatePreservation where
     (e L↦ e') ->   
     (Γ ⊢ e' ⇐)
   PreservationStepAna (AnaSubsume subsumable (~N-pair consist-t) consist-m syn) (StepNewSynConsist consist) with consist-t 
-  ... | ~DSome consist-t rewrite ~-unicity consist consist-t = AnaSubsume subsumable (~N-pair (~DSome consist-t)) ▶Old (oldify-syn syn)
+  ... | consist-t rewrite ~D-unicity consist consist-t = AnaSubsume subsumable (~N-pair consist-t) ▶Old (oldify-syn syn)
   PreservationStepAna (AnaSubsume subsumable (~N-pair consist-t) consist-m syn) (StepNewAnaConsist subsumable' consist) with ~D-unicity consist consist-t 
   ... | refl = AnaSubsume subsumable' (~N-pair consist-t) ▶Same (oldify-syn syn)
-  PreservationStepAna (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair (~DSome consist-all)) consist-m-all ana) (StepNewSynConsist consist') rewrite ~-unicity consist' consist-all  = AnaFun marrow consist consist-ana consist-asc consist-body (beyond-▷-contra ◁▷C consist-syn) (~N-pair (~DSome consist-all)) ▶Old ana
+  PreservationStepAna (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (StepNewSynConsist consist') rewrite ~D-unicity consist' consist-all = AnaFun marrow consist consist-ana consist-asc consist-body (beyond-▷-contra ◁▷C consist-syn) (~N-pair consist-all) ▶Old ana
   PreservationStepAna (AnaFun {t-asc = t-asc , n-asc} (NTArrowC x) consist (▷Pair ▶New) ▶New consist-body consist-syn consist-all consist-m-all ana) (StepAnaFun marrow' (■~D-pair consist')) = AnaFun (NTArrowC marrow') (■~N-pair (~N-pair consist')) (▷Pair ▶Old) ▶Old ▶Same (consist-unless-lemma {n1 = n-asc}) (~N-pair ~D-unless) ▶Same (newify-ana ana)
   PreservationStepAna (AnaFun (NTArrowC {d} {n} marrow) (■~N-pair {t} (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (StepNewAnnFun {syn-body' = syn-body'} marrow' (■~D-pair consist') vars-syn)  with ▸DTArrow-unicity marrow marrow' 
   ... | refl , refl , refl with ~D-unicity consist consist' | ~N-dec (DUnless (DArrow t syn-body') d , New) (d , n)
-  ... | refl | _ , (~N-pair consist'') = AnaFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc ▶Same helper (~N-pair consist'') ▶New (preservation-vars-ana? ana vars-syn)
-    where 
-    helper : ∀ {t t' d n n'} -> ▷ (NUnless (NArrow (t , Old) (t' , n)) (d , n')) (DUnless (DArrow t t') d , New)
-    helper {d = □} = ▷Pair ▶Same
-    helper {d = ■ x} = ▷Pair ▶Same
-  PreservationStepAna (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) StepSynFun = AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) (▷Pair ▶Old) ▶Old ▶Same (▷Pair ▶Same) (~N-pair ~DVoidR) ▶New (oldify-syn-inner ana)
+  ... | refl | _ , (~N-pair consist'') = AnaFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc ▶Same random-helper (~N-pair consist'') ▶New (preservation-vars-ana? ana vars-syn)
+  PreservationStepAna (AnaFun {ana-all = ana-all} (NTArrowC {d} marrow) (■~N-pair {t} {n} (~N-pair consist)) (▷Pair consistm-m-ana) consist-m-ann consist-body consist-syn consist-all consist-m-all ana) (StepSynFun {t-body = t-body}) with ~N-dec (DUnless (DArrow t t-body) d , New) ana-all
+  ... | _ , (~N-pair consist'')  = AnaFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair consistm-m-ana) consist-m-ann consist-body random-helper (~N-pair consist'') ▶New (oldify-syn-inner ana)
 
   mutual 
 
@@ -164,4 +165,4 @@ module Core.UpdatePreservation where
     (WellTypedProgram p')
   PreservationProgram (WTProg ana) (InsideStep step) = WTProg (PreservationAna ana step)
   PreservationProgram (WTProg ana) TopStep = WTProg (oldify-syn-inner ana)
-   
+    

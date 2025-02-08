@@ -50,11 +50,11 @@ module Core.Lemmas-Preservation where
   max-old Old = refl
   max-old New = refl
 
-  ~DVoid-left : ∀ {t m} ->
+  ~DVoid-right : ∀ {t m} ->
     t ~D □ , m ->
     m ≡ ✔
-  ~DVoid-left ~DVoidL = refl
-  ~DVoid-left ~DVoidR = refl
+  ~DVoid-right ~DVoidL = refl
+  ~DVoid-right ~DVoidR = refl
 
   ~D-unless : ∀ {t1 t2} ->
     DUnless t1 t2 ~D t2 , ✔

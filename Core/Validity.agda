@@ -112,7 +112,7 @@ module Core.Validity where
     ... | (~N-pair (~DSome consist)) | ▶Old = ValidityLowAna (MarkSubsume syn' (barren-subsumable subsumable bare) consist)
     validity-low (AnaFun {ana-all = □ , n} (NTArrowC DTArrowNone) consist (▷Pair ▶Old) ▶Old c3 c4 (~N-pair consist') c5 ana) (SettledLowC (SettledUpC (SettledFun settled))) (BarrenLow (BarrenUp (BarrenFun bare))) bare-ctx ctx-old with validity-low ana settled bare (BarrenCtxCons? bare-ctx) (ConsAllOld? ctx-old)
     ... | ValidityLowSyn syn with consist | c3 | c4 | c5
-    ... | ■~N-pair (~N-pair ~DVoidR) | ▶Old | ▷Pair ▶Old | ▶Old with ~DVoid-left consist' 
+    ... | ■~N-pair (~N-pair ~DVoidR) | ▶Old | ▷Pair ▶Old | ▶Old with ~DVoid-right consist' 
     ... | refl = ValidityLowSyn (MarkSynFun syn)
     validity-low (AnaFun {ana-all = ■ t , .Old} (NTArrowC (DTArrowSome marrow)) (■~N-pair (~N-pair (~DSome consist))) (▷Pair ▶Old) ▶Old ▶Old (▷Pair ▶Old) consist' c5 ana) (SettledLowC (SettledUpC (SettledFun settled))) (BarrenLow (BarrenUp (BarrenFun bare))) bare-ctx ctx-old with validity-low ana settled bare (BarrenCtxCons? bare-ctx) (ConsAllOld? ctx-old)
     ... | ValidityLowAna ana' with consist' | c5 
