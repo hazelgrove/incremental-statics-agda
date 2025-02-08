@@ -38,14 +38,14 @@ module Core.UpdatePreservation where
   beyond-L↦ (StepNewAnaConsist _ _) = ◁▷C
   beyond-L↦ (StepAnaFun _ _) = ◁▷C
   beyond-L↦ (StepSynFun) = ◁▷C
-  beyond-L↦ (StepNewAnnFun _) = ◁▷C
+  beyond-L↦ (StepNewAnnFun _ _ _) = ◁▷C
 
   beyond-L↦-inner : ∀ {e e' syn syn' m m' n-ana ana'} -> 
     ((e ⇒ syn) [ m ]⇐ (□ , n-ana)) L↦ ((e' ⇒ syn') [ m' ]⇐ ana') -> 
     =▷ syn syn' 
-  beyond-L↦-inner (StepNewAnaConsist x x₁) = =▷Refl
-  beyond-L↦-inner (StepAnaFun x x₁) = =▷New
-  beyond-L↦-inner (StepNewAnnFun x) = =▷New
+  beyond-L↦-inner (StepNewAnaConsist _ _) = =▷Refl
+  beyond-L↦-inner (StepAnaFun _ _) = =▷New
+  beyond-L↦-inner (StepNewAnnFun _ _ _) = =▷New
   beyond-L↦-inner StepSynFun = =▷New
 
   beyond-L↦-env-inner : ∀ {ε e e' e-in e-in' syn syn' m m' n-ana ana'} -> 
@@ -69,8 +69,8 @@ module Core.UpdatePreservation where
     (m ≡ ✔) × (t ≡ □)
   void-ana-step-same (StepNewAnaConsist x ~DVoidL) = refl , refl
   void-ana-step-same (StepNewAnaConsist x ~DVoidR) = refl , refl
-  void-ana-step-same (StepAnaFun x x₁) = refl , refl
-  void-ana-step-same (StepNewAnnFun x) = refl , refl
+  void-ana-step-same (StepAnaFun _ _) = refl , refl
+  void-ana-step-same (StepNewAnnFun _ _ _) = refl , refl
   void-ana-step-same StepSynFun = refl , refl
 
   step-subsumable : ∀ {e e' syn syn'} -> 
@@ -102,11 +102,13 @@ module Core.UpdatePreservation where
   ... | refl = AnaSubsume subsumable' (~N-pair consist-t) ▶Same (oldify-syn syn)
   PreservationStepAna (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair (~DSome consist-all)) consist-m-all ana) (StepNewSynConsist consist') rewrite ~-unicity consist' consist-all  = AnaFun marrow consist consist-ana consist-asc consist-body (beyond-▷-contra ◁▷C consist-syn) (~N-pair (~DSome consist-all)) ▶Old ana
   PreservationStepAna (AnaFun {t-asc = t-asc , n-asc} (NTArrowC x) consist (▷Pair ▶New) ▶New consist-body consist-syn consist-all consist-m-all ana) (StepAnaFun marrow' (■~D-pair consist')) = AnaFun (NTArrowC marrow') (■~N-pair (~N-pair consist')) (▷Pair ▶Old) ▶Old ▶Same (consist-unless-lemma {n1 = n-asc}) (~N-pair ~D-unless) ▶Same (newify-ana ana)
-  PreservationStepAna (AnaFun {x = x} {e-body = e-body} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (StepNewAnnFun {e-body' = e-body' ⇒ (syn-body' , n-syn-body')} {t-asc} {t-body} {n-body} vars-syn) 
-    = AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) (▷Pair ▶Old) ▶Old ▶Old (preservation-lambda-lemma-2 (vars-syn?-beyond vars-syn')) (~N-pair ~DVoidR) ▶New (preservation-vars-ana? ana vars-syn) 
+  PreservationStepAna (AnaFun (NTArrowC {d} {n} marrow) (■~N-pair {t} (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (StepNewAnnFun {syn-body' = syn-body'} marrow' (■~D-pair consist') vars-syn)  with ▸DTArrow-unicity marrow marrow' 
+  ... | refl , refl , refl with ~D-unicity consist consist' | ~N-dec (DUnless (DArrow t syn-body') d , New) (d , n)
+  ... | refl | _ , (~N-pair consist'') = AnaFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc ▶Same helper (~N-pair consist'') ▶New (preservation-vars-ana? ana vars-syn)
     where 
-    vars-syn' : VarsSynthesize? x t-asc ✔ (e-body ⇒ (■ t-body , n-body)) (e-body' ⇒ (syn-body' , n-syn-body' ⊓ Old))
-    vars-syn' rewrite max-old n-syn-body' = vars-syn
+    helper : ∀ {t t' d n n'} -> ▷ (NUnless (NArrow (t , Old) (t' , n)) (d , n')) (DUnless (DArrow t t') d , New)
+    helper {d = □} = ▷Pair ▶Same
+    helper {d = ■ x} = ▷Pair ▶Same
   PreservationStepAna (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) StepSynFun = AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) (▷Pair ▶Old) ▶Old ▶Same (▷Pair ▶Same) (~N-pair ~DVoidR) ▶New (oldify-syn-inner ana)
 
   mutual 
@@ -161,4 +163,4 @@ module Core.UpdatePreservation where
     (p P↦ p') ->   
     (WellTypedProgram p')
   PreservationProgram (WTProg ana) (TopStep step) = WTProg (PreservationAna ana step)
-  
+   

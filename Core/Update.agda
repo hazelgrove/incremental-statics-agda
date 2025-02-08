@@ -32,10 +32,18 @@ module Core.Update where
       t-asc ■~D t-in-ana , m-asc' ->
       ((EFun x (t-asc , n-asc) m-ana m-asc ((e-body ⇒ (t-body , n-body)) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (t-ana , New) L↦
       ((EFun x (t-asc , n-asc) m-ana' m-asc' ((e-body ⇒ (t-body , n-body)) [ m-body ]⇐ (t-out-ana , New))) ⇒ ((DUnless (DArrow t-asc t-body) t-ana) , New)) [ ✔ ]⇐ (t-ana , Old)
-    StepNewAnnFun : ∀ {x e-body e-body' t-asc t-body n-body m-body syn-all} ->
-      VarsSynthesize? x t-asc ✔ (e-body ⇒ (■ t-body , n-body)) e-body' ->
-      (((EFun x (t-asc , New) ✔ ✔ ((e-body ⇒ ((■ t-body , n-body))) [ m-body ]⇐ (□ , Old))) ⇒ syn-all) [ ✔ ]⇐ (□ , Old)) L↦
-      (((EFun x (t-asc , Old) ✔ ✔ (e-body' [ m-body ]⇐ (□ , Old))) ⇒ ((■ (TArrow t-asc t-body) , New))) [ ✔ ]⇐ (□ , Old))
+    StepNewAnnFun : ∀ {x 
+      e-body e-body' 
+      t-asc t-in-ana t-out-ana
+      n-body n-body' n-ana 
+      m-ana m-asc m-ana' m-asc' m-body m-all 
+      syn-body syn-body' syn-all 
+      ana-body ana-all } ->
+      ana-all ▸DTArrow t-in-ana , t-out-ana , m-ana' ->
+      t-asc ■~D t-in-ana , m-asc' ->
+      VarsSynthesize? x t-asc ✔ (e-body ⇒ (syn-body , n-body)) (e-body' ⇒ (syn-body' , n-body')) ->
+      (((EFun x (t-asc , New) m-ana m-asc ((e-body ⇒ (syn-body , n-body)) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (ana-all , n-ana)) L↦
+      (((EFun x (t-asc , Old) m-ana m-asc' ((e-body' ⇒ (syn-body' , n-body')) [ m-body ]⇐ ana-body)) ⇒ (DUnless (DArrow t-asc syn-body') ana-all , New)) [ m-all ]⇐ (ana-all , n-ana))
     StepSynFun : ∀ {x e-body t-asc t-body n-asc m-body syn-all} ->
       (((EFun x (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (t-body , New)) [ m-body ]⇐ (□ , Old))) ⇒ syn-all) [ ✔ ]⇐ (□ , Old)) L↦
       (((EFun x (t-asc , n-asc) ✔ ✔ ((e-body ⇒ (t-body , Old)) [ ✔ ]⇐ (□ , Old) )) ⇒ (DArrow t-asc t-body , New)) [ ✔ ]⇐ (□ , Old))

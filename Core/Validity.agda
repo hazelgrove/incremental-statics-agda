@@ -93,8 +93,8 @@ module Core.Validity where
     ... | ValidityLowSyn syn' | ValidityLowAna ana' with marrow
     ... | DTArrowSome marrow = ValidityUpSyn (MarkAp syn' marrow ana')
     validity-up (SynVar in-ctx consist) (SettledUpC SettledVar) (BarrenUp BarrenVar) bare-ctx ctx-old with all-old-lookup in-ctx ctx-old | consist
-    ... | _ , refl | ▷■Pair (▷Pair ▶Old) = ValidityUpSyn (MarkVar (∈-of-∈N in-ctx bare-ctx))
-    validity-up (SynAsc (▷■Pair (▷Pair ▶Old)) (▷■Pair (▷Pair ▶Old)) ana) (SettledUpC (SettledAsc x₃)) (BarrenUp (BarrenAsc x₄)) bare-ctx ctx-old with validity-low ana x₃ x₄ bare-ctx ctx-old 
+    ... | _ , refl | ▷Pair ▶Old = ValidityUpSyn (MarkVar (∈-of-∈N in-ctx bare-ctx))
+    validity-up (SynAsc (▷Pair ▶Old) (▷Pair ▶Old) ana) (SettledUpC (SettledAsc x₃)) (BarrenUp (BarrenAsc x₄)) bare-ctx ctx-old with validity-low ana x₃ x₄ bare-ctx ctx-old 
     ... | ValidityLowAna ana' = ValidityUpSyn (MarkAsc ana') 
 
     validity-low : ∀ {Γ Γ' e b} ->
