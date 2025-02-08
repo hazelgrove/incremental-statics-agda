@@ -70,14 +70,24 @@ module Core.Progress where
   -- settle-no-except (SettledSynExceptVar inctx) = SettledSynVar inctx
   -- settle-no-except (SettledSynExceptAsc x) = SettledSynAsc x
 
-  new-ana-steps-inner : ∀ {e m t} ->
+  syn-has-syn : ∀ {Γ e} ->
+    Γ ⊢ e ⇒ ->
+    ∃[ e' ] ∃[ t ] ∃[ n ] (e ≡ e' ⇒ (■ t , n))
+  syn-has-syn (SynConst (▷Pair ▶Old)) = _ , _ , _ , refl
+  syn-has-syn (SynHole (▷Pair ▶Old)) = _ , _ , _ , refl
+  syn-has-syn (SynVar x x₁) = {!   !}
+  syn-has-syn (SynAp x x₁ x₂ x₃ x₄ x₅) = {!   !}  
+  syn-has-syn (SynAsc x x₁ x₂) = {!   !}
+
+  new-ana-steps-inner : ∀ {Γ e m t} ->
+    Γ ⊢ e ⇒ ->
+    Subsumable e ->
     ∃[ e' ] (e [ m ]⇐ (t , New)) L↦ e' 
-  new-ana-steps-inner {EConst ⇒ _} = _ , {! StepNewAnaConsist  !}
-  new-ana-steps-inner {EHole ⇒ _} = {!   !}
-  new-ana-steps-inner {EAp _ _ _ ⇒ _} = {!   !}
-  new-ana-steps-inner {EVar _ _ ⇒ _} = {!   !}
-  new-ana-steps-inner {EAsc _ _ ⇒ _} = {!   !}
-  new-ana-steps-inner {EFun _ _ _ _ _ ⇒ _} = {!   !}
+  new-ana-steps-inner (SynConst (▷Pair x)) subsumable = {!   !}
+  new-ana-steps-inner (SynHole x) subsumable = {!   !}
+  new-ana-steps-inner (SynAp x x₁ x₂ x₃ x₄ x₅) subsumable = {!   !}
+  new-ana-steps-inner (SynVar x x₁) subsumable = {!   !}
+  new-ana-steps-inner (SynAsc x x₁ x₂) subsumable = {!   !}
 
   new-ana-steps : ∀ {e m t} ->
     ∃[ e' ] (e [ m ]⇐ (t , New)) Low↦ e' 
@@ -151,13 +161,14 @@ module Core.Progress where
     ∃[ p' ] (e ≡ ExpLowOfProgram p')
   step-preserves-program {p = Root e n} (StepUp (FillUEnvLowRec x) step (FillUEnvLowRec x₁)) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow (FillLEnvLowRec x) step (FillLEnvLowRec x₁)) = Root _ _ , refl
+  step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepNewAnaConsist x ~DVoidR) FillL⊙) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepAnaFun x x₁) FillL⊙) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepNewAnnFun x) FillL⊙) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillL⊙ StepSynFun FillL⊙) = Root _ _ , refl
 
   ProgressProgram : ∀ {p} ->
     WellTypedProgram p ->  
-    (∃[ p' ] (p P↦ p')) + (SettledProgram p)
+    (∃[ p' ] (p P↦ p')) + (SettledProgram p)  
   ProgressProgram (WTProg ana) with ProgressLow ana 
   ProgressProgram (WTProg ana) | Inl (e' , step) with step-preserves-program step 
   ProgressProgram (WTProg ana) | Inl (e' , step) | p' , refl = Inl (p' , (TopStep step)) 
