@@ -5,6 +5,7 @@ open import Data.Bool hiding (_<_; _≟_)
 open import Data.List
 open import Data.Product hiding (map)
 open import Relation.Nullary 
+open import Induction.WellFounded 
 open import Relation.Binary.PropositionalEquality hiding (inspect; [_])
 open import Prelude
 open import Agda.Primitive using (Level; lzero; lsuc) renaming (_⊔_ to lmax)
@@ -43,6 +44,32 @@ module Core.Termination where
 
   -- how many surface news, and set of all upstream positions of non-surface news
 
+  -- mutual 
+
+  --   <-wf' : (x : ℕ) -> {y : ℕ} → (y < x) -> (Acc _<_ y)
+  --   <-wf' zero () 
+  --   <-wf' (suc x) (s≤s z≤n) = acc (λ ())
+  --   <-wf' (2+ zero) (s≤s (s≤s z≤n)) = acc λ x → {! x  !}
+  --   <-wf' (2+ (suc x)) (s≤s (s≤s z≤n)) = {!   !}
+  --   <-wf' (2+ (suc x)) (s≤s (s≤s (s≤s lt))) = {!   !}
+
+  --   <-wf : WellFounded _<_ 
+  --   <-wf n = acc (<-wf' n)
+
+  step-terminate : 
+    (A : Set) -> 
+    (R : A -> A -> Set) -> 
+    (R-wf : WellFounded R) -> 
+    (step : Program -> Program -> Set) -> 
+    (val : Program -> A) -> 
+    (∀ {p p'} -> (step p p') -> (R (val p) (val p'))) -> 
+    (p p' : Program) ->
+    ∃[ n ] ∃[ p' ] (iter n step p p') × ¬ (∃[ p'' ] (step p' p''))
+  step-terminate A R R-wf step val decreases p p' = {!   !}
+
+  Score : Set 
+  Score = ℕ × List ℕ
+
   mutual 
     stream-length-up : ExpUp -> ℕ
     stream-length-up (EConst ⇒ _) = 1
@@ -68,7 +95,7 @@ module Core.Termination where
   
   mutual 
 
-    score-up : ExpUp -> ℕ -> (ℕ × List ℕ)
+    score-up : ExpUp -> (x : ℕ) -> (ℕ × List ℕ)
     score-up (EConst ⇒ (_ , n)) x = (0 , new-set n x)
     score-up (EHole ⇒ (_ , n)) x = (0 , new-set n x)
     score-up (EVar _ _ ⇒ (_ , n)) x = (0 , new-set n x)
@@ -83,16 +110,45 @@ module Core.Termination where
     score-low (e [ _ ]⇐ (_ , n)) x with score-up e (suc x)
     ... | num , set = num , ((new-set n x) set+ set)
 
+  -- property: all the elements of the list returned are less than stream-length of the exp
   -- score-bounded : ∀ {e x} -> (proj₂ (score-low e x))
   -- score-bounded = ?
 
-  score-program : Program -> (ℕ × List ℕ) 
+  score-program : Program -> Score
   score-program p = score-low (ExpLowOfProgram p) 0
 
-  -- property: all the elements of the list returned are less than stream-length of the exp
+  <Score : Score -> Score -> Set
+  <Score = _≡_
 
+  <Score-wf : WellFounded <Score
+  <Score-wf = {!   !}
+
+  <Program : Program -> Program -> Set
+  <Program p1 p2 = <Score (score-program p1) (score-program p2) 
+
+  acc-translate : ∀ {p} ->
+    Acc <Score (score-program p) ->
+    Acc <Program p
+  acc-translate (acc rs) = acc λ {p'} -> λ lt → acc-translate (rs lt)
+
+  <Program-wf' : 
+    (p : Program) -> 
+    ∀ {p'} → 
+    <Program p' p → 
+    (Acc <Program p') 
+  <Program-wf' p lt = acc-translate (<Score-wf _)
+
+  <Program-wf : WellFounded <Program
+  <Program-wf p = acc (<Program-wf' p)
+
+  StepDecrease : ∀ {p p'} ->
+    p P↦ p' -> 
+    <Program p p' 
+  StepDecrease = {!   !}
 
   TerminationProgram : ∀ {p} ->
-    WellTypedProgram p ->
+    -- WellTypedProgram p ->
     ∃[ n ] ∃[ p' ] (iter n (_P↦_) p p') × (SettledProgram p')
-  TerminationProgram (WTProg x) = {!   !}
+  TerminationProgram = {!   !}
+ 
+  
