@@ -2,9 +2,10 @@ open import Data.Nat
 open import Data.Unit 
 open import Data.Empty 
 open import Data.Bool hiding (_<_; _≟_)
+open import Data.List
 open import Data.Product hiding (map)
 open import Relation.Nullary 
-open import Relation.Binary.PropositionalEquality hiding (inspect)
+open import Relation.Binary.PropositionalEquality hiding (inspect; [_])
 open import Prelude
 open import Agda.Primitive using (Level; lzero; lsuc) renaming (_⊔_ to lmax)
 
@@ -27,34 +28,6 @@ module Core.Termination where
       R b c -> 
       iter (suc n) R a c
 
-  old-indicator : Newness -> ℕ 
-  old-indicator Old = 1
-  old-indicator New = 0
-
-  postulate 
-    x-binding : Binding
-
-  puzzle-e1 : ExpLow 
-  puzzle-e1 = ((EFun x-binding (THole , Old) ✔ ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (■ THole , Old))) ⇒ (□ , Old)) [ ✔ ]⇐ (■ THole , Old)
-  puzzle-e2 : ExpLow 
-  puzzle-e2 = ((EFun x-binding (THole , Old) ✔ ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (■ THole , Old))) ⇒ (□ , Old)) [ ✔ ]⇐ (□ , New)
-  puzzle-e3 : ExpLow 
-  puzzle-e3 = ((EFun x-binding (THole , Old) ✔ ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , New))) ⇒ (□ , New)) [ ✔ ]⇐ (□ , Old)
-
-  puzzle-e1-wt : ∅ ⊢ puzzle-e1 ⇐
-  puzzle-e1-wt = AnaFun (NTArrowC (DTArrowSome MArrowHole))
-    (■~N-pair (~N-pair (~DSome ConsistHoleL))) (▷Pair ▶Old) ▶Old ▶Old
-    (▷Pair ▶Old) (~N-pair ~DVoidL) ▶Old
-    (AnaSubsume SubsumableHole (~N-pair (~DSome ConsistHoleL)) ▶Old
-     (SynHole (▷Pair ▶Old)))
-  puzzle-e2-wt : ∅ ⊢ puzzle-e2 ⇐
-  puzzle-e2-wt = AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR))
-    (▷Pair ▶New) ▶New ▶New (▷Pair ▶New) (~N-pair ~DVoidL) ▶New
-    (AnaSubsume SubsumableHole (~N-pair (~DSome ConsistHoleL)) ▶Old
-     (SynHole (▷Pair ▶Old)))
-  puzzle-e3-wt : ∅ ⊢ puzzle-e3 ⇐
-  puzzle-e3-wt =  AnaFun {!   !} {!   !} {!   !} {!   !} ▶Old {!   !} {!   !} {!   !} {!   !}
-
   -- thinking time: 
   -- each action either decreases the number of news in the surface syntax, or leaves it the same
   -- so use a lexicographic ordering with this as the first entry. this handles those steps that change
@@ -68,22 +41,55 @@ module Core.Termination where
   -- issue: two directions for lambda, don't even align with modes (could be pushing around void)
   -- issue: ap splits
 
-  -- not good enough:
-  -- how long until encountering a new in the bidirectional flow
+  -- how many surface news, and set of all upstream positions of non-surface news
+
+  mutual 
+    stream-length-up : ExpUp -> ℕ
+    stream-length-up (EConst ⇒ _) = 1
+    stream-length-up (EHole ⇒ _) = 1
+    stream-length-up (EVar _ _ ⇒ _) = 1
+    stream-length-up (EFun _ _ _ _ e-body ⇒ _) = 1 + (stream-length-low e-body)
+    stream-length-up (EAsc _ e-body ⇒ _) = 1 + (stream-length-low e-body)
+    stream-length-up (EAp e-fun _ e-arg ⇒ _) = 1 + (stream-length-low e-fun) + (stream-length-low e-arg)
+
+    stream-length-low : ExpLow -> ℕ
+    stream-length-low (e [ _ ]⇐ _) = 1 + (stream-length-up e)
+
+  new-number : Newness -> ℕ 
+  new-number Old = 0
+  new-number New = 1
+
+  new-set : Newness -> ℕ -> List ℕ
+  new-set Old _ = []
+  new-set New x = [ x ]
+
+  _set+_ : (List ℕ) -> (List ℕ) -> (List ℕ)
+  _set+_ = {!   !}
+  
   mutual 
 
-    score-syn : ExpUp -> ℕ
-    score-syn (EConst ⇒ (t , n)) = old-indicator n
-    score-syn (EHole ⇒ (t , n)) = old-indicator n
-    score-syn (EAsc (t-asc , New) e-body ⇒ (t , n)) = 0
-    score-syn (EAsc (t-asc , Old) e-body ⇒ (t , n)) = 1 + ((old-indicator n) ⊓ (score-ana e-body))
-    score-syn (EFun x (t-ann , New) _ _ e-body ⇒ (t , n)) = 0
-    score-syn (EFun x (t-ann , Old) _ _ e-body ⇒ (t , n)) = 1 + {!   !}
-    score-syn (EAp e-fun m e-arg ⇒ (t , n)) = (old-indicator n) ⊓ (score-ana e-fun) ⊓ (score-ana e-arg)
-    score-syn (EVar _ _ ⇒ (t , n)) = {!   !}
+    score-up : ExpUp -> ℕ -> (ℕ × List ℕ)
+    score-up (EConst ⇒ (_ , n)) x = (0 , new-set n x)
+    score-up (EHole ⇒ (_ , n)) x = (0 , new-set n x)
+    score-up (EVar _ _ ⇒ (_ , n)) x = (0 , new-set n x)
+    score-up (EAsc (_ , n-asc) e-body ⇒ (_ , n)) x with score-low e-body (suc x)
+    ... | num , set = (new-number n-asc + num) , (new-set n x) set+ set
+    score-up (EFun _ (_ , n-ann) _ _ e-body ⇒ (_ , n)) x with score-low e-body (suc x)
+    ... | num , set = (new-number n-ann + num) , (new-set n x) set+ set
+    score-up (EAp e-fun _ e-arg ⇒ (_ , n)) x with score-low e-arg (suc x) | score-low e-fun (suc x + stream-length-low e-arg) 
+    ... | num-arg , set-arg | num-fun , set-fun = (num-fun + num-arg) , (((new-set n x) set+ set-arg) set+ set-fun)
 
-    score-ana : ExpLow -> ℕ
-    score-ana = {!   !}
+    score-low : ExpLow -> ℕ -> (ℕ × List ℕ)
+    score-low (e [ _ ]⇐ (_ , n)) x with score-up e (suc x)
+    ... | num , set = num , ((new-set n x) set+ set)
+
+  -- score-bounded : ∀ {e x} -> (proj₂ (score-low e x))
+  -- score-bounded = ?
+
+  score-program : Program -> (ℕ × List ℕ) 
+  score-program p = score-low (ExpLowOfProgram p) 0
+
+  -- property: all the elements of the list returned are less than stream-length of the exp
 
 
   TerminationProgram : ∀ {p} ->
