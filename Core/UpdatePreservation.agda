@@ -165,4 +165,11 @@ module Core.UpdatePreservation where
     (WellTypedProgram p')
   PreservationProgram (WTProg ana) (InsideStep step) = WTProg (PreservationAna ana step)
   PreservationProgram (WTProg ana) TopStep = WTProg (oldify-syn-inner ana)
+
+  InitProgram : Program 
+  InitProgram = Root (EHole ⇒ (■ THole , Old)) Old
+ 
+  InitWellTyped : WellTypedProgram InitProgram 
+  InitWellTyped = WTProg (AnaSubsume SubsumableHole (~N-pair ~DVoidR) ▶Old (SynHole (▷Pair ▶Old)))
+
     
