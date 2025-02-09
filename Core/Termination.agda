@@ -39,84 +39,88 @@ module Core.Termination where
   --   <-wf n = acc (<-wf' n)
 
 
-  mutual 
-    stream-length-up : ExpUp -> ℕ
-    stream-length-up (EConst ⇒ _) = 1
-    stream-length-up (EHole ⇒ _) = 1
-    stream-length-up (EVar _ _ ⇒ _) = 1
-    stream-length-up (EFun _ _ _ _ e-body ⇒ _) = 1 + (stream-length-low e-body)
-    stream-length-up (EAsc _ e-body ⇒ _) = 1 + (stream-length-low e-body)
-    stream-length-up (EAp e-fun _ e-arg ⇒ _) = 1 + (stream-length-low e-fun) + (stream-length-low e-arg)
+  -- mutual 
+  --   stream-length-up : ExpUp -> ℕ
+  --   stream-length-up (EConst ⇒ _) = 1
+  --   stream-length-up (EHole ⇒ _) = 1
+  --   stream-length-up (EVar _ _ ⇒ _) = 1
+  --   stream-length-up (EFun _ _ _ _ e-body ⇒ _) = 1 + (stream-length-low e-body)
+  --   stream-length-up (EAsc _ e-body ⇒ _) = 1 + (stream-length-low e-body)
+  --   stream-length-up (EAp e-fun _ e-arg ⇒ _) = 1 + (stream-length-low e-fun) + (stream-length-low e-arg)
 
-    stream-length-low : ExpLow -> ℕ
-    stream-length-low (e [ _ ]⇐ _) = 1 + (stream-length-up e)
+  --   stream-length-low : ExpLow -> ℕ
+  --   stream-length-low (e [ _ ]⇐ _) = 1 + (stream-length-up e)
 
-  new-number : Newness -> ℕ 
-  new-number Old = 0
-  new-number New = 1
+  -- new-number : Newness -> ℕ 
+  -- new-number Old = 0
+  -- new-number New = 1
 
-  new-set : Newness -> ℕ -> List ℕ
-  new-set Old _ = []
-  new-set New x = [ x ]
+  -- new-set : Newness -> ℕ -> List ℕ
+  -- new-set Old _ = []
+  -- new-set New x = [ x ]
 
-  _set+_ : (List ℕ) -> (List ℕ) -> (List ℕ)
-  _set+_ = {!   !}
+  -- _set+_ : (List ℕ) -> (List ℕ) -> (List ℕ)
+  -- _set+_ = {!   !}
 
-  Score : Set 
-  Score = ℕ × List ℕ
+  -- Score : Set 
+  -- Score = ℕ × List ℕ
   
-  mutual 
+  -- mutual 
 
-    -- the second component is a decreasing list of non-repeating naturals, all of which 
-    -- at greater than or equal to x and less than or equal to x + stream-length e
-    score-up : ExpUp -> (x : ℕ) -> (ℕ × List ℕ)
-    score-up (EConst ⇒ (_ , n)) x = (0 , new-set n x)
-    score-up (EHole ⇒ (_ , n)) x = (0 , new-set n x)
-    score-up (EVar _ _ ⇒ (_ , n)) x = (0 , new-set n x)
-    score-up (EAsc (_ , n-asc) e-body ⇒ (_ , n)) x with score-low e-body (suc x)
-    ... | num , set = (new-number n-asc + num) , set ++ (new-set n x)
-    score-up (EFun _ (_ , n-ann) _ _ e-body ⇒ (_ , n)) x with score-low e-body (suc x)
-    ... | num , set = (new-number n-ann + num) , set ++ (new-set n x)
-    score-up (EAp e-fun _ e-arg ⇒ (_ , n)) x with score-low e-arg (suc x) | score-low e-fun (suc x + stream-length-low e-arg) 
-    ... | num-arg , set-arg | num-fun , set-fun = (num-fun + num-arg) , (set-fun ++ set-arg ++ (new-set n x))
+  --   -- the second component is a decreasing list of non-repeating naturals, all of which 
+  --   -- at greater than or equal to x and less than or equal to x + stream-length e
+  --   score-up : ExpUp -> (x : ℕ) -> (ℕ × List ℕ)
+  --   score-up (EConst ⇒ (_ , n)) x = (0 , new-set n x)
+  --   score-up (EHole ⇒ (_ , n)) x = (0 , new-set n x)
+  --   score-up (EVar _ _ ⇒ (_ , n)) x = (0 , new-set n x)
+  --   score-up (EAsc (_ , n-asc) e-body ⇒ (_ , n)) x with score-low e-body (suc x)
+  --   ... | num , set = (new-number n-asc + num) , set ++ (new-set n x)
+  --   score-up (EFun _ (_ , n-ann) _ _ e-body ⇒ (_ , n)) x with score-low e-body (suc x)
+  --   ... | num , set = (new-number n-ann + num) , set ++ (new-set n x)
+  --   score-up (EAp e-fun _ e-arg ⇒ (_ , n)) x with score-low e-arg (suc x) | score-low e-fun (suc x + stream-length-low e-arg) 
+  --   ... | num-arg , set-arg | num-fun , set-fun = (num-fun + num-arg) , (set-fun ++ set-arg ++ (new-set n x))
 
-    score-low : ExpLow -> ℕ -> (ℕ × List ℕ)
-    score-low (e [ _ ]⇐ (_ , n)) x with score-up e (suc x)
-    ... | num , set = num , ((new-set n x) set+ set)
+  --   score-low : ExpLow -> ℕ -> (ℕ × List ℕ)
+  --   score-low (e [ _ ]⇐ (_ , n)) x with score-up e (suc x)
+  --   ... | num , set = num , ((new-set n x) set+ set)
 
-  -- property: all the elements of the list returned are less than stream-length of the exp
-  -- score-bounded : ∀ {e x} -> (proj₂ (score-low e x))
-  -- score-bounded = ?
+  -- -- property: all the elements of the list returned are less than stream-length of the exp
+  -- -- score-bounded : ∀ {e x} -> (proj₂ (score-low e x))
+  -- -- score-bounded = ?
 
-  score-program : Program -> Score
-  score-program p = score-low (ExpLowOfProgram p) 0
+  -- score-program : Program -> Score
+  -- score-program p = score-low (ExpLowOfProgram p) 0
 
-  data <Set : (List ℕ) -> (List ℕ) -> Set where 
-    <SetEmpty : ∀ {h t} ->
-      <Set [] (h ∷ t)
-    <SetHead : ∀ {h1 h2 t1 t2} ->
-      h1 < h2 -> 
-      <Set (h1 ∷ t1) (h2 ∷ t2)
-    <SetTail : ∀ {h t1 t2} ->
-      <Set t1 t2 -> 
-      <Set (h ∷ t1) (h ∷ t2)
+  -- data <Set : (List ℕ) -> (List ℕ) -> Set where 
+  --   <SetEmpty : ∀ {h t} ->
+  --     <Set [] (h ∷ t)
+  --   <SetHead : ∀ {h1 h2 t1 t2} ->
+  --     h1 < h2 -> 
+  --     <Set (h1 ∷ t1) (h2 ∷ t2)
+  --   <SetTail : ∀ {h t1 t2} ->
+  --     <Set t1 t2 -> 
+  --     <Set (h ∷ t1) (h ∷ t2)
 
-  data <Score : Score -> Score -> Set where 
-    <ScoreNum : ∀ {n1 n2 s1 s2} ->
-      (n1 < n2) -> 
-      <Score (n1 , s1) (n2 , s2)
-    <ScoreSet : ∀ {n1 n2 s1 s2} ->
-      (n1 ≡ n2) -> 
-      (<Set s1 s2) -> 
-      <Score (n1 , s1) (n2 , s2)
+  -- data <Score : Score -> Score -> Set where 
+  --   <ScoreNum : ∀ {n1 n2 s1 s2} ->
+  --     (n1 < n2) -> 
+  --     <Score (n1 , s1) (n2 , s2)
+  --   <ScoreSet : ∀ {n1 n2 s1 s2} ->
+  --     (n1 ≡ n2) -> 
+  --     (<Set s1 s2) -> 
+  --     <Score (n1 , s1) (n2 , s2)
 
-  <Score-wf : WellFounded <Score
-  <Score-wf = {!   !}
+  -- <Score-wf : WellFounded <Score
+  -- <Score-wf = {!   !}
 
   _↤P_ : Program -> Program -> Set 
   p' ↤P p = p P↦ p'
 
   -- direct approach 
+
+  new-number : Newness -> ℕ 
+  new-number Old = 0
+  new-number New = 1
 
   mutual 
     surface-news-up : ExpUp -> ℕ
@@ -281,33 +285,23 @@ module Core.Termination where
     e Low↦ e' -> 
     <ExpLow e' e
   StepDecreaseLow (StepLow fill1 step fill2) = FillLEnvLow-mono fill2 fill1 (StepDecreaseL step)
-  StepDecreaseLow (StepUp fill1 step fill2) with StepDecreaseU step 
-  ... | thing = FillUEnvLow-mono fill2 fill1 thing
-  
-  -- StepDecreaseLow (StepLow FillL⊙ step FillL⊙) = StepDecreaseL step
-  -- StepDecreaseLow (StepLow (FillLEnvLowRec fill1) step (FillLEnvLowRec fill2)) with StepDecreaseUp (StepLow fill1 step fill2)
-  -- ... | thing = {!   !}
-  -- StepDecreaseLow (StepUp (FillUEnvLowRec FillU⊙) step (FillUEnvLowRec FillU⊙)) with StepDecreaseU step
-  -- ... | thing = {!   !}
-  -- StepDecreaseLow (StepUp (FillUEnvLowRec (FillUEnvUpRec fill1)) step (FillUEnvLowRec (FillUEnvUpRec fill2))) with StepDecreaseLow {!   !}
-  -- ... | thing = {!   !}
-
-  StepDecrease' : ∀ {p p'} ->
-    p' ↤P p -> 
-    <Program p' p 
-  StepDecrease' TopStep = <Program= refl (<Lower= =New-refl (<Upper= =Mid-refl <NewC))
-  StepDecrease' (InsideStep step) with StepDecreaseLow step
-  ... | <ExpLow< lt = <Program< lt
-  ... | <ExpLow= eq lt = <Program= eq lt
+  StepDecreaseLow (StepUp fill1 step fill2) = FillUEnvLow-mono fill2 fill1 (StepDecreaseU step)
 
   StepDecrease : ∀ {p p'} ->
     p' ↤P p -> 
-    <Score (score-program p') (score-program p)
-  StepDecrease (InsideStep x) = {!   !}
-  StepDecrease TopStep = {!   !}
+    <Program p' p 
+  StepDecrease TopStep = <Program= refl (<Lower= =New-refl (<Upper= =Mid-refl <NewC))
+  StepDecrease (InsideStep step) with StepDecreaseLow step
+  ... | <ExpLow< lt = <Program< lt
+  ... | <ExpLow= eq lt = <Program= eq lt
+
+  -- well-foundedness 
+
+  <Program-wf : WellFounded <Program 
+  <Program-wf = {!   !}
 
   acc-translate : ∀ {p} ->
-    Acc <Score (score-program p) ->
+    Acc <Program p ->
     Acc _↤P_ p
   acc-translate (acc rs) = acc λ {p'} -> λ lt → acc-translate (rs (StepDecrease lt))
 
@@ -316,33 +310,33 @@ module Core.Termination where
     ∀ {p'} → 
     p' ↤P p → 
     (Acc _↤P_ p') 
-  ↤P-wf' p step = acc-translate (<Score-wf _)
+  ↤P-wf' p step = acc-translate (<Program-wf _)
 
   ↤P-wf : WellFounded _↤P_
   ↤P-wf p = acc (↤P-wf' p)
 
-  data iter {ℓ₁ ℓ₂ : Level} {A : Set ℓ₁} : ℕ -> (A -> A -> (Set ℓ₂)) -> (A -> A -> (Set (lmax ℓ₁ (lsuc ℓ₂)))) where 
-    Iter0 : ∀ {R a} ->
-      iter 0 R a a 
-    IterS : ∀ {n R a b c} ->
-      R a b -> 
-      iter n R b c ->
-      iter (suc n) R a c
+  data _P↦*_ : Program -> Program -> Set where 
+    P↦0 : ∀ {p} ->
+      p P↦* p
+    P↦suc : ∀ {p p' p''} ->
+      p P↦ p' -> 
+      p' P↦* p'' ->
+      p P↦* p''
 
   TerminationProgramRec : 
     {p : Program} ->
     (Acc _↤P_ p) ->
     (WellTypedProgram p) ->
-    ∃[ n ] ∃[ p' ] (iter n (_P↦_) p p') × (SettledProgram p')
+    ∃[ p' ] (p P↦* p') × (SettledProgram p')
   TerminationProgramRec {p} (acc recursor) wt with settled-dec p | ProgressProgram wt 
-  ... | Inl settled | _ = 0 , p , Iter0 , settled
+  ... | Inl settled | _ = p , P↦0 , settled
   ... | Inr unsettled | Inr settled = ⊥-elim (unsettled settled)
   ... | Inr unsettled | Inl (p' , step) with TerminationProgramRec {p'} (recursor step) (PreservationProgram wt step)
-  ... | n , p'' , steps , settled = suc n , p'' , IterS step steps , settled
+  ... | p'' , steps , settled = p'' , P↦suc step steps , settled
 
   TerminationProgram : 
     {p : Program} ->
     (WellTypedProgram p) ->
-    ∃[ n ] ∃[ p' ] (iter n (_P↦_) p p') × (SettledProgram p')
+    ∃[ p' ] (p P↦* p') × (SettledProgram p')
   TerminationProgram wt = TerminationProgramRec (↤P-wf _) wt
   
