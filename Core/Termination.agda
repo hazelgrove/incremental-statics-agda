@@ -3,6 +3,7 @@ open import Data.Unit
 open import Data.Empty 
 open import Data.Bool hiding (_<_; _≟_)
 open import Data.List
+open import Data.Sum renaming (inj₁ to Inl ; inj₂ to Inr) hiding (map)
 open import Data.Product hiding (map)
 open import Relation.Nullary 
 open import Induction.WellFounded 
@@ -18,31 +19,11 @@ open import Core.Lemmas-Preservation
 open import Core.VarsSynthesize
 open import Core.Update
 open import Core.Settled
+open import Core.SettledDec
+open import Core.Progress
+open import Core.UpdatePreservation
 
 module Core.Termination where
-
-  data iter {ℓ₁ ℓ₂ : Level} {A : Set ℓ₁} : ℕ -> (A -> A -> (Set ℓ₂)) -> (A -> A -> (Set (lmax ℓ₁ (lsuc ℓ₂)))) where 
-    Iter0 : ∀ {R a} ->
-      iter 0 R a a 
-    IterS : ∀ {n R a b c} ->
-      iter n R a b ->
-      R b c -> 
-      iter (suc n) R a c
-
-  -- thinking time: 
-  -- each action either decreases the number of news in the surface syntax, or leaves it the same
-  -- so use a lexicographic ordering with this as the first entry. this handles those steps that change
-  -- surface news. 
-  -- This leaves five: new syn, new ana, ana fun, syn fun, and ap
-  -- new syn and new ana: just deletes a new. should be easy to handle. 
-  -- ana fun : new pushed down through fun 
-  -- syn fun : new pushed up through fun 
-  -- ap : new pushed up and around, splitting. 
-
-  -- issue: two directions for lambda, don't even align with modes (could be pushing around void)
-  -- issue: ap splits
-
-  -- how many surface news, and set of all upstream positions of non-surface news
 
   -- mutual 
 
@@ -107,64 +88,56 @@ module Core.Termination where
   score-program p = score-low (ExpLowOfProgram p) 0
 
   <Score : Score -> Score -> Set
-  <Score = _≡_
+  <Score = {!   !}
 
   <Score-wf : WellFounded <Score
   <Score-wf = {!   !}
-
-  <Program : Program -> Program -> Set
-  <Program p1 p2 = <Score (score-program p1) (score-program p2) 
-
-  acc-translate : ∀ {p} ->
-    Acc <Score (score-program p) ->
-    Acc <Program p
-  acc-translate (acc rs) = acc λ {p'} -> λ lt → acc-translate (rs lt)
-
-  <Program-wf' : 
-    (p : Program) -> 
-    ∀ {p'} → 
-    <Program p' p → 
-    (Acc <Program p') 
-  <Program-wf' p lt = acc-translate (<Score-wf _)
-
-  <Program-wf : WellFounded <Program
-  <Program-wf p = acc (<Program-wf' p)
 
   _↤P_ : Program -> Program -> Set 
   p' ↤P p = p P↦ p'
 
   StepDecrease : ∀ {p p'} ->
     p' ↤P p -> 
-    <Program p' p
+    <Score (score-program p') (score-program p)
   StepDecrease = {!   !}
 
-  acc-translate' : ∀ {p} ->
-    Acc <Program p ->
+  acc-translate : ∀ {p} ->
+    Acc <Score (score-program p) ->
     Acc _↤P_ p
-  acc-translate' (acc rs) = acc λ {p'} -> λ lt → acc-translate' (rs (StepDecrease lt))
+  acc-translate (acc rs) = acc λ {p'} -> λ lt → acc-translate (rs (StepDecrease lt))
 
   ↤P-wf' :
     (p : Program) -> 
     ∀ {p'} → 
     p' ↤P p → 
     (Acc _↤P_ p') 
-  ↤P-wf' p step = acc-translate' (<Program-wf _)
+  ↤P-wf' p step = acc-translate (<Score-wf _)
 
   ↤P-wf : WellFounded _↤P_
   ↤P-wf p = acc (↤P-wf' p)
 
-  step-terminate : 
-    (A : Set) -> 
-    (R : A -> A -> Set) -> 
-    (R-wf : WellFounded R) ->
-    (p p' : A) ->
-    ∃[ n ] ∃[ p' ] (iter n R p' p) × ¬ (∃[ p'' ] (R p' p''))
-  step-terminate A R R-wf p p' with R-wf p'
-  ... | acc rs = {! rs  !}
+  data iter {ℓ₁ ℓ₂ : Level} {A : Set ℓ₁} : ℕ -> (A -> A -> (Set ℓ₂)) -> (A -> A -> (Set (lmax ℓ₁ (lsuc ℓ₂)))) where 
+    Iter0 : ∀ {R a} ->
+      iter 0 R a a 
+    IterS : ∀ {n R a b c} ->
+      R a b -> 
+      iter n R b c ->
+      iter (suc n) R a c
 
-  TerminationProgram : ∀ {p} ->
-    -- WellTypedProgram p ->
+  TerminationProgramRec : 
+    {p : Program} ->
+    (Acc _↤P_ p) ->
+    (WellTypedProgram p) ->
     ∃[ n ] ∃[ p' ] (iter n (_P↦_) p p') × (SettledProgram p')
-  TerminationProgram = {!   !}
- 
+  TerminationProgramRec {p} (acc recursor) wt with settled-dec p | ProgressProgram wt 
+  ... | Inl settled | _ = 0 , p , Iter0 , settled
+  ... | Inr unsettled | Inr settled = ⊥-elim (unsettled settled)
+  ... | Inr unsettled | Inl (p' , step) with TerminationProgramRec {p'} (recursor step) (PreservationProgram wt step)
+  ... | n , p'' , steps , settled = suc n , p'' , IterS step steps , settled
+
+  TerminationProgram : 
+    {p : Program} ->
+    (WellTypedProgram p) ->
+    ∃[ n ] ∃[ p' ] (iter n (_P↦_) p p') × (SettledProgram p')
+  TerminationProgram wt = TerminationProgramRec (↤P-wf _) wt
   
