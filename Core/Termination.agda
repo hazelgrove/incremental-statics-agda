@@ -1,4 +1,5 @@
 open import Data.Nat 
+open import Data.Nat.Properties
 open import Data.Unit 
 open import Data.Empty 
 open import Data.Bool hiding (_<_; _≟_)
@@ -37,8 +38,6 @@ module Core.Termination where
   --   <-wf : WellFounded _<_ 
   --   <-wf n = acc (<-wf' n)
 
-  Score : Set 
-  Score = ℕ × List ℕ
 
   mutual 
     stream-length-up : ExpUp -> ℕ
@@ -62,19 +61,24 @@ module Core.Termination where
 
   _set+_ : (List ℕ) -> (List ℕ) -> (List ℕ)
   _set+_ = {!   !}
+
+  Score : Set 
+  Score = ℕ × List ℕ
   
   mutual 
 
+    -- the second component is a decreasing list of non-repeating naturals, all of which 
+    -- at greater than or equal to x and less than or equal to x + stream-length e
     score-up : ExpUp -> (x : ℕ) -> (ℕ × List ℕ)
     score-up (EConst ⇒ (_ , n)) x = (0 , new-set n x)
     score-up (EHole ⇒ (_ , n)) x = (0 , new-set n x)
     score-up (EVar _ _ ⇒ (_ , n)) x = (0 , new-set n x)
     score-up (EAsc (_ , n-asc) e-body ⇒ (_ , n)) x with score-low e-body (suc x)
-    ... | num , set = (new-number n-asc + num) , (new-set n x) set+ set
+    ... | num , set = (new-number n-asc + num) , set ++ (new-set n x)
     score-up (EFun _ (_ , n-ann) _ _ e-body ⇒ (_ , n)) x with score-low e-body (suc x)
-    ... | num , set = (new-number n-ann + num) , (new-set n x) set+ set
+    ... | num , set = (new-number n-ann + num) , set ++ (new-set n x)
     score-up (EAp e-fun _ e-arg ⇒ (_ , n)) x with score-low e-arg (suc x) | score-low e-fun (suc x + stream-length-low e-arg) 
-    ... | num-arg , set-arg | num-fun , set-fun = (num-fun + num-arg) , (((new-set n x) set+ set-arg) set+ set-fun)
+    ... | num-arg , set-arg | num-fun , set-fun = (num-fun + num-arg) , (set-fun ++ set-arg ++ (new-set n x))
 
     score-low : ExpLow -> ℕ -> (ℕ × List ℕ)
     score-low (e [ _ ]⇐ (_ , n)) x with score-up e (suc x)
@@ -87,8 +91,24 @@ module Core.Termination where
   score-program : Program -> Score
   score-program p = score-low (ExpLowOfProgram p) 0
 
-  <Score : Score -> Score -> Set
-  <Score = {!   !}
+  data <Set : (List ℕ) -> (List ℕ) -> Set where 
+    <SetEmpty : ∀ {h t} ->
+      <Set [] (h ∷ t)
+    <SetHead : ∀ {h1 h2 t1 t2} ->
+      h1 < h2 -> 
+      <Set (h1 ∷ t1) (h2 ∷ t2)
+    <SetTail : ∀ {h t1 t2} ->
+      <Set t1 t2 -> 
+      <Set (h ∷ t1) (h ∷ t2)
+
+  data <Score : Score -> Score -> Set where 
+    <ScoreNum : ∀ {n1 n2 s1 s2} ->
+      (n1 < n2) -> 
+      <Score (n1 , s1) (n2 , s2)
+    <ScoreSet : ∀ {n1 n2 s1 s2} ->
+      (n1 ≡ n2) -> 
+      (<Set s1 s2) -> 
+      <Score (n1 , s1) (n2 , s2)
 
   <Score-wf : WellFounded <Score
   <Score-wf = {!   !}
@@ -96,10 +116,195 @@ module Core.Termination where
   _↤P_ : Program -> Program -> Set 
   p' ↤P p = p P↦ p'
 
+  -- direct approach 
+
+  mutual 
+    surface-news-up : ExpUp -> ℕ
+    surface-news-up (e ⇒ _) = surface-news-mid e
+
+    surface-news-mid : ExpMid -> ℕ
+    surface-news-mid (EConst) = 0
+    surface-news-mid (EHole) = 0
+    surface-news-mid (EVar _ _) = 0
+    surface-news-mid (EAsc (_ , n-asc) e-body) = (new-number n-asc) + surface-news-low e-body
+    surface-news-mid (EFun _ (_ , n-ann) _ _ e-body) = (new-number n-ann) + surface-news-low e-body
+    surface-news-mid (EAp e-fun _ e-arg) = surface-news-low e-fun + surface-news-low e-arg
+
+    surface-news-low : ExpLow -> ℕ
+    surface-news-low (e [ _ ]⇐ _) = surface-news-up e
+
+  data =New : NewData -> NewData -> Set where 
+    =NewOld : ∀ {t1 t2} ->
+      =New (t1 , Old) (t2 , Old)
+    =NewNew : ∀ {t1 t2} ->
+      =New (t1 , New) (t2 , New)
+
+  =New-refl : ∀ {n} -> =New n n 
+  =New-refl {_ , Old} = =NewOld
+  =New-refl {_ , New} = =NewNew
+
+  data =Up : ExpUp -> ExpUp -> Set where 
+
+  data =Mid : ExpMid -> ExpMid -> Set where 
+
+  data =Low : ExpLow -> ExpLow -> Set where 
+    
+
+  =Mid-refl : ∀ {e} -> =Mid e e 
+  =Mid-refl = {!   !}
+
+  data <New : NewData -> NewData -> Set where 
+    <NewC : ∀ {t1 t2} ->
+      <New (t1 , Old) (t2 , New)
+
+  mutual 
+
+    data <Up : ExpUp -> ExpUp -> Set where 
+      <Upper : ∀ {e1 e2 syn1 syn2} ->
+        <Mid e1 e2 ->  
+        <Up (e1 ⇒ syn1) (e2 ⇒ syn2)
+      <Upper= : ∀ {e1 e2 syn1 syn2} ->
+        =Mid e1 e2 ->  
+        <New syn1 syn2 ->  
+        <Up (e1 ⇒ syn1) (e2 ⇒ syn2)
+      
+    data <Mid : ExpMid -> ExpMid -> Set where 
+      <Asc : ∀ {a1 a2 e1 e2} ->
+        <Low e1 e2 -> 
+        <Mid (EAsc a1 e1) (EAsc a2 e2)
+      <Fun : ∀ {a1 a2 a3 a4 a5 a6 a7 a8 e1 e2} ->
+        <Low e1 e2 -> 
+        <Mid (EFun a1 a2 a3 a4 e1) (EFun a5 a6 a7 a8 e2)
+      <Ap< : ∀ {a1 a2 e1 e2 e3 e4} ->
+        <Low e1 e3 -> 
+        <Mid (EAp e1 a1 e2) (EAp e3 a2 e4)
+      <Ap=< : ∀ {a1 a2 e1 e2 e3 e4} ->
+        =Low e1 e3 -> 
+        <Low e2 e4 -> 
+        <Mid (EAp e1 a1 e2) (EAp e3 a2 e4)
+
+    data <Low : ExpLow -> ExpLow -> Set where 
+      <Lower : ∀ {e1 e2 a1 a2 ana1 ana2} ->
+        <New ana1 ana2 ->  
+        <Low (e1 [ a1 ]⇐ ana1) (e2 [ a2 ]⇐ ana2)
+      <Lower= : ∀ {e1 e2 a1 a2 ana1 ana2} ->
+        =New ana1 ana2 ->  
+        <Up e1 e2 ->
+        <Low (e1 [ a1 ]⇐ ana1) (e2 [ a2 ]⇐ ana2)
+
+  data <Program : Program -> Program -> Set where 
+    <Program< : ∀ {p p'} ->
+      surface-news-low (ExpLowOfProgram p) < surface-news-low (ExpLowOfProgram p') -> 
+      <Program p p'
+    <Program= : ∀ {p p'} ->
+      surface-news-low (ExpLowOfProgram p) ≡ surface-news-low (ExpLowOfProgram p') -> 
+      <Low (ExpLowOfProgram p) (ExpLowOfProgram p') ->
+      <Program p p'
+
+  data <ExpUp : ExpUp -> ExpUp -> Set where 
+    <ExpUp< : ∀ {e e'} ->
+      surface-news-up e < surface-news-up e' -> 
+      <ExpUp e e'
+    <ExpUp= : ∀ {e e'} ->
+      surface-news-up e ≡ surface-news-up e' -> 
+      <Up e e' ->
+      <ExpUp e e'
+
+  data <ExpLow : ExpLow -> ExpLow -> Set where 
+    <ExpLow< : ∀ {e e'} ->
+      surface-news-low e < surface-news-low e' -> 
+      <ExpLow e e'
+    <ExpLow= : ∀ {e e'} ->
+      surface-news-low e ≡ surface-news-low e' -> 
+      <Low e e' ->
+      <ExpLow e e'
+
+  StepDecreaseU : ∀ {e e'} ->
+    e U↦ e' -> 
+    <ExpUp e' e
+  StepDecreaseU = {!   !}
+
+  StepDecreaseL : ∀ {e e'} ->
+    e L↦ e' -> 
+    <ExpLow e' e
+  StepDecreaseL = {!   !}
+
+  StepDecreaseUp : ∀ {e e'} ->
+    e Up↦ e' -> 
+    <ExpUp e' e
+  StepDecreaseUp = {!   !}
+
+  surface-news-ll : LEnvLow -> ℕ
+  surface-news-ll = {!   !}
+
+  FillLEnvLow-surface : ∀ {ε e e-in} ->
+    ε L⟦ e-in ⟧Low== e ->
+    surface-news-low e ≡ surface-news-low e-in + surface-news-ll ε
+  FillLEnvLow-surface fill = {!   !}
+
+  FillLEnvLow-mono' : ∀ {ε e e' e-in e-in'} ->
+    ε L⟦ e-in' ⟧Low== e' ->
+    ε L⟦ e-in ⟧Low== e ->
+    <Low e-in' e-in ->
+    <Low e' e
+  FillLEnvLow-mono' = {!   !}
+
+  FillLEnvLow-mono : ∀ {ε e e' e-in e-in'} ->
+    ε L⟦ e-in' ⟧Low== e' ->
+    ε L⟦ e-in ⟧Low== e ->
+    <ExpLow e-in' e-in ->
+    <ExpLow e' e
+  FillLEnvLow-mono {ε} {e} {e'} fill1 fill2 (<ExpLow< lt) = <ExpLow< lt'
+    where 
+    lt' : surface-news-low e' < surface-news-low e
+    lt' 
+      rewrite FillLEnvLow-surface fill1 
+      rewrite FillLEnvLow-surface fill2 
+      = +-monoˡ-< (surface-news-ll ε) lt
+  FillLEnvLow-mono {ε} {e} {e'} fill1 fill2 (<ExpLow= eq lt) = <ExpLow= eq' (FillLEnvLow-mono' fill1 fill2 lt)
+    where 
+    eq' : surface-news-low e' ≡ surface-news-low e
+    eq' 
+      rewrite FillLEnvLow-surface fill1 
+      rewrite FillLEnvLow-surface fill2 
+      rewrite eq
+      = refl
+
+  FillUEnvLow-mono : ∀ {ε e e' e-in e-in'} ->
+    ε U⟦ e-in' ⟧Low== e' ->
+    ε U⟦ e-in ⟧Low== e ->
+    <ExpUp e-in' e-in ->
+    <ExpLow e' e
+  FillUEnvLow-mono = {!   !}
+
+  StepDecreaseLow : ∀ {e e'} ->
+    e Low↦ e' -> 
+    <ExpLow e' e
+  StepDecreaseLow (StepLow fill1 step fill2) = FillLEnvLow-mono fill2 fill1 (StepDecreaseL step)
+  StepDecreaseLow (StepUp fill1 step fill2) with StepDecreaseU step 
+  ... | thing = FillUEnvLow-mono fill2 fill1 thing
+  
+  -- StepDecreaseLow (StepLow FillL⊙ step FillL⊙) = StepDecreaseL step
+  -- StepDecreaseLow (StepLow (FillLEnvLowRec fill1) step (FillLEnvLowRec fill2)) with StepDecreaseUp (StepLow fill1 step fill2)
+  -- ... | thing = {!   !}
+  -- StepDecreaseLow (StepUp (FillUEnvLowRec FillU⊙) step (FillUEnvLowRec FillU⊙)) with StepDecreaseU step
+  -- ... | thing = {!   !}
+  -- StepDecreaseLow (StepUp (FillUEnvLowRec (FillUEnvUpRec fill1)) step (FillUEnvLowRec (FillUEnvUpRec fill2))) with StepDecreaseLow {!   !}
+  -- ... | thing = {!   !}
+
+  StepDecrease' : ∀ {p p'} ->
+    p' ↤P p -> 
+    <Program p' p 
+  StepDecrease' TopStep = <Program= refl (<Lower= =New-refl (<Upper= =Mid-refl <NewC))
+  StepDecrease' (InsideStep step) with StepDecreaseLow step
+  ... | <ExpLow< lt = <Program< lt
+  ... | <ExpLow= eq lt = <Program= eq lt
+
   StepDecrease : ∀ {p p'} ->
     p' ↤P p -> 
     <Score (score-program p') (score-program p)
-  StepDecrease = {!   !}
+  StepDecrease (InsideStep x) = {!   !}
+  StepDecrease TopStep = {!   !}
 
   acc-translate : ∀ {p} ->
     Acc <Score (score-program p) ->
