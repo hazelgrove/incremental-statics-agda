@@ -157,6 +157,9 @@ module Core.Termination where
   =Mid-refl : ∀ {e} -> =Mid e e 
   =Mid-refl = {!   !}
 
+  =Low-refl : ∀ {e} -> =Low e e 
+  =Low-refl = {!   !}
+
   data <New : NewData -> NewData -> Set where 
     <NewC : ∀ {t1 t2} ->
       <New (t1 , Old) (t2 , New)
@@ -222,50 +225,184 @@ module Core.Termination where
       surface-news-low e ≡ surface-news-low e' -> 
       <Low e e' ->
       <ExpLow e e'
+  
+  vars-syn-preserves-surface-news : ∀{x t m e e'} ->
+    VarsSynthesize x t m e e' ->
+    surface-news-up e ≡ surface-news-up e'
+  vars-syn-preserves-surface-news VSConst = refl
+  vars-syn-preserves-surface-news VSHole = refl
+  vars-syn-preserves-surface-news VSVarEq = refl
+  vars-syn-preserves-surface-news (VSVarNeq _) = refl
+  vars-syn-preserves-surface-news VSFunEq = refl
+  vars-syn-preserves-surface-news (VSFunNeq _ vars-syn) 
+    rewrite vars-syn-preserves-surface-news vars-syn = refl
+  vars-syn-preserves-surface-news (VSAsc vars-syn) 
+    rewrite vars-syn-preserves-surface-news vars-syn = refl
+  vars-syn-preserves-surface-news (VSAp vars-syn1 vars-syn2) 
+    rewrite vars-syn-preserves-surface-news vars-syn1
+    rewrite vars-syn-preserves-surface-news vars-syn2 = refl
+
+  vars-syn?-preserves-surface-news : ∀{x t m e e'} ->
+    VarsSynthesize? x t m e e' ->
+    surface-news-up e ≡ surface-news-up e'
+  vars-syn?-preserves-surface-news {BHole} refl = refl
+  vars-syn?-preserves-surface-news {BVar x} = vars-syn-preserves-surface-news
 
   StepDecreaseU : ∀ {e e'} ->
     e U↦ e' -> 
     <ExpUp e' e
-  StepDecreaseU = {!   !}
+  StepDecreaseU StepAsc = <ExpUp< (n<1+n _)
+  StepDecreaseU (StepAp x) = <ExpUp= refl (<Upper (<Ap< (<Lower= =New-refl (<Upper= =Mid-refl <NewC))))
 
   StepDecreaseL : ∀ {e e'} ->
     e L↦ e' -> 
     <ExpLow e' e
-  StepDecreaseL = {!   !}
+  StepDecreaseL (StepNewAnnFun {e-body = e} {e-body' = e'} _ _ vars-syn) = <ExpLow< helper
+    where 
+    helper : surface-news-mid e' < suc (surface-news-mid e)
+    helper rewrite (vars-syn?-preserves-surface-news vars-syn) = ≤-refl
+  StepDecreaseL (StepNewSynConsist x) = <ExpLow= refl (<Lower= =NewOld (<Upper= =Mid-refl <NewC))
+  StepDecreaseL (StepNewAnaConsist x x₁) = <ExpLow= refl (<Lower <NewC)
+  StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC)
+  StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =New-refl (<Upper (<Fun (<Lower= =NewOld (<Upper= =Mid-refl <NewC)))))
 
-  StepDecreaseUp : ∀ {e e'} ->
-    e Up↦ e' -> 
-    <ExpUp e' e
-  StepDecreaseUp = {!   !}
+  -- environment stuff
 
-  surface-news-ll : LEnvLow -> ℕ
-  surface-news-ll = {!   !}
+  mutual 
+    
+    surface-news-uu : UEnvUp -> ℕ
+    surface-news-uu U⊙ = 0
+    surface-news-uu (UEnvUpRec ε _) = surface-news-um ε
 
-  FillLEnvLow-surface : ∀ {ε e e-in} ->
-    ε L⟦ e-in ⟧Low== e ->
-    surface-news-low e ≡ surface-news-low e-in + surface-news-ll ε
-  FillLEnvLow-surface fill = {!   !}
+    surface-news-um : UEnvMid -> ℕ
+    surface-news-um (UEnvAsc (_ , n-asc) ε) = (new-number n-asc) + surface-news-ul ε
+    surface-news-um (UEnvFun _ (_ , n-ann) _ _ ε) = (new-number n-ann) + surface-news-ul ε
+    surface-news-um (UEnvAp1 ε _ e-arg) = surface-news-ul ε + surface-news-low e-arg
+    surface-news-um (UEnvAp2 e-fun _ ε) = surface-news-low e-fun + surface-news-ul ε
 
-  FillLEnvLow-mono' : ∀ {ε e e' e-in e-in'} ->
-    ε L⟦ e-in' ⟧Low== e' ->
-    ε L⟦ e-in ⟧Low== e ->
-    <Low e-in' e-in ->
-    <Low e' e
-  FillLEnvLow-mono' = {!   !}
+    surface-news-ul : UEnvLow -> ℕ
+    surface-news-ul (UEnvLowRec ε _ _) = surface-news-uu ε
 
-  FillLEnvLow-mono : ∀ {ε e e' e-in e-in'} ->
+  mutual
+    surface-news-lu : LEnvUp -> ℕ
+    surface-news-lu (LEnvUpRec ε _) = surface-news-lm ε
+
+    surface-news-lm : LEnvMid -> ℕ
+    surface-news-lm (LEnvAsc (_ , n-asc) ε) = (new-number n-asc) + surface-news-ll ε
+    surface-news-lm (LEnvFun _ (_ , n-ann) _ _ ε) = (new-number n-ann) + surface-news-ll ε
+    surface-news-lm (LEnvAp1 ε _ e-arg) = surface-news-ll ε + surface-news-low e-arg
+    surface-news-lm (LEnvAp2 e-fun _ ε) = surface-news-low e-fun + surface-news-ll ε
+
+    surface-news-ll : LEnvLow -> ℕ
+    surface-news-ll L⊙ = 0
+    surface-news-ll (LEnvLowRec ε _ _) = surface-news-lu ε
+
+  FillUEnvLow-surface : ∀ {ε e e-in} ->
+    ε U⟦ e-in ⟧Low== e ->
+    surface-news-low e ≡ surface-news-up e-in + surface-news-ul ε
+  FillUEnvLow-surface fill = {!   !}
+
+  mutual 
+
+    FillLEnvUp-surface : ∀ {ε e e-in} ->
+      ε L⟦ e-in ⟧Up== e ->
+      surface-news-up e ≡ surface-news-lu ε + surface-news-low e-in
+    FillLEnvUp-surface (FillLEnvUpRec fill) = FillLEnvMid-surface fill
+
+    FillLEnvMid-surface : ∀ {ε e e-in} ->
+      ε L⟦ e-in ⟧Mid== e ->
+      surface-news-mid e ≡ surface-news-lm ε + surface-news-low e-in 
+    FillLEnvMid-surface {e-in = e-in} (FillLEnvAsc {ε = ε} {t = (_ , n)} fill) 
+      rewrite FillLEnvLow-surface fill 
+      =  sym (+-assoc (new-number n) (surface-news-ll ε) (surface-news-low e-in))
+    FillLEnvMid-surface {e-in = e-in} (FillLEnvFun {ε = ε} {t = (_ , n)} fill) 
+      rewrite FillLEnvLow-surface fill 
+      = sym (+-assoc (new-number n) (surface-news-ll ε) (surface-news-low e-in))
+    FillLEnvMid-surface {e-in = e-in} (FillLEnvAp1 {ε = ε} {e2 = e2} fill) 
+      rewrite FillLEnvLow-surface fill 
+      rewrite (+-assoc (surface-news-ll ε) (surface-news-low e-in) (surface-news-low e2))
+      rewrite +-comm (surface-news-low e-in) (surface-news-low e2) 
+      rewrite sym (+-assoc (surface-news-ll ε) (surface-news-low e2) (surface-news-low e-in))
+      = refl
+    FillLEnvMid-surface {e-in = e-in} (FillLEnvAp2 {ε = ε} {e1 = e1} fill) 
+      rewrite FillLEnvLow-surface fill 
+      = sym (+-assoc (surface-news-low e1) (surface-news-ll ε) (surface-news-low e-in))
+
+    FillLEnvLow-surface : ∀ {ε e e-in} ->
+      ε L⟦ e-in ⟧Low== e ->
+      surface-news-low e ≡ surface-news-ll ε + surface-news-low e-in
+    FillLEnvLow-surface FillL⊙ = refl
+    FillLEnvLow-surface (FillLEnvLowRec fill) = FillLEnvUp-surface fill 
+
+
+  mutual 
+
+    FillLEnvUp-<Up : ∀ {ε e e' e-in e-in'} ->
+      ε L⟦ e-in' ⟧Up== e' ->
+      ε L⟦ e-in ⟧Up== e ->
+      <Low e-in' e-in ->
+      <Up e' e
+    FillLEnvUp-<Up (FillLEnvUpRec fill1) (FillLEnvUpRec fill2) lt = <Upper (FillLEnvMid-<Mid fill1 fill2 lt)
+
+    FillLEnvMid-<Mid : ∀ {ε e e' e-in e-in'} ->
+      ε L⟦ e-in' ⟧Mid== e' ->
+      ε L⟦ e-in ⟧Mid== e ->
+      <Low e-in' e-in ->
+      <Mid e' e
+    FillLEnvMid-<Mid (FillLEnvAsc fill1) (FillLEnvAsc fill2) lt = <Asc (FillLEnvLow-<Low fill1 fill2 lt) 
+    FillLEnvMid-<Mid (FillLEnvFun fill1) (FillLEnvFun fill2) lt = <Fun (FillLEnvLow-<Low fill1 fill2 lt)
+    FillLEnvMid-<Mid (FillLEnvAp1 fill1) (FillLEnvAp1 fill2) lt = <Ap< (FillLEnvLow-<Low fill1 fill2 lt) 
+    FillLEnvMid-<Mid (FillLEnvAp2 fill1) (FillLEnvAp2 fill2) lt = <Ap=< =Low-refl (FillLEnvLow-<Low fill1 fill2 lt)
+
+    FillLEnvLow-<Low : ∀ {ε e e' e-in e-in'} ->
+      ε L⟦ e-in' ⟧Low== e' ->
+      ε L⟦ e-in ⟧Low== e ->
+      <Low e-in' e-in ->
+      <Low e' e
+    FillLEnvLow-<Low FillL⊙ FillL⊙ lt = lt
+    FillLEnvLow-<Low (FillLEnvLowRec fill1) (FillLEnvLowRec fill2) lt = <Lower= =New-refl (FillLEnvUp-<Up fill1 fill2 lt)
+  
+  mutual 
+
+    FillUEnvUp-<Up : ∀ {ε e e' e-in e-in'} ->
+      ε U⟦ e-in' ⟧Up== e' ->
+      ε U⟦ e-in ⟧Up== e ->
+      <Up e-in' e-in ->
+      <Up e' e
+    FillUEnvUp-<Up FillU⊙ FillU⊙ lt = lt
+    FillUEnvUp-<Up (FillUEnvUpRec fill1) (FillUEnvUpRec fill2) lt = <Upper (FillUEnvMid-<Mid fill1 fill2 lt)
+
+    FillUEnvMid-<Mid : ∀ {ε e e' e-in e-in'} ->
+      ε U⟦ e-in' ⟧Mid== e' ->
+      ε U⟦ e-in ⟧Mid== e ->
+      <Up e-in' e-in ->
+      <Mid e' e
+    FillUEnvMid-<Mid (FillUEnvAsc fill1) (FillUEnvAsc fill2) lt = <Asc (FillUEnvLow-<Low fill1 fill2 lt)
+    FillUEnvMid-<Mid (FillUEnvFun fill1) (FillUEnvFun fill2) lt = <Fun (FillUEnvLow-<Low fill1 fill2 lt)
+    FillUEnvMid-<Mid (FillUEnvAp1 fill1) (FillUEnvAp1 fill2) lt = <Ap< (FillUEnvLow-<Low fill1 fill2 lt)
+    FillUEnvMid-<Mid (FillUEnvAp2 fill1) (FillUEnvAp2 fill2) lt = <Ap=< =Low-refl (FillUEnvLow-<Low fill1 fill2 lt)
+
+
+    FillUEnvLow-<Low : ∀ {ε e e' e-in e-in'} ->
+      ε U⟦ e-in' ⟧Low== e' ->
+      ε U⟦ e-in ⟧Low== e ->
+      <Up e-in' e-in ->
+      <Low e' e
+    FillUEnvLow-<Low (FillUEnvLowRec fill1) (FillUEnvLowRec fill2) lt = <Lower= =New-refl (FillUEnvUp-<Up fill1 fill2 lt)
+    
+  FillLEnvLow-<ExpLow : ∀ {ε e e' e-in e-in'} ->
     ε L⟦ e-in' ⟧Low== e' ->
     ε L⟦ e-in ⟧Low== e ->
     <ExpLow e-in' e-in ->
     <ExpLow e' e
-  FillLEnvLow-mono {ε} {e} {e'} fill1 fill2 (<ExpLow< lt) = <ExpLow< lt'
+  FillLEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpLow< lt) = <ExpLow< lt'
     where 
     lt' : surface-news-low e' < surface-news-low e
     lt' 
       rewrite FillLEnvLow-surface fill1 
       rewrite FillLEnvLow-surface fill2 
-      = +-monoˡ-< (surface-news-ll ε) lt
-  FillLEnvLow-mono {ε} {e} {e'} fill1 fill2 (<ExpLow= eq lt) = <ExpLow= eq' (FillLEnvLow-mono' fill1 fill2 lt)
+      = +-monoʳ-< (surface-news-ll ε) lt
+  FillLEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpLow= eq lt) = <ExpLow= eq' (FillLEnvLow-<Low fill1 fill2 lt)
     where 
     eq' : surface-news-low e' ≡ surface-news-low e
     eq' 
@@ -274,18 +411,32 @@ module Core.Termination where
       rewrite eq
       = refl
 
-  FillUEnvLow-mono : ∀ {ε e e' e-in e-in'} ->
+  FillUEnvLow-<ExpLow : ∀ {ε e e' e-in e-in'} ->
     ε U⟦ e-in' ⟧Low== e' ->
     ε U⟦ e-in ⟧Low== e ->
     <ExpUp e-in' e-in ->
     <ExpLow e' e
-  FillUEnvLow-mono = {!   !}
-
+  FillUEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpUp< lt) = <ExpLow< lt'
+    where 
+    lt' : surface-news-low e' < surface-news-low e
+    lt' 
+      rewrite FillUEnvLow-surface fill1 
+      rewrite FillUEnvLow-surface fill2 
+      = +-monoˡ-< (surface-news-ul ε) lt
+  FillUEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpUp= eq lt) = <ExpLow= eq' (FillUEnvLow-<Low fill1 fill2 lt)
+    where 
+    eq' : surface-news-low e' ≡ surface-news-low e
+    eq' 
+      rewrite FillUEnvLow-surface fill1 
+      rewrite FillUEnvLow-surface fill2 
+      rewrite eq
+      = refl
+  
   StepDecreaseLow : ∀ {e e'} ->
     e Low↦ e' -> 
     <ExpLow e' e
-  StepDecreaseLow (StepLow fill1 step fill2) = FillLEnvLow-mono fill2 fill1 (StepDecreaseL step)
-  StepDecreaseLow (StepUp fill1 step fill2) = FillUEnvLow-mono fill2 fill1 (StepDecreaseU step)
+  StepDecreaseLow (StepLow fill1 step fill2) = FillLEnvLow-<ExpLow fill2 fill1 (StepDecreaseL step)
+  StepDecreaseLow (StepUp fill1 step fill2) = FillUEnvLow-<ExpLow fill2 fill1 (StepDecreaseU step)
 
   StepDecrease : ∀ {p p'} ->
     p' ↤P p -> 
@@ -339,4 +490,4 @@ module Core.Termination where
     (WellTypedProgram p) ->
     ∃[ p' ] (p P↦* p') × (SettledProgram p')
   TerminationProgram wt = TerminationProgramRec (↤P-wf _) wt
-  
+    
