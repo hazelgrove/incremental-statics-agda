@@ -56,17 +56,6 @@ module Core.Termination where
   --   <-wf : WellFounded _<_ 
   --   <-wf n = acc (<-wf' n)
 
-  step-terminate : 
-    (A : Set) -> 
-    (R : A -> A -> Set) -> 
-    (R-wf : WellFounded R) -> 
-    (step : Program -> Program -> Set) -> 
-    (val : Program -> A) -> 
-    (∀ {p p'} -> (step p p') -> (R (val p) (val p'))) -> 
-    (p p' : Program) ->
-    ∃[ n ] ∃[ p' ] (iter n step p p') × ¬ (∃[ p'' ] (step p' p''))
-  step-terminate A R R-wf step val decreases p p' = {!   !}
-
   Score : Set 
   Score = ℕ × List ℕ
 
@@ -141,10 +130,37 @@ module Core.Termination where
   <Program-wf : WellFounded <Program
   <Program-wf p = acc (<Program-wf' p)
 
+  _↤P_ : Program -> Program -> Set 
+  p' ↤P p = p P↦ p'
+
   StepDecrease : ∀ {p p'} ->
-    p P↦ p' -> 
-    <Program p p' 
+    p' ↤P p -> 
+    <Program p' p
   StepDecrease = {!   !}
+
+  acc-translate' : ∀ {p} ->
+    Acc <Program p ->
+    Acc _↤P_ p
+  acc-translate' (acc rs) = acc λ {p'} -> λ lt → acc-translate' (rs (StepDecrease lt))
+
+  ↤P-wf' :
+    (p : Program) -> 
+    ∀ {p'} → 
+    p' ↤P p → 
+    (Acc _↤P_ p') 
+  ↤P-wf' p step = acc-translate' (<Program-wf _)
+
+  ↤P-wf : WellFounded _↤P_
+  ↤P-wf p = acc (↤P-wf' p)
+
+  step-terminate : 
+    (A : Set) -> 
+    (R : A -> A -> Set) -> 
+    (R-wf : WellFounded R) ->
+    (p p' : A) ->
+    ∃[ n ] ∃[ p' ] (iter n R p' p) × ¬ (∃[ p'' ] (R p' p''))
+  step-terminate A R R-wf p p' with R-wf p'
+  ... | acc rs = {! rs  !}
 
   TerminationProgram : ∀ {p} ->
     -- WellTypedProgram p ->
