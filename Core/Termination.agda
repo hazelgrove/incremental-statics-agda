@@ -27,97 +27,8 @@ open import Core.UpdatePreservation
 
 module Core.Termination where
 
-  -- mutual 
-
-  --   <-wf' : (x : ℕ) -> {y : ℕ} -> (y < x) -> (Acc _<_ y)
-  --   <-wf' zero () 
-  --   <-wf' (suc x) (s≤s z≤n) = acc (λ ())
-  --   <-wf' (2+ zero) (s≤s (s≤s z≤n)) = acc λ x -> {! x  !}
-  --   <-wf' (2+ (suc x)) (s≤s (s≤s z≤n)) = {!   !}
-  --   <-wf' (2+ (suc x)) (s≤s (s≤s (s≤s lt))) = {!   !}
-
-  --   <-wf : WellFounded _<_ 
-  --   <-wf n = acc (<-wf' n)
-
-
-  -- mutual 
-  --   stream-length-up : ExpUp -> ℕ
-  --   stream-length-up (EConst ⇒ _) = 1
-  --   stream-length-up (EHole ⇒ _) = 1
-  --   stream-length-up (EVar _ _ ⇒ _) = 1
-  --   stream-length-up (EFun _ _ _ _ e-body ⇒ _) = 1 + (stream-length-low e-body)
-  --   stream-length-up (EAsc _ e-body ⇒ _) = 1 + (stream-length-low e-body)
-  --   stream-length-up (EAp e-fun _ e-arg ⇒ _) = 1 + (stream-length-low e-fun) + (stream-length-low e-arg)
-
-  --   stream-length-low : ExpLow -> ℕ
-  --   stream-length-low (e [ _ ]⇐ _) = 1 + (stream-length-up e)
-
-  -- new-number : Newness -> ℕ 
-  -- new-number Old = 0
-  -- new-number New = 1
-
-  -- new-set : Newness -> ℕ -> List ℕ
-  -- new-set Old _ = []
-  -- new-set New x = [ x ]
-
-  -- _set+_ : (List ℕ) -> (List ℕ) -> (List ℕ)
-  -- _set+_ = {!   !}
-
-  -- Score : Set 
-  -- Score = ℕ × List ℕ
-  
-  -- mutual 
-
-  --   -- the second component is a decreasing list of non-repeating naturals, all of which 
-  --   -- at greater than or equal to x and less than or equal to x + stream-length e
-  --   score-up : ExpUp -> (x : ℕ) -> (ℕ × List ℕ)
-  --   score-up (EConst ⇒ (_ , n)) x = (0 , new-set n x)
-  --   score-up (EHole ⇒ (_ , n)) x = (0 , new-set n x)
-  --   score-up (EVar _ _ ⇒ (_ , n)) x = (0 , new-set n x)
-  --   score-up (EAsc (_ , n-asc) e-body ⇒ (_ , n)) x with score-low e-body (suc x)
-  --   ... | num , set = (new-number n-asc + num) , set ++ (new-set n x)
-  --   score-up (EFun _ (_ , n-ann) _ _ e-body ⇒ (_ , n)) x with score-low e-body (suc x)
-  --   ... | num , set = (new-number n-ann + num) , set ++ (new-set n x)
-  --   score-up (EAp e-fun _ e-arg ⇒ (_ , n)) x with score-low e-arg (suc x) | score-low e-fun (suc x + stream-length-low e-arg) 
-  --   ... | num-arg , set-arg | num-fun , set-fun = (num-fun + num-arg) , (set-fun ++ set-arg ++ (new-set n x))
-
-  --   score-low : ExpLow -> ℕ -> (ℕ × List ℕ)
-  --   score-low (e [ _ ]⇐ (_ , n)) x with score-up e (suc x)
-  --   ... | num , set = num , ((new-set n x) set+ set)
-
-  -- -- property: all the elements of the list returned are less than stream-length of the exp
-  -- -- score-bounded : ∀ {e x} -> (proj₂ (score-low e x))
-  -- -- score-bounded = ?
-
-  -- score-program : Program -> Score
-  -- score-program p = score-low (ExpLowOfProgram p) 0
-
-  -- data <Set : (List ℕ) -> (List ℕ) -> Set where 
-  --   <SetEmpty : ∀ {h t} ->
-  --     <Set [] (h ∷ t)
-  --   <SetHead : ∀ {h1 h2 t1 t2} ->
-  --     h1 < h2 -> 
-  --     <Set (h1 ∷ t1) (h2 ∷ t2)
-  --   <SetTail : ∀ {h t1 t2} ->
-  --     <Set t1 t2 -> 
-  --     <Set (h ∷ t1) (h ∷ t2)
-
-  -- data <Score : Score -> Score -> Set where 
-  --   <ScoreNum : ∀ {n1 n2 s1 s2} ->
-  --     (n1 < n2) -> 
-  --     <Score (n1 , s1) (n2 , s2)
-  --   <ScoreSet : ∀ {n1 n2 s1 s2} ->
-  --     (n1 ≡ n2) -> 
-  --     (<Set s1 s2) -> 
-  --     <Score (n1 , s1) (n2 , s2)
-
-  -- <Score-wf : WellFounded <Score
-  -- <Score-wf = {!   !}
-
   _↤P_ : Program -> Program -> Set 
   p' ↤P p = p P↦ p'
-
-  -- direct approach 
 
   new-number : Newness -> ℕ 
   new-number Old = 0
@@ -152,77 +63,85 @@ module Core.Termination where
     <NewC : ∀ {t1 t2} ->
       <New (t1 , Old) (t2 , New)
 
-  -- convenient proxy for structural similarity
-  data =Low : ExpLow -> ExpLow -> Set where 
-
-  data =Up : ExpUp -> ExpUp -> Set where 
-    =UpRefl : ∀{ e } -> =Up e e
-    =UpFun : ∀{x ann m1 m2 m3 m4 e m ana ana' syn syn'} -> 
-      =Up 
-        (EFun x ann m1 m2 (e [ m ]⇐ (ana , New)) ⇒ syn)
-        (EFun x ann m3 m4 (e [ m ]⇐ ana') ⇒ syn')
+  data Skeleton : Set where 
+    S0 : Skeleton 
+    S1 : Skeleton -> Skeleton 
+    S2 : Skeleton -> Skeleton -> Skeleton 
 
   mutual 
 
-    data <Up : ExpUp -> ExpUp -> Set where 
-      <Upper : ∀ {e1 e2 syn1 syn2} ->
-        <Mid e1 e2 ->  
-        <Up (e1 ⇒ syn1) (e2 ⇒ syn2)
-      <Upper= : ∀ {e syn1 syn2} ->
-        -- =Mid e1 e2 ->
-        <New syn1 syn2 ->  
-        <Up (e ⇒ syn1) (e ⇒ syn2)
-      
-    data <Mid : ExpMid -> ExpMid -> Set where 
-      <Asc : ∀ {a1 a2 e1 e2} ->
-        <Low e1 e2 -> 
-        <Mid (EAsc a1 e1) (EAsc a2 e2)
-      <Fun : ∀ {a1 a2 a3 a4 a5 a6 a7 a8 e1 e2} ->
-        <Low e1 e2 -> 
-        <Mid (EFun a1 a2 a3 a4 e1) (EFun a5 a6 a7 a8 e2)
-      <Ap< : ∀ {a1 a2 e1 e2 e3 e4} ->
-        <Low e1 e3 -> 
-        =Low e2 e4 -> 
-        <Mid (EAp e1 a1 e2) (EAp e3 a2 e4)
-      <Ap=< : ∀ {a1 a2 e1 e2 e3} ->
-        <Low e2 e3 -> 
-        <Mid (EAp e1 a1 e2) (EAp e1 a2 e3)
+    SkelUp : ExpUp -> Skeleton 
+    SkelUp (e ⇒ _) = SkelMid e
 
-    data <Low : ExpLow -> ExpLow -> Set where 
+    SkelMid : ExpMid -> Skeleton 
+    SkelMid EConst = S0
+    SkelMid EHole = S0
+    SkelMid (EVar _ _) = S0
+    SkelMid (EAsc _ e) = S1 (SkelLow e)
+    SkelMid (EFun _ _ _ _ e) = S1 (SkelLow e)
+    SkelMid (EAp e1 _ e2) = S2 (SkelLow e1) (SkelLow e2)
+
+    SkelLow : ExpLow -> Skeleton  
+    SkelLow (e [ _ ]⇐ _) = SkelUp e
+
+  mutual 
+
+    data <Up : Skeleton -> ExpUp -> ExpUp -> Set where 
+      <Upper : ∀ {s e1 e2 syn1 syn2} ->
+        <Mid s e1 e2 ->  
+        <Up s (e1 ⇒ syn1) (e2 ⇒ syn2)
+      <Upper= : ∀ {e syn1 syn2} ->
+        <New syn1 syn2 ->  
+        <Up (SkelMid e) (e ⇒ syn1) (e ⇒ syn2)
+      
+    data <Mid : Skeleton -> ExpMid -> ExpMid -> Set where 
+      <Asc : ∀ {s a1 a2 e1 e2} ->
+        <Low s e1 e2 -> 
+        <Mid (S1 s) (EAsc a1 e1) (EAsc a2 e2)
+      <Fun : ∀ {s a1 a2 a3 a4 a5 a6 a7 a8 e1 e2} ->
+        <Low s e1 e2 -> 
+        <Mid (S1 s) (EFun a1 a2 a3 a4 e1) (EFun a5 a6 a7 a8 e2)
+      <Ap< : ∀ {s1 a1 a2 e1 e2 e3 e4} ->
+        <Low s1 e1 e3 -> 
+        <Mid (S2 s1 (SkelLow e2)) (EAp e1 a1 e2) (EAp e3 a2 e4)
+      <Ap=< : ∀ {s2 a1 a2 e1 e2 e3} ->
+        <Low s2 e2 e3 -> 
+        <Mid (S2 (SkelLow e1) s2) (EAp e1 a1 e2) (EAp e1 a2 e3)
+
+    data <Low : Skeleton -> ExpLow -> ExpLow -> Set where 
       <Lower : ∀ {e1 e2 a1 a2 ana1 ana2} ->
         <New ana1 ana2 ->  
-        =Up e1 e2 -> 
-        <Low (e1 [ a1 ]⇐ ana1) (e2 [ a2 ]⇐ ana2)
-      <Lower= : ∀ {e1 e2 a1 a2 ana1 ana2} ->
+        <Low (SkelUp e1) (e1 [ a1 ]⇐ ana1) (e2 [ a2 ]⇐ ana2)
+      <Lower= : ∀ {s e1 e2 a1 a2 ana1 ana2} ->
         =New ana1 ana2 ->  
-        <Up e1 e2 ->
-        <Low (e1 [ a1 ]⇐ ana1) (e2 [ a2 ]⇐ ana2)
+        <Up s e1 e2 ->
+        <Low s (e1 [ a1 ]⇐ ana1) (e2 [ a2 ]⇐ ana2)
 
   data <Program : Program -> Program -> Set where 
     <Program< : ∀ {p p'} ->
       surface-news-low (ExpLowOfProgram p) < surface-news-low (ExpLowOfProgram p') -> 
       <Program p p'
-    <Program= : ∀ {p p'} ->
+    <Program= : ∀ {s p p'} ->
       surface-news-low (ExpLowOfProgram p) ≡ surface-news-low (ExpLowOfProgram p') -> 
-      <Low (ExpLowOfProgram p) (ExpLowOfProgram p') ->
+      <Low s (ExpLowOfProgram p) (ExpLowOfProgram p') ->
       <Program p p'
 
   data <ExpUp : ExpUp -> ExpUp -> Set where 
     <ExpUp< : ∀ {e e'} ->
       surface-news-up e < surface-news-up e' -> 
       <ExpUp e e'
-    <ExpUp= : ∀ {e e'} ->
+    <ExpUp= : ∀ {s e e'} ->
       surface-news-up e ≡ surface-news-up e' -> 
-      <Up e e' ->
+      <Up s e e' ->
       <ExpUp e e'
 
   data <ExpLow : ExpLow -> ExpLow -> Set where 
     <ExpLow< : ∀ {e e'} ->
       surface-news-low e < surface-news-low e' -> 
       <ExpLow e e'
-    <ExpLow= : ∀ {e e'} ->
+    <ExpLow= : ∀ {s e e'} ->
       surface-news-low e ≡ surface-news-low e' -> 
-      <Low e e' ->
+      <Low s e e' ->
       <ExpLow e e'
   
   vars-syn-preserves-surface-news : ∀{x t m e e'} ->
@@ -251,7 +170,7 @@ module Core.Termination where
     e U↦ e' -> 
     <ExpUp e' e
   StepDecreaseU StepAsc = <ExpUp< (n<1+n _)
-  StepDecreaseU (StepAp x) = <ExpUp= refl (<Upper (<Ap< (<Lower= =New-refl (<Upper= <NewC)) {!   !}))
+  StepDecreaseU (StepAp x) = <ExpUp= refl (<Upper (<Ap< (<Lower= =New-refl (<Upper= <NewC))))
 
   StepDecreaseL : ∀ {e e'} ->
     e L↦ e' -> 
@@ -261,11 +180,11 @@ module Core.Termination where
     helper : surface-news-mid e' < suc (surface-news-mid e)
     helper rewrite (vars-syn?-preserves-surface-news vars-syn) = ≤-refl
   StepDecreaseL (StepNewSynConsist x) = <ExpLow= refl (<Lower= =NewOld (<Upper= <NewC))
-  StepDecreaseL (StepNewAnaConsist x x₁) = <ExpLow= refl (<Lower <NewC =UpRefl)
-  StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC =UpFun)
+  StepDecreaseL (StepNewAnaConsist x x₁) = <ExpLow= refl (<Lower <NewC)
+  StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC)
   StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =New-refl (<Upper (<Fun (<Lower= =NewOld (<Upper= <NewC)))))
 
-  -- environment stuff
+  -- -- environment stuff
 
   mutual 
     
@@ -360,59 +279,75 @@ module Core.Termination where
     FillLEnvLow-surface FillL⊙ = refl
     FillLEnvLow-surface (FillLEnvLowRec fill) = FillLEnvUp-surface fill 
 
+
+  -- data SkelEnv : Set where 
+  --   S⊙ : SkelEnv
+  --   SE1 : SkelEnv -> SkelEnv
+  --   SEL : SkelEnv -> Skeleton -> SkelEnv
+  --   SER : Skeleton -> SkelEnv -> SkelEnv
+
+  -- SkelFill : Skeleton -> SkelEnv -> Skeleton 
+  -- SkelFill s S⊙ = s
+  -- SkelFill s (SE1 e) = S1 (SkelFill s e)
+  -- SkelFill s (SEL e s2) = S2 (SkelFill s e) s2
+  -- SkelFill s (SER s1 e) = S2 s1 (SkelFill s e)
+
+  -- skel-ll : LEnvLow -> SkelEnv 
+  -- skel-ll e = {!   !}
+
   mutual 
 
-    FillLEnvUp-<Up : ∀ {ε e e' e-in e-in'} ->
+    FillLEnvUp-<Up : ∀ {ε e e' e-in e-in' s} ->
       ε L⟦ e-in' ⟧Up== e' ->
       ε L⟦ e-in ⟧Up== e ->
-      <Low e-in' e-in ->
-      <Up e' e
-    FillLEnvUp-<Up (FillLEnvUpRec fill1) (FillLEnvUpRec fill2) lt = <Upper (FillLEnvMid-<Mid fill1 fill2 lt)
+      <Low s e-in' e-in ->
+      ∃[ s' ] <Up s' e' e
+    FillLEnvUp-<Up (FillLEnvUpRec fill1) (FillLEnvUpRec fill2) lt = _ , <Upper (proj₂ (FillLEnvMid-<Mid fill1 fill2 lt))
 
-    FillLEnvMid-<Mid : ∀ {ε e e' e-in e-in'} ->
+    FillLEnvMid-<Mid : ∀ {ε e e' e-in e-in' s} ->
       ε L⟦ e-in' ⟧Mid== e' ->
       ε L⟦ e-in ⟧Mid== e ->
-      <Low e-in' e-in ->
-      <Mid e' e
-    FillLEnvMid-<Mid (FillLEnvAsc fill1) (FillLEnvAsc fill2) lt = <Asc (FillLEnvLow-<Low fill1 fill2 lt) 
-    FillLEnvMid-<Mid (FillLEnvFun fill1) (FillLEnvFun fill2) lt = <Fun (FillLEnvLow-<Low fill1 fill2 lt)
-    FillLEnvMid-<Mid (FillLEnvAp1 fill1) (FillLEnvAp1 fill2) lt = <Ap< (FillLEnvLow-<Low fill1 fill2 lt) {!   !}
-    FillLEnvMid-<Mid (FillLEnvAp2 fill1) (FillLEnvAp2 fill2) lt = <Ap=< (FillLEnvLow-<Low fill1 fill2 lt)
+      <Low s e-in' e-in ->
+      ∃[ s' ] <Mid s' e' e
+    FillLEnvMid-<Mid (FillLEnvAsc fill1) (FillLEnvAsc fill2) lt = _ , <Asc (proj₂ (FillLEnvLow-<Low fill1 fill2 lt))
+    FillLEnvMid-<Mid (FillLEnvFun fill1) (FillLEnvFun fill2) lt = _ , <Fun (proj₂ (FillLEnvLow-<Low fill1 fill2 lt))
+    FillLEnvMid-<Mid (FillLEnvAp1 fill1) (FillLEnvAp1 fill2) lt = _ , <Ap< (proj₂ (FillLEnvLow-<Low fill1 fill2 lt))
+    FillLEnvMid-<Mid (FillLEnvAp2 fill1) (FillLEnvAp2 fill2) lt = _ , <Ap=< (proj₂ (FillLEnvLow-<Low fill1 fill2 lt))
 
-    FillLEnvLow-<Low : ∀ {ε e e' e-in e-in'} ->
+    FillLEnvLow-<Low : ∀ {ε e e' e-in e-in' s} ->
       ε L⟦ e-in' ⟧Low== e' ->
       ε L⟦ e-in ⟧Low== e ->
-      <Low e-in' e-in ->
-      <Low e' e
-    FillLEnvLow-<Low FillL⊙ FillL⊙ lt = lt
-    FillLEnvLow-<Low (FillLEnvLowRec fill1) (FillLEnvLowRec fill2) lt = <Lower= =New-refl (FillLEnvUp-<Up fill1 fill2 lt)
+      <Low s e-in' e-in ->
+      ∃[ s' ] <Low s' e' e
+    FillLEnvLow-<Low FillL⊙ FillL⊙ lt = _ , lt
+    FillLEnvLow-<Low (FillLEnvLowRec fill1) (FillLEnvLowRec fill2) lt = _ , <Lower= =New-refl (proj₂ (FillLEnvUp-<Up fill1 fill2 lt))
   
   mutual 
 
-    FillUEnvUp-<Up : ∀ {ε e e' e-in e-in'} ->
+    FillUEnvUp-<Up : ∀ {ε e e' e-in e-in' s} ->
       ε U⟦ e-in' ⟧Up== e' ->
       ε U⟦ e-in ⟧Up== e ->
-      <Up e-in' e-in ->
-      <Up e' e
-    FillUEnvUp-<Up FillU⊙ FillU⊙ lt = lt
-    FillUEnvUp-<Up (FillUEnvUpRec fill1) (FillUEnvUpRec fill2) lt = <Upper (FillUEnvMid-<Mid fill1 fill2 lt)
+      <Up s e-in' e-in ->
+      ∃[ s' ] <Up s' e' e
+    FillUEnvUp-<Up FillU⊙ FillU⊙ lt = _ , lt
+    FillUEnvUp-<Up (FillUEnvUpRec fill1) (FillUEnvUpRec fill2) lt = _ , <Upper (proj₂ (FillUEnvMid-<Mid fill1 fill2 lt))
 
-    FillUEnvMid-<Mid : ∀ {ε e e' e-in e-in'} ->
+    FillUEnvMid-<Mid : ∀ {ε e e' e-in e-in' s} ->
       ε U⟦ e-in' ⟧Mid== e' ->
       ε U⟦ e-in ⟧Mid== e ->
-      <Up e-in' e-in ->
-      <Mid e' e
-    FillUEnvMid-<Mid (FillUEnvAsc fill1) (FillUEnvAsc fill2) lt = <Asc (FillUEnvLow-<Low fill1 fill2 lt)
-    FillUEnvMid-<Mid (FillUEnvFun fill1) (FillUEnvFun fill2) lt = <Fun (FillUEnvLow-<Low fill1 fill2 lt)
-    FillUEnvMid-<Mid (FillUEnvAp1 fill1) (FillUEnvAp1 fill2) lt = <Ap< (FillUEnvLow-<Low fill1 fill2 lt) {!   !}
-    FillUEnvMid-<Mid (FillUEnvAp2 fill1) (FillUEnvAp2 fill2) lt = <Ap=< (FillUEnvLow-<Low fill1 fill2 lt)
+      <Up s e-in' e-in ->
+      ∃[ s' ] <Mid s' e' e
+    FillUEnvMid-<Mid (FillUEnvAsc fill1) (FillUEnvAsc fill2) lt = _ , <Asc (proj₂ (FillUEnvLow-<Low fill1 fill2 lt))
+    FillUEnvMid-<Mid (FillUEnvFun fill1) (FillUEnvFun fill2) lt = _ , <Fun (proj₂ (FillUEnvLow-<Low fill1 fill2 lt))
+    FillUEnvMid-<Mid (FillUEnvAp1 fill1) (FillUEnvAp1 fill2) lt = _ , <Ap< (proj₂ (FillUEnvLow-<Low fill1 fill2 lt))
+    FillUEnvMid-<Mid (FillUEnvAp2 fill1) (FillUEnvAp2 fill2) lt = _ , <Ap=< (proj₂ (FillUEnvLow-<Low fill1 fill2 lt))
 
-    FillUEnvLow-<Low : ∀ {ε e e' e-in e-in'} ->
+    FillUEnvLow-<Low : ∀ {ε e e' e-in e-in' s} ->
       ε U⟦ e-in' ⟧Low== e' ->
       ε U⟦ e-in ⟧Low== e ->
-      <Up e-in' e-in ->
-      <Low e' e
-    FillUEnvLow-<Low (FillUEnvLowRec fill1) (FillUEnvLowRec fill2) lt = <Lower= =New-refl (FillUEnvUp-<Up fill1 fill2 lt)
+      <Up s e-in' e-in ->
+      ∃[ s' ] <Low s' e' e
+    FillUEnvLow-<Low (FillUEnvLowRec fill1) (FillUEnvLowRec fill2) lt = _ , <Lower= =New-refl (proj₂ (FillUEnvUp-<Up fill1 fill2 lt))
     
   FillLEnvLow-<ExpLow : ∀ {ε e e' e-in e-in'} ->
     ε L⟦ e-in' ⟧Low== e' ->
@@ -426,7 +361,7 @@ module Core.Termination where
       rewrite FillLEnvLow-surface fill1 
       rewrite FillLEnvLow-surface fill2 
       = +-monoʳ-< (surface-news-ll ε) lt
-  FillLEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpLow= eq lt) = <ExpLow= eq' (FillLEnvLow-<Low fill1 fill2 lt)
+  FillLEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpLow= eq lt) = <ExpLow= eq' (proj₂ (FillLEnvLow-<Low fill1 fill2 lt))
     where 
     eq' : surface-news-low e' ≡ surface-news-low e
     eq' 
@@ -447,7 +382,7 @@ module Core.Termination where
       rewrite FillUEnvLow-surface fill1 
       rewrite FillUEnvLow-surface fill2 
       = +-monoʳ-< (surface-news-ul ε) lt
-  FillUEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpUp= eq lt) = <ExpLow= eq' (FillUEnvLow-<Low fill1 fill2 lt)
+  FillUEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpUp= eq lt) = <ExpLow= eq' (proj₂ (FillUEnvLow-<Low fill1 fill2 lt))
     where 
     eq' : surface-news-low e' ≡ surface-news-low e
     eq' 
@@ -474,276 +409,272 @@ module Core.Termination where
   
   mutual 
     translate-acc-up-old' : ∀{e t} ->
-      Acc <Mid e ->
+      (s : Skeleton) ->
+      Acc (<Mid s) e ->
       ∀ {e'} ->
-      (<Up e' (e ⇒ (t , Old))) -> 
-      (Acc <Up e')
-    translate-acc-up-old' (acc ac) (<Upper x) = translate-acc-up (ac x)
+      (<Up s e' (e ⇒ (t , Old))) -> 
+      (Acc (<Up s) e')
+    translate-acc-up-old' s (acc ac) (<Upper x) = translate-acc-up s (ac x)
     
     translate-acc-up-old : ∀{e t} ->
-      Acc <Mid e ->
-      Acc <Up (e ⇒ (t , Old))
-    translate-acc-up-old ac = acc (translate-acc-up-old' ac)
+      (s : Skeleton) ->
+      Acc (<Mid s) e ->
+      Acc (<Up s) (e ⇒ (t , Old))
+    translate-acc-up-old s ac = acc (translate-acc-up-old' s ac)
 
     translate-acc-up' : ∀{e syn} ->
-      Acc <Mid e ->
+      (s : Skeleton) ->
+      Acc (<Mid s) e ->
       ∀ {e'} ->
-      (<Up e' (e ⇒ syn)) -> 
-      (Acc <Up e') 
-    translate-acc-up' ac (<Upper= <NewC) = translate-acc-up-old ac
-    translate-acc-up' (acc ac) (<Upper x) = translate-acc-up (ac x)
+      (<Up s e' (e ⇒ syn)) -> 
+      (Acc (<Up s) e') 
+    translate-acc-up' s ac (<Upper= <NewC) = translate-acc-up-old s ac
+    translate-acc-up' s (acc ac) (<Upper x) = translate-acc-up s (ac x)
 
     translate-acc-up : ∀{e syn} ->
-      Acc <Mid e ->
-      Acc <Up (e ⇒ syn)
-    translate-acc-up ac = acc (translate-acc-up' ac)
+      (s : Skeleton) ->
+      Acc (<Mid s) e ->
+      Acc (<Up s) (e ⇒ syn)
+    translate-acc-up s ac = acc (translate-acc-up' s ac)
   
   mutual
 
     translate-acc-low-old' : ∀{e m t} ->
-      Acc <Up e ->
+      (s : Skeleton) ->
+      Acc (<Up s) e ->
       ∀ {e'} ->
-      (<Low e' (e [ m ]⇐ (t , Old))) -> 
-      (Acc <Low e') 
-    translate-acc-low-old' (acc ac) (<Lower= =NewOld lt) = translate-acc-low-old (ac lt)
+      (<Low s e' (e [ m ]⇐ (t , Old))) -> 
+      (Acc (<Low s) e') 
+    translate-acc-low-old' s (acc ac) (<Lower= =NewOld lt) = translate-acc-low-old s (ac lt)
 
     translate-acc-low-old : ∀{e m t} ->
-      Acc <Up e ->
-      Acc <Low (e [ m ]⇐ (t , Old))
-    translate-acc-low-old ac = acc (translate-acc-low-old' ac)
-
-  -- mutual 
-
-  --   translate-acc-eq' : ∀{e e'} -> 
-  --     =Up e' e -> 
-  --     Acc <Up e -> 
-  --     ∀ {e''} ->
-  --     (<Up e'' e') -> 
-  --     (Acc <Up e'') 
-  --   translate-acc-eq' =UpRefl (acc rs) lt = rs lt
-  --   translate-acc-eq' =UpFun ac (<Upper (<Fun x)) = {!   !}
-  --   translate-acc-eq' =UpFun ac (<Upper= x) = {!   !}
-  --   -- translate-acc-eq' =UpFun (acc rs) (<Upper (<Fun (<Lower <NewC x₁))) = rs (<Upper (<Fun {!   !}))
-  --   -- translate-acc-eq' =UpFun (acc rs) (<Upper (<Fun (<Lower= x x₁))) = {!   !} --rs {!  <Upper (<Fun x) !}
-  --   -- translate-acc-eq' =UpFun ac (<Upper= x) = {!   !}
-
-  --   translate-acc-eq : ∀{e e'} -> 
-  --     =Up e' e -> 
-  --     Acc <Up e -> 
-  --     Acc <Up e'
-  --   translate-acc-eq eq ac = acc (translate-acc-eq' eq ac)
+      (s : Skeleton) ->
+      Acc (<Up s) e ->
+      Acc (<Low s) (e [ m ]⇐ (t , Old))
+    translate-acc-low-old s ac = acc (translate-acc-low-old' s ac)
 
   mutual
 
-    translate-acc-low' : ∀{e m ana} ->
-      Acc <Up e ->
+    translate-acc-low-2 : ∀{e m ana} ->
+      (s : Skeleton) ->
+      (Acc (<Up s) e) -> 
       ∀ {e'} ->
-      (<Low e' (e [ m ]⇐ ana)) -> 
-      (Acc <Low e') 
-    translate-acc-low' ac (<Lower <NewC eq) = translate-acc-low-old {!   !}
-    -- translate-acc-low' ac (<Lower <NewC =UpRefl) = translate-acc-low-old ac
-    -- translate-acc-low' ac (<Lower <NewC =UpFun) = translate-acc-low-old {!   !}
-      -- where 
-      -- helper : ∀{e x ann m1 m2 m3 m4 m ana ana' syn syn'} ->
-      --   Acc <Up (EFun x ann m3 m4 (e [ m ]⇐ ana') ⇒ syn') ->
-      --   ∀ {e'} ->
-      --   (<Up e' (EFun x ann m1 m2 (e [ m ]⇐ (ana , New)) ⇒ syn)) -> 
-      --   (Acc <Up e') 
-      -- helper = {!   !}
-    translate-acc-low' (acc ac) (<Lower= eq lt) = translate-acc-low (ac lt)
+      (<Low s e' (e [ m ]⇐ ana)) -> 
+      (Acc (<Low s) e') 
+    translate-acc-low-2 = {!   !}
+
+    translate-acc-low' : ∀{e m ana} ->
+      (s : Skeleton) ->
+      WellFounded (<Up s) ->
+      ∀ {e'} ->
+      (<Low s e' (e [ m ]⇐ ana)) -> 
+      (Acc (<Low s) e') 
+    translate-acc-low' s ac (<Lower <NewC) = translate-acc-low-old s {!   !}
+    translate-acc-low' s wf (<Lower= {e1 = e1} eq lt) = {!   !}
 
     translate-acc-low : ∀{e m ana} ->
-      Acc <Up e ->
-      Acc <Low (e [ m ]⇐ ana)
-    translate-acc-low ac = acc (translate-acc-low' ac)
+      (s : Skeleton) ->
+      WellFounded (<Up s) ->
+      Acc (<Low s) (e [ m ]⇐ ana)
+    translate-acc-low s wf = acc (translate-acc-low' s wf)
     
   mutual 
 
     translate-acc-asc' : ∀ {a e} ->
-      Acc <Low e ->
+      (s : Skeleton) ->
+      Acc (<Low s) e ->
       ∀ {e'} ->
-      (<Mid e' (EAsc a e)) -> 
-      (Acc <Mid e') 
-    translate-acc-asc' (acc ac) (<Asc x) = translate-acc-asc (ac x)
+      (<Mid (S1 s) e' (EAsc a e)) -> 
+      (Acc (<Mid (S1 s)) e') 
+    translate-acc-asc' s (acc ac) (<Asc x) = translate-acc-asc s (ac x)
      
     translate-acc-asc : ∀ {a e} ->
-      Acc <Low e ->
-      Acc <Mid (EAsc a e)
-    translate-acc-asc ac = acc (translate-acc-asc' ac)   
+      (s : Skeleton) ->
+      Acc (<Low s) e ->
+      Acc (<Mid (S1 s)) (EAsc a e)
+    translate-acc-asc s ac = acc (translate-acc-asc' s ac)   
 
   mutual 
 
     translate-acc-fun' : ∀ {a1 a2 a3 a4 e} ->
-      Acc <Low e ->
+      (s : Skeleton) ->
+      Acc (<Low s) e ->
       ∀ {e'} ->
-      (<Mid e' (EFun a1 a2 a3 a4 e)) -> 
-      (Acc <Mid e') 
-    translate-acc-fun' (acc ac) (<Fun x) = translate-acc-fun (ac x)
+      (<Mid (S1 s) e' (EFun a1 a2 a3 a4 e)) -> 
+      (Acc (<Mid (S1 s)) e') 
+    translate-acc-fun' s (acc ac) (<Fun x) = translate-acc-fun s (ac x)
      
     translate-acc-fun : ∀ {a1 a2 a3 a4 e} ->
-      Acc <Low e ->
-      Acc <Mid (EFun a1 a2 a3 a4 e)
-    translate-acc-fun ac = acc (translate-acc-fun' ac)
+      (s : Skeleton) ->
+      Acc (<Low s) e ->
+      Acc (<Mid (S1 s)) (EFun a1 a2 a3 a4 e)
+    translate-acc-fun s ac = acc (translate-acc-fun' s ac)
 
   mutual 
 
     translate-acc-ap' : ∀ {e1 e2 a} ->
-      Acc <Low e1 ->
-      Acc <Low e2 ->
+      (s1 s2 : Skeleton) ->
+      Acc (<Low s1) e1 ->
+      Acc (<Low s2) e2 ->
       ∀ {e'} ->
-      (<Mid e' (EAp e1 a e2)) -> 
-      (Acc <Mid e') 
-    translate-acc-ap' (acc ac1) ac2 (<Ap< lt eq) = translate-acc-ap (ac1 lt) {!   !}
-    translate-acc-ap' ac1 (acc ac2) (<Ap=< lt) = translate-acc-ap ac1 (ac2 lt)
+      (<Mid (S2 s1 s2) e' (EAp e1 a e2)) -> 
+      (Acc (<Mid (S2 s1 s2)) e') 
+    translate-acc-ap' s1 s2 (acc ac1) ac2 (<Ap< lt) = translate-acc-ap s1 s2 (ac1 lt) {!   !}
+    translate-acc-ap' s1 s2 ac1 (acc ac2) (<Ap=< lt) = translate-acc-ap s1 s2 ac1 (ac2 lt)
 
     translate-acc-ap : ∀ {e1 e2 a} ->
-      Acc <Low e1 ->
-      Acc <Low e2 ->
-      Acc <Mid (EAp e1 a e2)
-    translate-acc-ap ac1 ac2 = acc (translate-acc-ap' ac1 ac2)
+      (s1 s2 : Skeleton) ->
+      Acc (<Low s1) e1 ->
+      Acc (<Low s2) e2 ->
+      Acc (<Mid (S2 s1 s2)) (EAp e1 a e2)
+    translate-acc-ap s1 s2 ac1 ac2 = acc (translate-acc-ap' s1 s2 ac1 ac2)
 
 
   mutual 
     
     <Up-wf-old' : 
+      (s : Skeleton) ->
       (e : ExpMid) -> 
       {t : Data} -> 
       ∀ {e'} ->
-      (<Up e' (e ⇒ (t , Old))) -> 
-      (Acc <Up e') 
-    <Up-wf-old' e (<Upper lt) = translate-acc-up (<Mid-wf' _ lt)
+      (<Up s e' (e ⇒ (t , Old))) -> 
+      (Acc (<Up s) e') 
+    <Up-wf-old' s e (<Upper lt) = {!   !} --translate-acc-up (<Mid-wf' _ lt)
 
     <Up-wf-old : 
+      (s : Skeleton) ->
       (e : ExpMid) -> 
       {t : Data} -> 
-      (Acc <Up (e ⇒ (t , Old))) 
-    <Up-wf-old e = acc (<Up-wf-old' e)
+      (Acc (<Up s) (e ⇒ (t , Old))) 
+    <Up-wf-old s e = acc (<Up-wf-old' s e)
 
     <Up-wf' : 
+      (s : Skeleton) ->
       (e : ExpUp) -> 
       ∀ {e'} ->
-      (<Up e' e) -> 
-      (Acc <Up e') 
-    <Up-wf' (e ⇒ _) (<Upper= <NewC) = <Up-wf-old e
-    <Up-wf' e (<Upper lt) = translate-acc-up (<Mid-wf' _ lt)
+      (<Up s e' e) -> 
+      (Acc (<Up s) e') 
+    <Up-wf' s (e ⇒ _) (<Upper= <NewC) = <Up-wf-old s e
+    <Up-wf' s e (<Upper lt) = {!   !} --translate-acc-up (<Mid-wf' _ lt)
 
     <Mid-wf' : 
+      (s : Skeleton) ->
       (e : ExpMid) -> 
       ∀ {e'} ->
-      (<Mid e' e) -> 
-      (Acc <Mid e') 
-    <Mid-wf' EConst ()
-    <Mid-wf' EHole ()
-    <Mid-wf' (EVar _ _) ()
-    <Mid-wf' (EAsc _ e) (<Asc lt) = translate-acc-asc (<Low-wf' e lt)
-    <Mid-wf' (EFun _ _ _ _ e) (<Fun lt) = translate-acc-fun (<Low-wf' e lt)
-    <Mid-wf' (EAp e1 _ e2) (<Ap< lt eq) with <Low-wf e2
-    ... | thing = translate-acc-ap (<Low-wf' e1 lt) {!   !}
-    <Mid-wf' (EAp e1 _ e2) (<Ap=< lt) = translate-acc-ap (<Low-wf e1) (<Low-wf' e2 lt)
-
-    -- <Mid-wf : WellFounded <Mid 
-    -- <Mid-wf e = acc (<Mid-wf' e)
+      (<Mid s e' e) -> 
+      (Acc (<Mid s) e') 
+    <Mid-wf' s EConst ()
+    <Mid-wf' s EHole ()
+    <Mid-wf' s (EVar _ _) ()
+    <Mid-wf' s (EAsc _ e) (<Asc lt) = {!   !} --translate-acc-asc (<Low-wf' e lt)
+    <Mid-wf' s (EFun _ _ _ _ e) (<Fun lt) = {!   !} --translate-acc-fun (<Low-wf' e lt)
+    <Mid-wf' s (EAp e1 _ e2) (<Ap< lt) with <Low-wf {!   !} e2
+    ... | thing = {!   !} --translate-acc-ap (<Low-wf' e1 lt) {!   !}
+    <Mid-wf' s (EAp e1 _ e2) (<Ap=< lt) = {!   !} --translate-acc-ap (<Low-wf e1) (<Low-wf' e2 lt)
 
     <Low-wf-old' : 
+      (s : Skeleton) ->
       (e : ExpUp) -> 
       ∀ {m t} -> 
       ∀ {e'} ->
-      (<Low e' (e [ m ]⇐ (t , Old))) -> 
-      (Acc <Low e') 
-    <Low-wf-old' e (<Lower= =NewOld lt) = translate-acc-low-old (<Up-wf' _ lt)
+      (<Low s e' (e [ m ]⇐ (t , Old))) -> 
+      (Acc (<Low s) e') 
+    <Low-wf-old' s e (<Lower= =NewOld lt) = {!   !} --translate-acc-low-old (<Up-wf' _ lt)
     
     <Low-wf-old : 
+      (s : Skeleton) ->
       (e : ExpUp) -> 
       ∀ {m t} -> 
-      (Acc <Low (e [ m ]⇐ (t , Old))) 
-    <Low-wf-old e = acc (<Low-wf-old' e)
+      (Acc (<Low s) (e [ m ]⇐ (t , Old))) 
+    <Low-wf-old s e = acc (<Low-wf-old' s e)
 
     <Low-wf' : 
+      (s : Skeleton) ->
       (e : ExpLow) -> 
       ∀ {e'} ->
-      (<Low e' e) -> 
-      (Acc <Low e') 
-    <Low-wf' (e [ m ]⇐ (t , New)) {e' [ m' ]⇐ (t' , Old)} (<Lower <NewC _) with <Low-wf-old e 
+      (<Low s e' e) -> 
+      (Acc (<Low s) e') 
+    <Low-wf' s (e [ m ]⇐ (t , New)) {e' [ m' ]⇐ (t' , Old)} (<Lower <NewC) with <Low-wf-old s e 
     ... | thing = {!   !} --<Low-wf-old e'
-    <Low-wf' (e [ m ]⇐ (t , n)) (<Lower= =NewOld lt) = translate-acc-low (<Up-wf' _ lt)
-    <Low-wf' (e [ m ]⇐ (t , n)) (<Lower= =NewNew lt) = translate-acc-low (<Up-wf' _ lt)
+    <Low-wf' s (e [ m ]⇐ (t , n)) (<Lower= =NewOld lt) = {!   !} -- translate-acc-low (<Up-wf' _ lt)
+    <Low-wf' s (e [ m ]⇐ (t , n)) (<Lower= =NewNew lt) = {!   !} --translate-acc-low (<Up-wf' _ lt)
 
-    <Low-wf : WellFounded <Low 
-    <Low-wf e = acc (<Low-wf' e)
+    <Low-wf : (s : Skeleton) -> WellFounded (<Low s)
+    <Low-wf s e = acc (<Low-wf' s e)
 
-  -- mutual 
+  -- -- mutual 
 
-    -- <Program-wf-2 : 
-    --   (p : Program) -> 
-    --   (n : ℕ) -> 
-    --   (surface-news-low (ExpLowOfProgram p) ≡ n) ->
-    --   ∀ {p'} ->
-    --   (surface-news-low (ExpLowOfProgram p') <
-    --   surface-news-low (ExpLowOfProgram p)) -> 
-    --   (Acc <Program p')
-    -- <Program-wf-2 p zero eq lt rewrite eq with lt 
-    -- ... | () 
-    -- <Program-wf-2 p (suc n) eq {p'} lt =  <Program-wf-22 p' (surface-news-low (ExpLowOfProgram p')) refl
+  --   -- <Program-wf-2 : 
+  --   --   (p : Program) -> 
+  --   --   (n : ℕ) -> 
+  --   --   (surface-news-low (ExpLowOfProgram p) ≡ n) ->
+  --   --   ∀ {p'} ->
+  --   --   (surface-news-low (ExpLowOfProgram p') <
+  --   --   surface-news-low (ExpLowOfProgram p)) -> 
+  --   --   (Acc <Program p')
+  --   -- <Program-wf-2 p zero eq lt rewrite eq with lt 
+  --   -- ... | () 
+  --   -- <Program-wf-2 p (suc n) eq {p'} lt =  <Program-wf-22 p' (surface-news-low (ExpLowOfProgram p')) refl
 
-    -- <Program-wf-22 : 
-    --   (p : Program) -> 
-    --   (n : ℕ) -> 
-    --   (surface-news-low (ExpLowOfProgram p) ≡ n) ->
-    --   (Acc <Program p)
-    -- <Program-wf-22 p n eq = acc helper
-    --   where 
-    --   helper : {y : Program} → <Program y p → Acc <Program y
-    --   helper (<Program< lt) = <Program-wf-2 p _ refl lt
-    --   helper (<Program= eq lt) = {!   !}
+  --   -- <Program-wf-22 : 
+  --   --   (p : Program) -> 
+  --   --   (n : ℕ) -> 
+  --   --   (surface-news-low (ExpLowOfProgram p) ≡ n) ->
+  --   --   (Acc <Program p)
+  --   -- <Program-wf-22 p n eq = acc helper
+  --   --   where 
+  --   --   helper : {y : Program} → <Program y p → Acc <Program y
+  --   --   helper (<Program< lt) = <Program-wf-2 p _ refl lt
+  --   --   helper (<Program= eq lt) = {!   !}
 
-  <Program-wf' : 
-    (p : Program) -> 
-    ∀ {p'} ->
-    (<Program p' p) -> 
-    (Acc <Program p') 
-  <Program-wf' p (<Program< lt) = {!   !} --<Program-wf-2 p _ refl lt
-  <Program-wf' p (<Program= eq lt) = {!   !}
+  -- <Program-wf' : 
+  --   (p : Program) -> 
+  --   ∀ {p'} ->
+  --   (<Program p' p) -> 
+  --   (Acc <Program p') 
+  -- <Program-wf' p (<Program< lt) = {!   !} --<Program-wf-2 p _ refl lt
+  -- <Program-wf' p (<Program= eq lt) = {!   !}
 
-  <Program-wf : WellFounded <Program 
-  <Program-wf p = acc (<Program-wf' p)
+  -- <Program-wf : WellFounded <Program 
+  -- <Program-wf p = acc (<Program-wf' p)
 
-  acc-translate : ∀ {p} ->
-    Acc <Program p ->
-    Acc _↤P_ p
-  acc-translate (acc rs) = acc λ {p'} -> λ lt -> acc-translate (rs (StepDecrease lt))
+  -- acc-translate : ∀ {p} ->
+  --   Acc <Program p ->
+  --   Acc _↤P_ p
+  -- acc-translate (acc rs) = acc λ {p'} -> λ lt -> acc-translate (rs (StepDecrease lt))
 
-  ↤P-wf' :
-    (p : Program) -> 
-    ∀ {p'} -> 
-    p' ↤P p -> 
-    (Acc _↤P_ p') 
-  ↤P-wf' p step = acc-translate (<Program-wf _)
+  -- ↤P-wf' :
+  --   (p : Program) -> 
+  --   ∀ {p'} -> 
+  --   p' ↤P p -> 
+  --   (Acc _↤P_ p') 
+  -- ↤P-wf' p step = acc-translate (<Program-wf _)
 
-  ↤P-wf : WellFounded _↤P_
-  ↤P-wf p = acc (↤P-wf' p)
+  -- ↤P-wf : WellFounded _↤P_
+  -- ↤P-wf p = acc (↤P-wf' p)
 
-  data _P↦*_ : Program -> Program -> Set where 
-    P↦0 : ∀ {p} ->
-      p P↦* p
-    P↦suc : ∀ {p p' p''} ->
-      p P↦ p' -> 
-      p' P↦* p'' ->
-      p P↦* p''
+  -- data _P↦*_ : Program -> Program -> Set where 
+  --   P↦0 : ∀ {p} ->
+  --     p P↦* p
+  --   P↦suc : ∀ {p p' p''} ->
+  --     p P↦ p' -> 
+  --     p' P↦* p'' ->
+  --     p P↦* p''
 
-  TerminationProgramRec : 
-    {p : Program} ->
-    (Acc _↤P_ p) ->
-    (WellTypedProgram p) ->
-    ∃[ p' ] (p P↦* p') × (SettledProgram p')
-  TerminationProgramRec {p} (acc recursor) wt with settled-dec p | ProgressProgram wt 
-  ... | Inl settled | _ = p , P↦0 , settled
-  ... | Inr unsettled | Inr settled = ⊥-elim (unsettled settled)
-  ... | Inr unsettled | Inl (p' , step) with TerminationProgramRec {p'} (recursor step) (PreservationProgram wt step)
-  ... | p'' , steps , settled = p'' , P↦suc step steps , settled
+  -- TerminationProgramRec : 
+  --   {p : Program} ->
+  --   (Acc _↤P_ p) ->
+  --   (WellTypedProgram p) ->
+  --   ∃[ p' ] (p P↦* p') × (SettledProgram p')
+  -- TerminationProgramRec {p} (acc recursor) wt with settled-dec p | ProgressProgram wt 
+  -- ... | Inl settled | _ = p , P↦0 , settled
+  -- ... | Inr unsettled | Inr settled = ⊥-elim (unsettled settled)
+  -- ... | Inr unsettled | Inl (p' , step) with TerminationProgramRec {p'} (recursor step) (PreservationProgram wt step)
+  -- ... | p'' , steps , settled = p'' , P↦suc step steps , settled
  
-  TerminationProgram : 
-    {p : Program} ->
-    (WellTypedProgram p) ->
-    ∃[ p' ] (p P↦* p') × (SettledProgram p')
-  TerminationProgram wt = TerminationProgramRec (↤P-wf _) wt
+  -- TerminationProgram : 
+  --   {p : Program} ->
+  --   (WellTypedProgram p) ->
+  --   ∃[ p' ] (p P↦* p') × (SettledProgram p')
+  -- TerminationProgram wt = TerminationProgramRec (↤P-wf _) wt
       
