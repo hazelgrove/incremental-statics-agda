@@ -1,5 +1,6 @@
 open import Data.Nat hiding (_+_)
 open import Data.Unit 
+open import Data.List 
 open import Data.Bool hiding (_<_; _≟_)
 open import Data.Sum renaming (_⊎_ to _+_; inj₁ to Inl ; inj₂ to Inr) hiding (map)
 open import Data.Product hiding (map)
@@ -93,27 +94,39 @@ module Core.Actions where
     CtxOfUEnvLow : UEnvLow -> Ctx -> Ctx
     CtxOfUEnvLow (UEnvLowRec ε _ _) Γ = CtxOfUEnvUp ε Γ
 
-  record ActionOnExpLow (e : ExpLow) : Set where 
-    field
-      α : Action
-      ε : UEnvLow 
-      e-in : ExpUp 
-      fill : ε U⟦ e-in ⟧Low== e
+  LocalizedAction : Set
+  LocalizedAction = Action × (List Child)
 
-  data _,_ALow↦_ : (e : ExpLow) -> (A : ActionOnExpLow e) -> (e' : ExpLow) -> Set where
-    AStepLow : ∀{ε α e e' e-in e-in' fill} ->
-      (CtxOfUEnvLow ε ∅) ⊢ α , e-in A↦ e-in' ->
-      ε U⟦ e-in' ⟧Low== e' ->
-      e , (record {α = α ; ε = ε ; e-in = e-in ; fill = fill}) ALow↦ e'
+  mutual 
 
-  record ActionOnProgram (p : Program) : Set where 
-    field
-      α : Action
-      ε : UEnvLow 
-      e-in : ExpUp 
-      fill : ε U⟦ e-in ⟧Low== (ExpLowOfProgram p)
+    data _⊢_,_AUp↦_ : (Γ : Ctx) -> (α : LocalizedAction) -> (e : ExpUp) -> (e' : ExpUp) -> Set where
+      AUpDone : ∀ {Γ α e e'} ->
+        Γ ⊢ α , e A↦ e' ->
+        Γ ⊢ (α , []) , e AUp↦ e'
+      AUpMid : ∀ {Γ α e e' syn} ->
+        Γ ⊢ α , e  AMid↦ e' ->
+        Γ ⊢ α , (e ⇒ syn) AUp↦ (e' ⇒ syn) 
 
-  data _,_AP↦_ : (p : Program) -> (A : ActionOnProgram p) -> (p' : Program) -> Set where
-    AStepProgram : ∀{A p p'} ->
-      (ExpLowOfProgram p) , ? ALow↦ (ExpLowOfProgram p') ->
-      p , A AP↦ p'
+    data _⊢_,_AMid↦_ : (Γ : Ctx) -> (α : LocalizedAction) -> (e : ExpMid) -> (e' : ExpMid) -> Set where 
+      AMidAsc : ∀ {Γ α l e e' a1} ->
+        Γ ⊢ (α , l) , e ALow↦ e' ->
+        Γ ⊢ (α , One ∷ l) , (EAsc a1 e) AMid↦ (EAsc a1 e')
+      AMidFun : ∀ {Γ α l e e' x t m1 m2} ->
+        (x ∶ t ∷? Γ) ⊢ (α , l) , e ALow↦ e' ->
+        Γ ⊢ (α , One ∷ l) , (EFun x t m1 m2 e) AMid↦ (EFun x t m1 m2 e')
+      AMidApOne : ∀ {Γ α l e1 e2 e1' m} ->
+        Γ ⊢ (α , l) , e1 ALow↦ e1' ->
+        Γ ⊢ (α , One ∷ l) , (EAp e1 m e2) AMid↦ (EAp e1' m e2)
+      AMidApTwo : ∀ {Γ α l e1 e2 e2' m} ->
+        Γ ⊢ (α , l) , e2 ALow↦ e2' ->
+        Γ ⊢ (α , Two ∷ l) , (EAp e1 m e2) AMid↦ (EAp e1 m e2')
+    
+    data _⊢_,_ALow↦_ : (Γ : Ctx) -> (α : LocalizedAction) -> (e : ExpLow) -> (e' : ExpLow) -> Set where
+      ALowUp : ∀ {Γ α e e' m ana} ->
+        Γ ⊢ α , e  AUp↦ e' ->
+        Γ ⊢ α , e [ m ]⇐ ana ALow↦ (e' [ m ]⇐ ana)
+
+  data _,_AP↦_ : (α : LocalizedAction) -> (p p' : Program) -> Set where
+    AStepProgram : ∀{α p p'} ->
+      ∅ ⊢ α , (ExpLowOfProgram p) ALow↦ (ExpLowOfProgram p') ->
+      α , p AP↦ p'
