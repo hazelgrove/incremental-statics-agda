@@ -18,6 +18,7 @@ open import Core.WellTyped
 open import Core.Environment
 open import Core.Lemmas-Preservation
 open import Core.VarsSynthesize
+open import Core.Marking
 open import Core.Update
 open import Core.Settled
 open import Core.SettledDec
@@ -151,6 +152,16 @@ module Core.Termination where
     <NewC : ∀ {t1 t2} ->
       <New (t1 , Old) (t2 , New)
 
+  -- convenient proxy for structural similarity
+  data =Low : ExpLow -> ExpLow -> Set where 
+
+  data =Up : ExpUp -> ExpUp -> Set where 
+    =UpRefl : ∀{ e } -> =Up e e
+    =UpFun : ∀{x ann m1 m2 m3 m4 e m ana ana' syn syn'} -> 
+      =Up 
+        (EFun x ann m1 m2 (e [ m ]⇐ (ana , New)) ⇒ syn)
+        (EFun x ann m3 m4 (e [ m ]⇐ ana') ⇒ syn')
+
   mutual 
 
     data <Up : ExpUp -> ExpUp -> Set where 
@@ -171,6 +182,7 @@ module Core.Termination where
         <Mid (EFun a1 a2 a3 a4 e1) (EFun a5 a6 a7 a8 e2)
       <Ap< : ∀ {a1 a2 e1 e2 e3 e4} ->
         <Low e1 e3 -> 
+        =Low e2 e4 -> 
         <Mid (EAp e1 a1 e2) (EAp e3 a2 e4)
       <Ap=< : ∀ {a1 a2 e1 e2 e3} ->
         <Low e2 e3 -> 
@@ -179,6 +191,7 @@ module Core.Termination where
     data <Low : ExpLow -> ExpLow -> Set where 
       <Lower : ∀ {e1 e2 a1 a2 ana1 ana2} ->
         <New ana1 ana2 ->  
+        =Up e1 e2 -> 
         <Low (e1 [ a1 ]⇐ ana1) (e2 [ a2 ]⇐ ana2)
       <Lower= : ∀ {e1 e2 a1 a2 ana1 ana2} ->
         =New ana1 ana2 ->  
@@ -238,7 +251,7 @@ module Core.Termination where
     e U↦ e' -> 
     <ExpUp e' e
   StepDecreaseU StepAsc = <ExpUp< (n<1+n _)
-  StepDecreaseU (StepAp x) = <ExpUp= refl (<Upper (<Ap< (<Lower= =New-refl (<Upper= <NewC))))
+  StepDecreaseU (StepAp x) = <ExpUp= refl (<Upper (<Ap< (<Lower= =New-refl (<Upper= <NewC)) {!   !}))
 
   StepDecreaseL : ∀ {e e'} ->
     e L↦ e' -> 
@@ -248,8 +261,8 @@ module Core.Termination where
     helper : surface-news-mid e' < suc (surface-news-mid e)
     helper rewrite (vars-syn?-preserves-surface-news vars-syn) = ≤-refl
   StepDecreaseL (StepNewSynConsist x) = <ExpLow= refl (<Lower= =NewOld (<Upper= <NewC))
-  StepDecreaseL (StepNewAnaConsist x x₁) = <ExpLow= refl (<Lower <NewC)
-  StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC)
+  StepDecreaseL (StepNewAnaConsist x x₁) = <ExpLow= refl (<Lower <NewC =UpRefl)
+  StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC =UpFun)
   StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =New-refl (<Upper (<Fun (<Lower= =NewOld (<Upper= <NewC)))))
 
   -- environment stuff
@@ -363,7 +376,7 @@ module Core.Termination where
       <Mid e' e
     FillLEnvMid-<Mid (FillLEnvAsc fill1) (FillLEnvAsc fill2) lt = <Asc (FillLEnvLow-<Low fill1 fill2 lt) 
     FillLEnvMid-<Mid (FillLEnvFun fill1) (FillLEnvFun fill2) lt = <Fun (FillLEnvLow-<Low fill1 fill2 lt)
-    FillLEnvMid-<Mid (FillLEnvAp1 fill1) (FillLEnvAp1 fill2) lt = <Ap< (FillLEnvLow-<Low fill1 fill2 lt) 
+    FillLEnvMid-<Mid (FillLEnvAp1 fill1) (FillLEnvAp1 fill2) lt = <Ap< (FillLEnvLow-<Low fill1 fill2 lt) {!   !}
     FillLEnvMid-<Mid (FillLEnvAp2 fill1) (FillLEnvAp2 fill2) lt = <Ap=< (FillLEnvLow-<Low fill1 fill2 lt)
 
     FillLEnvLow-<Low : ∀ {ε e e' e-in e-in'} ->
@@ -391,7 +404,7 @@ module Core.Termination where
       <Mid e' e
     FillUEnvMid-<Mid (FillUEnvAsc fill1) (FillUEnvAsc fill2) lt = <Asc (FillUEnvLow-<Low fill1 fill2 lt)
     FillUEnvMid-<Mid (FillUEnvFun fill1) (FillUEnvFun fill2) lt = <Fun (FillUEnvLow-<Low fill1 fill2 lt)
-    FillUEnvMid-<Mid (FillUEnvAp1 fill1) (FillUEnvAp1 fill2) lt = <Ap< (FillUEnvLow-<Low fill1 fill2 lt)
+    FillUEnvMid-<Mid (FillUEnvAp1 fill1) (FillUEnvAp1 fill2) lt = <Ap< (FillUEnvLow-<Low fill1 fill2 lt) {!   !}
     FillUEnvMid-<Mid (FillUEnvAp2 fill1) (FillUEnvAp2 fill2) lt = <Ap=< (FillUEnvLow-<Low fill1 fill2 lt)
 
     FillUEnvLow-<Low : ∀ {ε e e' e-in e-in'} ->
@@ -465,7 +478,7 @@ module Core.Termination where
       ∀ {e'} ->
       (<Up e' (e ⇒ (t , Old))) -> 
       (Acc <Up e')
-    translate-acc-up-old' ac (<Upper x) = translate-acc-up (<Mid-wf' _ x)
+    translate-acc-up-old' (acc ac) (<Upper x) = translate-acc-up (ac x)
     
     translate-acc-up-old : ∀{e t} ->
       Acc <Mid e ->
@@ -477,13 +490,120 @@ module Core.Termination where
       ∀ {e'} ->
       (<Up e' (e ⇒ syn)) -> 
       (Acc <Up e') 
+    translate-acc-up' ac (<Upper= <NewC) = translate-acc-up-old ac
     translate-acc-up' (acc ac) (<Upper x) = translate-acc-up (ac x)
-    translate-acc-up' ac (<Upper= <NewC) = {!   !}
 
     translate-acc-up : ∀{e syn} ->
       Acc <Mid e ->
       Acc <Up (e ⇒ syn)
     translate-acc-up ac = acc (translate-acc-up' ac)
+  
+  mutual
+
+    translate-acc-low-old' : ∀{e m t} ->
+      Acc <Up e ->
+      ∀ {e'} ->
+      (<Low e' (e [ m ]⇐ (t , Old))) -> 
+      (Acc <Low e') 
+    translate-acc-low-old' (acc ac) (<Lower= =NewOld lt) = translate-acc-low-old (ac lt)
+
+    translate-acc-low-old : ∀{e m t} ->
+      Acc <Up e ->
+      Acc <Low (e [ m ]⇐ (t , Old))
+    translate-acc-low-old ac = acc (translate-acc-low-old' ac)
+
+  -- mutual 
+
+  --   translate-acc-eq' : ∀{e e'} -> 
+  --     =Up e' e -> 
+  --     Acc <Up e -> 
+  --     ∀ {e''} ->
+  --     (<Up e'' e') -> 
+  --     (Acc <Up e'') 
+  --   translate-acc-eq' =UpRefl (acc rs) lt = rs lt
+  --   translate-acc-eq' =UpFun ac (<Upper (<Fun x)) = {!   !}
+  --   translate-acc-eq' =UpFun ac (<Upper= x) = {!   !}
+  --   -- translate-acc-eq' =UpFun (acc rs) (<Upper (<Fun (<Lower <NewC x₁))) = rs (<Upper (<Fun {!   !}))
+  --   -- translate-acc-eq' =UpFun (acc rs) (<Upper (<Fun (<Lower= x x₁))) = {!   !} --rs {!  <Upper (<Fun x) !}
+  --   -- translate-acc-eq' =UpFun ac (<Upper= x) = {!   !}
+
+  --   translate-acc-eq : ∀{e e'} -> 
+  --     =Up e' e -> 
+  --     Acc <Up e -> 
+  --     Acc <Up e'
+  --   translate-acc-eq eq ac = acc (translate-acc-eq' eq ac)
+
+  mutual
+
+    translate-acc-low' : ∀{e m ana} ->
+      Acc <Up e ->
+      ∀ {e'} ->
+      (<Low e' (e [ m ]⇐ ana)) -> 
+      (Acc <Low e') 
+    translate-acc-low' ac (<Lower <NewC eq) = translate-acc-low-old {!   !}
+    -- translate-acc-low' ac (<Lower <NewC =UpRefl) = translate-acc-low-old ac
+    -- translate-acc-low' ac (<Lower <NewC =UpFun) = translate-acc-low-old {!   !}
+      -- where 
+      -- helper : ∀{e x ann m1 m2 m3 m4 m ana ana' syn syn'} ->
+      --   Acc <Up (EFun x ann m3 m4 (e [ m ]⇐ ana') ⇒ syn') ->
+      --   ∀ {e'} ->
+      --   (<Up e' (EFun x ann m1 m2 (e [ m ]⇐ (ana , New)) ⇒ syn)) -> 
+      --   (Acc <Up e') 
+      -- helper = {!   !}
+    translate-acc-low' (acc ac) (<Lower= eq lt) = translate-acc-low (ac lt)
+
+    translate-acc-low : ∀{e m ana} ->
+      Acc <Up e ->
+      Acc <Low (e [ m ]⇐ ana)
+    translate-acc-low ac = acc (translate-acc-low' ac)
+    
+  mutual 
+
+    translate-acc-asc' : ∀ {a e} ->
+      Acc <Low e ->
+      ∀ {e'} ->
+      (<Mid e' (EAsc a e)) -> 
+      (Acc <Mid e') 
+    translate-acc-asc' (acc ac) (<Asc x) = translate-acc-asc (ac x)
+     
+    translate-acc-asc : ∀ {a e} ->
+      Acc <Low e ->
+      Acc <Mid (EAsc a e)
+    translate-acc-asc ac = acc (translate-acc-asc' ac)   
+
+  mutual 
+
+    translate-acc-fun' : ∀ {a1 a2 a3 a4 e} ->
+      Acc <Low e ->
+      ∀ {e'} ->
+      (<Mid e' (EFun a1 a2 a3 a4 e)) -> 
+      (Acc <Mid e') 
+    translate-acc-fun' (acc ac) (<Fun x) = translate-acc-fun (ac x)
+     
+    translate-acc-fun : ∀ {a1 a2 a3 a4 e} ->
+      Acc <Low e ->
+      Acc <Mid (EFun a1 a2 a3 a4 e)
+    translate-acc-fun ac = acc (translate-acc-fun' ac)
+
+  mutual 
+
+    translate-acc-ap' : ∀ {e1 e2 a} ->
+      Acc <Low e1 ->
+      Acc <Low e2 ->
+      ∀ {e'} ->
+      (<Mid e' (EAp e1 a e2)) -> 
+      (Acc <Mid e') 
+    translate-acc-ap' (acc ac1) ac2 (<Ap< lt eq) = translate-acc-ap (ac1 lt) {!   !}
+    translate-acc-ap' ac1 (acc ac2) (<Ap=< lt) = translate-acc-ap ac1 (ac2 lt)
+
+    translate-acc-ap : ∀ {e1 e2 a} ->
+      Acc <Low e1 ->
+      Acc <Low e2 ->
+      Acc <Mid (EAp e1 a e2)
+    translate-acc-ap ac1 ac2 = acc (translate-acc-ap' ac1 ac2)
+
+
+  mutual 
     
     <Up-wf-old' : 
       (e : ExpMid) -> 
@@ -491,7 +611,7 @@ module Core.Termination where
       ∀ {e'} ->
       (<Up e' (e ⇒ (t , Old))) -> 
       (Acc <Up e') 
-    <Up-wf-old' e (<Upper lt) =  translate-acc-up (<Mid-wf' _ lt)
+    <Up-wf-old' e (<Upper lt) = translate-acc-up (<Mid-wf' _ lt)
 
     <Up-wf-old : 
       (e : ExpMid) -> 
@@ -504,8 +624,8 @@ module Core.Termination where
       ∀ {e'} ->
       (<Up e' e) -> 
       (Acc <Up e') 
+    <Up-wf' (e ⇒ _) (<Upper= <NewC) = <Up-wf-old e
     <Up-wf' e (<Upper lt) = translate-acc-up (<Mid-wf' _ lt)
-    <Up-wf' (e ⇒ (_ , .New)) (<Upper= <NewC) = <Up-wf-old e
 
     <Mid-wf' : 
       (e : ExpMid) -> 
@@ -515,28 +635,47 @@ module Core.Termination where
     <Mid-wf' EConst ()
     <Mid-wf' EHole ()
     <Mid-wf' (EVar _ _) ()
-    <Mid-wf' (EAsc _ e) (<Asc lt) with <Low-wf' e lt
-    ... | thing = {!   !}
-    <Mid-wf' (EFun _ _ _ _ e) (<Fun lt) = {!   !}
-    <Mid-wf' (EAp e _ _) (<Ap< lt) = {!   !}
-    <Mid-wf' (EAp _ _ e) (<Ap=< lt) = {!   !}
+    <Mid-wf' (EAsc _ e) (<Asc lt) = translate-acc-asc (<Low-wf' e lt)
+    <Mid-wf' (EFun _ _ _ _ e) (<Fun lt) = translate-acc-fun (<Low-wf' e lt)
+    <Mid-wf' (EAp e1 _ e2) (<Ap< lt eq) with <Low-wf e2
+    ... | thing = translate-acc-ap (<Low-wf' e1 lt) {!   !}
+    <Mid-wf' (EAp e1 _ e2) (<Ap=< lt) = translate-acc-ap (<Low-wf e1) (<Low-wf' e2 lt)
 
-    <Mid-wf : WellFounded <Mid 
-    <Mid-wf = {!   !}
+    -- <Mid-wf : WellFounded <Mid 
+    -- <Mid-wf e = acc (<Mid-wf' e)
+
+    <Low-wf-old' : 
+      (b : BareExp) -> 
+      (e : ExpUp) -> 
+      (BarrenExpUp e b) ->
+      ∀ {m t} -> 
+      ∀ {e'} ->
+      (<Low e' (e [ m ]⇐ (t , Old))) -> 
+      (Acc <Low e') 
+    <Low-wf-old' e (<Lower= =NewOld lt) = translate-acc-low-old (<Up-wf' _ lt)
+    
+    <Low-wf-old : 
+      (b : BareExp) -> 
+      (e : ExpUp) -> 
+      (BarrenExpUp e b) ->
+      ∀ {m t} -> 
+      (Acc <Low (e [ m ]⇐ (t , Old))) 
+    <Low-wf-old e = acc (<Low-wf-old' e)
 
     <Low-wf' : 
+      (b : BareExp) -> 
       (e : ExpLow) -> 
+      (BarrenExpLow e b) ->
       ∀ {e'} ->
       (<Low e' e) -> 
       (Acc <Low e') 
-    <Low-wf' (e [ _ ]⇐ _) (<Lower <NewC) = {!   !}
-    <Low-wf' (e [ _ ]⇐ _) (<Lower= =NewOld lt) with <Up-wf' e lt
-    ... | thing = {!   !}
-    <Low-wf' (e [ _ ]⇐ _) (<Lower= =NewNew lt) with <Up-wf' e lt
-    ... | thing = {!   !}
+    <Low-wf' (e [ m ]⇐ (t , New)) {e' [ m' ]⇐ (t' , Old)} (<Lower <NewC _) with <Low-wf-old e 
+    ... | thing = {!   !} --<Low-wf-old e'
+    <Low-wf' (e [ m ]⇐ (t , n)) (<Lower= =NewOld lt) = translate-acc-low (<Up-wf' _ lt)
+    <Low-wf' (e [ m ]⇐ (t , n)) (<Lower= =NewNew lt) = translate-acc-low (<Up-wf' _ lt)
 
-  <Low-wf : WellFounded <Low 
-  <Low-wf e = acc (<Low-wf' e)
+    <Low-wf : WellFounded <Low 
+    <Low-wf e = acc (<Low-wf' e)
 
   -- mutual 
 
@@ -613,4 +752,4 @@ module Core.Termination where
     (WellTypedProgram p) ->
     ∃[ p' ] (p P↦* p') × (SettledProgram p')
   TerminationProgram wt = TerminationProgramRec (↤P-wf _) wt
-    
+      
