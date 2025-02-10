@@ -87,22 +87,39 @@ module Core.ActionPreservation where
   -- PreservationStepAna (AnaSubsume subsumable consist-t consist-m (SynAsc consist-syn consist-ana ana)) (ActLow ActUnwrapAsc) = newify-ana ana
   -- PreservationStepAna (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (ActLow (ActUnwrapFun a b)) = newify-ana (preservation-vars-unwrap a ana b)
 
+  SynSubsume :  
+    ∀ {Γ e t} ->
+    (Γ ⊢ (e ⇒ (t , New)) ⇒) ->
+    Subsumable (e ⇒ (t , New))
+  SynSubsume (SynConst x) = SubsumableConst
+  SynSubsume (SynHole x) = SubsumableHole
+  SynSubsume (SynAp x x₁ x₂ x₃ x₄ x₅) = SubsumableAp
+  SynSubsume (SynVar x x₁) = SubsumableVar
+  SynSubsume (SynAsc x x₁ x₂) = SubsumableAsc
+    
+  WrapSubsume :  
+    ∀ {Γ e t m ana} ->
+    (Γ ⊢ (e ⇒ (t , New)) ⇒) ->
+    (Γ ⊢ (e ⇒ (t , New)) [ m ]⇐ ana ⇐)
+  WrapSubsume {t = t} {ana = ana} syn with ~N-dec (t , New) ana
+  ... | _ , ~N-pair x = AnaSubsume (SynSubsume syn) (~N-pair x) ▶New syn
+
   PreservationStep :  
     ∀ {Γ α e e' m ana} ->
     (Γ ⊢ e [ m ]⇐ ana ⇐) ->
     (Γ ⊢ α , e A↦ e') ->   
     (Γ ⊢ e' [ m ]⇐ ana ⇐)
-  PreservationStep syn ActInsertConst = AnaSubsume SubsumableConst !{!   !} {!   !} {!   !} --SynConst (▷Pair ▶Old)
-  PreservationStep syn ActDelete = {!   !} --SynHole (▷Pair ▶Old)
-  PreservationStep syn (ActInsertVar in-ctx) = {!   !} --SynVar in-ctx (▷Pair ▶Same)
-  PreservationStep syn ActWrapAsc = {!   !} --SynAsc (▷Pair ▶New) (▷Pair ▶New) {!   !}
-  PreservationStep syn (ActWrapFun x) = {! SynFun  !}
-  PreservationStep syn ActWrapApOne = {!   !}
-  PreservationStep syn ActWrapApTwo = {!   !}
-  PreservationStep syn ActUnwrapApOne = {!   !}
-  PreservationStep syn ActUnwrapApTwo = {!   !}
-  PreservationStep syn ActUnwrapAsc = {!   !}
-  PreservationStep syn (ActUnwrapFun a1 a2) = {!   !}
+  PreservationStep ana ActInsertConst = WrapSubsume (SynConst (▷Pair ▶Old))
+  PreservationStep ana ActDelete = WrapSubsume (SynHole (▷Pair ▶Old))
+  PreservationStep ana (ActInsertVar in-ctx) = WrapSubsume (SynVar in-ctx (▷Pair ▶Same))
+  PreservationStep ana ActWrapAsc = WrapSubsume (SynAsc (▷Pair ▶New) (▷Pair ▶New) (newify-ana ana))
+  PreservationStep ana (ActWrapFun x) = {! SynFun  !}
+  PreservationStep ana ActWrapApOne = {!  ?  !}
+  PreservationStep ana ActWrapApTwo = WrapSubsume (SynAp (NTArrowC (DTArrowSome MArrowHole)) (▷Pair ▶Old) (▷Pair ▶Old) ▶Old (AnaSubsume SubsumableHole (~N-pair ~DVoidR) ▶Old (SynHole (▷Pair ▶Old))) (newify-ana ana))
+  PreservationStep (AnaSubsume subsumable consist-t consist-m (SynAsc consist-syn consist-ana ana)) ActUnwrapAsc = {! newify-ana ana  !}
+  PreservationStep (AnaSubsume subsumable consist-t consist-m (SynAp marrow consist-syn consist-ana consist-mark syn ana)) ActUnwrapApOne = {!   !}
+  PreservationStep (AnaSubsume subsumable consist-t consist-m (SynAp marrow consist-syn consist-ana consist-mark syn ana)) ActUnwrapApTwo = {!   !}
+  PreservationStep ana (ActUnwrapFun a1 a2) = {!   !}
 
 
   mutual 
@@ -134,7 +151,7 @@ module Core.ActionPreservation where
     --   = AnaFun marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma-3 {t = t-asc} =▷Refl consist-syn) consist-all consist-m-all (PreservationAna ana (AStepLow (FillLEnvLowRec (FillLEnvUpRec fill1)) step (FillLEnvLowRec (FillLEnvUpRec fill2)))) 
 
   PreservationProgram :   
-    ∀ {α p p'} ->
+    ∀ {α p p'} ->  
     (WellTypedProgram p) ->  
     (α , p AP↦ p') ->      
     (WellTypedProgram p')           
