@@ -1,11 +1,7 @@
-open import Data.Nat hiding (_+_; _⊓_; _⊔_)
 open import Data.Unit 
-open import Data.Bool hiding (_<_; _≟_)
-open import Data.Sum renaming (_⊎_ to _+_; inj₁ to Inl ; inj₂ to Inr) hiding (map)
-open import Data.Product hiding (map)
+open import Data.Product
 open import Relation.Nullary 
-open import Relation.Nullary.Decidable
-open import Relation.Binary.PropositionalEquality hiding (inspect)
+open import Relation.Binary.PropositionalEquality
 open import Prelude
 
 module Core.Core where
@@ -75,13 +71,9 @@ module Core.Core where
     MArrowArrow : ∀ {t1 t2} -> 
       (TArrow t1 t2) ▸TArrow t1 , t2 , ✔
 
-  -- data (option)
-  data DATA (A : Set) : Set where 
-    □ : DATA A
-    ■ : A -> DATA A
-
-  Data : Set 
-  Data = DATA Type
+  data Data : Set where 
+    □ : Data
+    ■ : Type -> Data
 
   NEW : (A : Set) -> Set 
   NEW A = A × Newness 
@@ -155,14 +147,14 @@ module Core.Core where
   Ctx : Set 
   Ctx = Context NewType
 
-  data BarrenCtx : Ctx -> BareCtx -> Set where 
-    BarrenCtxEmpty : BarrenCtx ∅ ∅
-    BarrenCtxCons : ∀ {x t n Γ Γ'} ->
-      BarrenCtx Γ Γ' ->
-      BarrenCtx (x ∶ (t , n) ∷ Γ) (x ∶ t ∷ Γ')
+  -- data BarrenCtx : Ctx -> BareCtx -> Set where 
+  --   BarrenCtxEmpty : BarrenCtx ∅ ∅
+  --   BarrenCtxCons : ∀ {x t n Γ Γ'} ->
+  --     BarrenCtx Γ Γ' ->
+  --     BarrenCtx (x ∶ (t , n) ∷ Γ) (x ∶ t ∷ Γ')
 
-  BarrenCtxCons? : ∀ {x t n Γ Γ'} ->
-    BarrenCtx Γ Γ' -> 
-    BarrenCtx (x ∶ (t , n) ∷? Γ) (x ∶ t ∷? Γ')
-  BarrenCtxCons? {BHole} ctx-bare = ctx-bare
-  BarrenCtxCons? {BVar x} ctx-bare = BarrenCtxCons ctx-bare
+  -- BarrenCtxCons? : ∀ {x t n Γ Γ'} ->
+  --   BarrenCtx Γ Γ' -> 
+  --   BarrenCtx (x ∶ (t , n) ∷? Γ) (x ∶ t ∷? Γ')
+  -- BarrenCtxCons? {BHole} ctx-bare = ctx-bare
+  -- BarrenCtxCons? {BVar x} ctx-bare = BarrenCtxCons ctx-bare

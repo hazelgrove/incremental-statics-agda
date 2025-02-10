@@ -292,9 +292,7 @@ module Core.Lemmas-Preservation where
   beyond-▷-contra ◁▷C (▷Pair consist) = ▷Pair consist
 
   beyond-▷■-contra : 
-    {A : Set} -> 
-    {a : NEW A} ->
-    {b b' : NEW (DATA A)} ->
+    ∀ {a b b'} ->
     ◁▷ b b' ->
     ▷■ a b ->
     ▷■ a b' 

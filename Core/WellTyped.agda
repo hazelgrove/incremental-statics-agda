@@ -22,7 +22,7 @@ data ▷ {A : Set} : NEW A -> NEW A -> Set where
     ▶ (a , n) a' ->
     ▷ (a , n) (a' , n')
     
-data ▷■ {A : Set} : NEW A -> NEW (DATA A) -> Set where
+data ▷■ : NewType -> NewData -> Set where
   ▷■Pair : ∀ {a a' n n'} -> 
     ▷ (■ a , n) (a' , n') ->
     ▷■ (a , n) (a' , n')
