@@ -180,18 +180,20 @@ module Core.Termination where
       <Fun : ∀ {a1 a2 a3 a4 a5 a6 a7 a8 e1 e2} ->
         <Low e1 e2 -> 
         <Mid (EFun a1 a2 a3 a4 e1) (EFun a5 a6 a7 a8 e2)
-      <Ap< : ∀ {a1 a2 e1 e2 e3 e4} ->
+      <Ap< : ∀ {a1 a2 b e1 e2 e3 e4} ->
         <Low e1 e3 -> 
-        =Low e2 e4 -> 
+        BarrenExpLow e2 b ->
+        BarrenExpLow e4 b ->
         <Mid (EAp e1 a1 e2) (EAp e3 a2 e4)
       <Ap=< : ∀ {a1 a2 e1 e2 e3} ->
         <Low e2 e3 -> 
         <Mid (EAp e1 a1 e2) (EAp e1 a2 e3)
 
     data <Low : ExpLow -> ExpLow -> Set where 
-      <Lower : ∀ {e1 e2 a1 a2 ana1 ana2} ->
+      <Lower : ∀ {e1 e2 b a1 a2 ana1 ana2} ->
         <New ana1 ana2 ->  
-        =Up e1 e2 -> 
+        BarrenExpUp e1 b ->
+        BarrenExpUp e2 b ->
         <Low (e1 [ a1 ]⇐ ana1) (e2 [ a2 ]⇐ ana2)
       <Lower= : ∀ {e1 e2 a1 a2 ana1 ana2} ->
         =New ana1 ana2 ->  
@@ -247,11 +249,22 @@ module Core.Termination where
   vars-syn?-preserves-surface-news {BHole} refl = refl
   vars-syn?-preserves-surface-news {BVar x} = vars-syn-preserves-surface-news
 
+  mutual 
+    barren-up-dec : (e : ExpUp) -> ∃[ b ] (BarrenExpUp e b)
+    barren-up-dec = {!   !}
+
+    barren-mid-dec : (e : ExpMid) -> ∃[ b ] (BarrenExpMid e b)
+    barren-mid-dec = {!   !}
+
+    barren-low-dec : (e : ExpLow) -> ∃[ b ] (BarrenExpLow e b)
+    barren-low-dec = {!   !}
+
   StepDecreaseU : ∀ {e e'} ->
     e U↦ e' -> 
     <ExpUp e' e
   StepDecreaseU StepAsc = <ExpUp< (n<1+n _)
-  StepDecreaseU (StepAp x) = <ExpUp= refl (<Upper (<Ap< (<Lower= =New-refl (<Upper= <NewC)) {!   !}))
+  StepDecreaseU (StepAp {e-arg = e-arg} x) with barren-up-dec e-arg 
+  ... | b , bare = <ExpUp= refl (<Upper (<Ap< (<Lower= =New-refl (<Upper= <NewC)) (BarrenLow bare) (BarrenLow bare)))
 
   StepDecreaseL : ∀ {e e'} ->
     e L↦ e' -> 
@@ -261,8 +274,10 @@ module Core.Termination where
     helper : surface-news-mid e' < suc (surface-news-mid e)
     helper rewrite (vars-syn?-preserves-surface-news vars-syn) = ≤-refl
   StepDecreaseL (StepNewSynConsist x) = <ExpLow= refl (<Lower= =NewOld (<Upper= <NewC))
-  StepDecreaseL (StepNewAnaConsist x x₁) = <ExpLow= refl (<Lower <NewC =UpRefl)
-  StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC =UpFun)
+  StepDecreaseL (StepNewAnaConsist {e-all} {t-syn} {n-syn = n-syn} x x₁) with barren-up-dec (e-all ⇒ (t-syn , n-syn))
+  ... | b , bare = <ExpLow= refl (<Lower <NewC bare bare)
+  StepDecreaseL (StepAnaFun {e-body = e-body} x x₁) with barren-mid-dec e-body 
+  ... | b , bare = <ExpLow= refl (<Lower <NewC (BarrenUp (BarrenFun (BarrenLow (BarrenUp bare)))) (BarrenUp (BarrenFun (BarrenLow (BarrenUp bare)))))
   StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =New-refl (<Upper (<Fun (<Lower= =NewOld (<Upper= <NewC)))))
 
   -- environment stuff
@@ -376,7 +391,8 @@ module Core.Termination where
       <Mid e' e
     FillLEnvMid-<Mid (FillLEnvAsc fill1) (FillLEnvAsc fill2) lt = <Asc (FillLEnvLow-<Low fill1 fill2 lt) 
     FillLEnvMid-<Mid (FillLEnvFun fill1) (FillLEnvFun fill2) lt = <Fun (FillLEnvLow-<Low fill1 fill2 lt)
-    FillLEnvMid-<Mid (FillLEnvAp1 fill1) (FillLEnvAp1 fill2) lt = <Ap< (FillLEnvLow-<Low fill1 fill2 lt) {!   !}
+    FillLEnvMid-<Mid (FillLEnvAp1 {e2 = e2} fill1) (FillLEnvAp1 fill2) lt with barren-low-dec e2 
+    ... | b , bare = <Ap< (FillLEnvLow-<Low fill1 fill2 lt) bare bare
     FillLEnvMid-<Mid (FillLEnvAp2 fill1) (FillLEnvAp2 fill2) lt = <Ap=< (FillLEnvLow-<Low fill1 fill2 lt)
 
     FillLEnvLow-<Low : ∀ {ε e e' e-in e-in'} ->
@@ -404,7 +420,8 @@ module Core.Termination where
       <Mid e' e
     FillUEnvMid-<Mid (FillUEnvAsc fill1) (FillUEnvAsc fill2) lt = <Asc (FillUEnvLow-<Low fill1 fill2 lt)
     FillUEnvMid-<Mid (FillUEnvFun fill1) (FillUEnvFun fill2) lt = <Fun (FillUEnvLow-<Low fill1 fill2 lt)
-    FillUEnvMid-<Mid (FillUEnvAp1 fill1) (FillUEnvAp1 fill2) lt = <Ap< (FillUEnvLow-<Low fill1 fill2 lt) {!   !}
+    FillUEnvMid-<Mid (FillUEnvAp1 {e2 = e2} fill1) (FillUEnvAp1 fill2) lt with barren-low-dec e2 
+    ... | b , bare = <Ap< (FillUEnvLow-<Low fill1 fill2 lt) bare bare
     FillUEnvMid-<Mid (FillUEnvAp2 fill1) (FillUEnvAp2 fill2) lt = <Ap=< (FillUEnvLow-<Low fill1 fill2 lt)
 
     FillUEnvLow-<Low : ∀ {ε e e' e-in e-in'} ->
@@ -533,6 +550,11 @@ module Core.Termination where
   --     Acc <Up e'
   --   translate-acc-eq eq ac = acc (translate-acc-eq' eq ac)
 
+  BAccLow : BareExp -> Set 
+  BAccLow b = {e : ExpLow} -> 
+    (BarrenExpLow e b) -> 
+    (Acc <Low e)
+
   mutual
 
     translate-acc-low' : ∀{e m ana} ->
@@ -540,7 +562,7 @@ module Core.Termination where
       ∀ {e'} ->
       (<Low e' (e [ m ]⇐ ana)) -> 
       (Acc <Low e') 
-    translate-acc-low' ac (<Lower <NewC eq) = translate-acc-low-old {!   !}
+    translate-acc-low' ac (<Lower <NewC b1 b2) = translate-acc-low-old {!   !}
     -- translate-acc-low' ac (<Lower <NewC =UpRefl) = translate-acc-low-old ac
     -- translate-acc-low' ac (<Lower <NewC =UpFun) = translate-acc-low-old {!   !}
       -- where 
@@ -593,7 +615,7 @@ module Core.Termination where
       ∀ {e'} ->
       (<Mid e' (EAp e1 a e2)) -> 
       (Acc <Mid e') 
-    translate-acc-ap' (acc ac1) ac2 (<Ap< lt eq) = translate-acc-ap (ac1 lt) {!   !}
+    translate-acc-ap' (acc ac1) ac2 (<Ap< lt b1 b2) = translate-acc-ap (ac1 lt) {!   !}
     translate-acc-ap' ac1 (acc ac2) (<Ap=< lt) = translate-acc-ap ac1 (ac2 lt)
 
     translate-acc-ap : ∀ {e1 e2 a} ->
@@ -606,40 +628,48 @@ module Core.Termination where
   mutual 
     
     <Up-wf-old' : 
+      (b : BareExp) -> 
       (e : ExpMid) -> 
+      (BarrenExpMid e b) ->
       {t : Data} -> 
       ∀ {e'} ->
       (<Up e' (e ⇒ (t , Old))) -> 
       (Acc <Up e') 
-    <Up-wf-old' e (<Upper lt) = translate-acc-up (<Mid-wf' _ lt)
+    <Up-wf-old' b e bare (<Upper lt) = translate-acc-up (<Mid-wf' {!   !} _ {!   !} lt)
 
     <Up-wf-old : 
+      (b : BareExp) -> 
       (e : ExpMid) -> 
+      (BarrenExpMid e b) ->
       {t : Data} -> 
       (Acc <Up (e ⇒ (t , Old))) 
-    <Up-wf-old e = acc (<Up-wf-old' e)
+    <Up-wf-old b e bare = acc (<Up-wf-old' b e bare)
 
     <Up-wf' : 
+      (b : BareExp) -> 
       (e : ExpUp) -> 
+      (BarrenExpUp e b) ->
       ∀ {e'} ->
       (<Up e' e) -> 
       (Acc <Up e') 
-    <Up-wf' (e ⇒ _) (<Upper= <NewC) = <Up-wf-old e
-    <Up-wf' e (<Upper lt) = translate-acc-up (<Mid-wf' _ lt)
+    <Up-wf' b (e ⇒ _) bare (<Upper= <NewC) = <Up-wf-old {!   !} e {!   !}
+    <Up-wf' b e bare (<Upper lt) = translate-acc-up (<Mid-wf' {!   !} _ {!   !} lt)
 
     <Mid-wf' : 
+      (b : BareExp) -> 
       (e : ExpMid) -> 
+      (BarrenExpMid e b) ->
       ∀ {e'} ->
       (<Mid e' e) -> 
       (Acc <Mid e') 
-    <Mid-wf' EConst ()
-    <Mid-wf' EHole ()
-    <Mid-wf' (EVar _ _) ()
-    <Mid-wf' (EAsc _ e) (<Asc lt) = translate-acc-asc (<Low-wf' e lt)
-    <Mid-wf' (EFun _ _ _ _ e) (<Fun lt) = translate-acc-fun (<Low-wf' e lt)
-    <Mid-wf' (EAp e1 _ e2) (<Ap< lt eq) with <Low-wf e2
-    ... | thing = translate-acc-ap (<Low-wf' e1 lt) {!   !}
-    <Mid-wf' (EAp e1 _ e2) (<Ap=< lt) = translate-acc-ap (<Low-wf e1) (<Low-wf' e2 lt)
+    <Mid-wf' _ EConst _ ()
+    <Mid-wf' _ EHole _ ()
+    <Mid-wf' _ (EVar _ _) _ ()
+    <Mid-wf' _ (EAsc _ e) _ (<Asc lt) = translate-acc-asc (<Low-wf' {!   !} e {!   !} lt)
+    <Mid-wf' _ (EFun _ _ _ _ e) _ (<Fun lt) = translate-acc-fun (<Low-wf' {!   !} e {!   !} lt)
+    <Mid-wf' b (EAp e1 _ e2) bare (<Ap< lt b1 b2) with <Low-wf e2
+    ... | thing = translate-acc-ap (<Low-wf' {!   !} e1 {!   !} lt) {!   !}
+    <Mid-wf' b (EAp e1 _ e2) bare (<Ap=< lt) = translate-acc-ap (<Low-wf e1) (<Low-wf' {!   !} e2 {!   !} lt)
 
     -- <Mid-wf : WellFounded <Mid 
     -- <Mid-wf e = acc (<Mid-wf' e)
@@ -652,7 +682,7 @@ module Core.Termination where
       ∀ {e'} ->
       (<Low e' (e [ m ]⇐ (t , Old))) -> 
       (Acc <Low e') 
-    <Low-wf-old' e (<Lower= =NewOld lt) = translate-acc-low-old (<Up-wf' _ lt)
+    <Low-wf-old' b e bare (<Lower= =NewOld lt) = translate-acc-low-old (<Up-wf' {!   !} _ {!   !} lt)
     
     <Low-wf-old : 
       (b : BareExp) -> 
@@ -660,7 +690,7 @@ module Core.Termination where
       (BarrenExpUp e b) ->
       ∀ {m t} -> 
       (Acc <Low (e [ m ]⇐ (t , Old))) 
-    <Low-wf-old e = acc (<Low-wf-old' e)
+    <Low-wf-old b e bare = acc (<Low-wf-old' {!   !} e {!   !})
 
     <Low-wf' : 
       (b : BareExp) -> 
@@ -669,13 +699,25 @@ module Core.Termination where
       ∀ {e'} ->
       (<Low e' e) -> 
       (Acc <Low e') 
-    <Low-wf' (e [ m ]⇐ (t , New)) {e' [ m' ]⇐ (t' , Old)} (<Lower <NewC _) with <Low-wf-old e 
+    <Low-wf' b (e [ m ]⇐ (t , New)) bare {e' [ m' ]⇐ (t' , Old)} (<Lower <NewC _ _) with <Low-wf-old {!   !} e {!   !} 
     ... | thing = {!   !} --<Low-wf-old e'
-    <Low-wf' (e [ m ]⇐ (t , n)) (<Lower= =NewOld lt) = translate-acc-low (<Up-wf' _ lt)
-    <Low-wf' (e [ m ]⇐ (t , n)) (<Lower= =NewNew lt) = translate-acc-low (<Up-wf' _ lt)
+    <Low-wf' b (e [ m ]⇐ (t , n)) bare (<Lower= =NewOld lt) = translate-acc-low (<Up-wf' {!   !} _ {!   !} lt)
+    <Low-wf' b (e [ m ]⇐ (t , n)) bare (<Lower= =NewNew lt) = translate-acc-low (<Up-wf' {!   !} _ {!   !} lt)
+
+    -- <Blow-wf' : (b : BareExp) -> 
+    --   {e : ExpLow} -> 
+    --   (BarrenExpLow e b) ->
+    --   ∀ {e' b'} ->
+    --   (BarrenExpLow e' b') ->
+    --   (<Low e' e) -> 
+    --   (BAccLow b') 
+      
+
+    -- <Blow-wf : (b : BareExp) -> (BAccLow b)
+    -- <Blow-wf b bare = {!   !}
 
     <Low-wf : WellFounded <Low 
-    <Low-wf e = acc (<Low-wf' e)
+    <Low-wf e = acc (<Low-wf' {!   !} e {!   !})
 
   -- mutual 
 
