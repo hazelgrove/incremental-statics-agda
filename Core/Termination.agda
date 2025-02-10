@@ -540,7 +540,6 @@ module Core.Termination where
       Acc (<Mid (S2 s1 s2)) (EAp e1 a e2)
     translate-acc-ap s1 s2 wf1 wf2 = translate-acc-ap' s1 s2 wf1 wf2 (wf1 _) (wf2 _) 
 
-
   mutual 
     
     <Up-wf-old' : 
@@ -589,22 +588,6 @@ module Core.Termination where
     <Mid-wf : (s : Skeleton) -> WellFounded (<Mid s)
     <Mid-wf s e = acc (<Mid-wf' s e)
 
-    -- <Low-wf-old' : 
-    --   (s : Skeleton) ->
-    --   (e : ExpUp) -> 
-    --   ∀ {m t} -> 
-    --   ∀ {e'} ->
-    --   (<Low s e' (e [ m ]⇐ (t , Old))) -> 
-    --   (Acc (<Low s) e') 
-    -- <Low-wf-old' s e (<Lower= =NewOld lt) = {!   !} --translate-acc-low-old (<Up-wf' _ lt)
-    
-    -- <Low-wf-old : 
-    --   (s : Skeleton) ->
-    --   (e : ExpUp) -> 
-    --   ∀ {m t} -> 
-    --   (Acc (<Low s) (e [ m ]⇐ (t , Old))) 
-    -- <Low-wf-old s e = acc (<Low-wf-old' s e)
-
     <Low-wf' : 
       (s : Skeleton) ->
       (e : ExpLow) -> 
@@ -612,53 +595,79 @@ module Core.Termination where
       (<Low s e' e) -> 
       (Acc (<Low s) e') 
     <Low-wf' s e {x [ x₁ ]⇐ x₂} lt = translate-acc-low s (<Up-wf s)
-    -- <Low-wf' s (e [ m ]⇐ (t , New)) {e' [ m' ]⇐ (t' , Old)} (<Lower <NewC) = translate-acc-low s (<Up-wf s) 
-    -- <Low-wf' s (e [ m ]⇐ (t , n)) (<Lower= =NewOld lt) = translate-acc-low (<Up-wf' _ lt)
-    -- <Low-wf' s (e [ m ]⇐ (t , n)) (<Lower= =NewNew lt) = {!   !} --translate-acc-low (<Up-wf' _ lt)
 
     <Low-wf : (s : Skeleton) -> WellFounded (<Low s)
     <Low-wf s e = acc (<Low-wf' s e)
 
-  -- -- mutual 
+  -- <Surface : Program -> Program 
+  
+  -- mutual 
 
-  --   -- <Program-wf-2 : 
-  --   --   (p : Program) -> 
-  --   --   (n : ℕ) -> 
-  --   --   (surface-news-low (ExpLowOfProgram p) ≡ n) ->
-  --   --   ∀ {p'} ->
-  --   --   (surface-news-low (ExpLowOfProgram p') <
-  --   --   surface-news-low (ExpLowOfProgram p)) -> 
-  --   --   (Acc <Program p')
-  --   -- <Program-wf-2 p zero eq lt rewrite eq with lt 
-  --   -- ... | () 
-  --   -- <Program-wf-2 p (suc n) eq {p'} lt =  <Program-wf-22 p' (surface-news-low (ExpLowOfProgram p')) refl
+    -- <Program-wf-2 : 
+    --   (p : Program) -> 
+    --   (n : ℕ) -> 
+    --   (surface-news-low (ExpLowOfProgram p) ≡ n) ->
+    --   ∀ {p'} ->
+    --   (surface-news-low (ExpLowOfProgram p') <
+    --   surface-news-low (ExpLowOfProgram p)) -> 
+    --   (Acc <Program p')
+    -- <Program-wf-2 p zero eq lt rewrite eq with lt 
+    -- ... | () 
+    -- <Program-wf-2 p (suc n) eq {p'} lt =  <Program-wf-22 p' (surface-news-low (ExpLowOfProgram p')) refl
 
-  --   -- <Program-wf-22 : 
-  --   --   (p : Program) -> 
-  --   --   (n : ℕ) -> 
-  --   --   (surface-news-low (ExpLowOfProgram p) ≡ n) ->
-  --   --   (Acc <Program p)
-  --   -- <Program-wf-22 p n eq = acc helper
-  --   --   where 
-  --   --   helper : {y : Program} → <Program y p → Acc <Program y
-  --   --   helper (<Program< lt) = <Program-wf-2 p _ refl lt
-  --   --   helper (<Program= eq lt) = {!   !}
+    -- <Program-wf-22 : 
+    --   (p : Program) -> 
+    --   (n : ℕ) -> 
+    --   (surface-news-low (ExpLowOfProgram p) ≡ n) ->
+    --   (Acc <Program p)
+    -- <Program-wf-22 p n eq = acc helper
+    --   where 
+    --   helper : {y : Program} → <Program y p → Acc <Program y
+    --   helper (<Program< lt) = <Program-wf-2 p _ refl lt
+    --   helper (<Program= eq lt) = {!   !}
 
-  -- <Program-wf' : 
-  --   (p : Program) -> 
-  --   ∀ {p'} ->
-  --   (<Program p' p) -> 
-  --   (Acc <Program p') 
-  -- <Program-wf' p (<Program< lt) = {!   !} --<Program-wf-2 p _ refl lt
-  -- <Program-wf' p (<Program= eq lt) = {!   !}
+    -- <Program-wf-3' : 
+    --   (p : Program) -> 
+    --   (n : ℕ) -> 
+    --   (surface-news-low (ExpLowOfProgram p) ≡ n) ->
+    --   ∀ {p'} ->
+    --   (surface-news-low (ExpLowOfProgram p') <
+    --   surface-news-low (ExpLowOfProgram p)) -> 
+    --   (Acc <Program p')
+    -- <Program-wf-3' = {!   !}
+    
+    -- <Program-wf-3 : 
+    --   (p : Program) -> 
+    --   (n : ℕ) -> 
+    --   (surface-news-low (ExpLowOfProgram p) ≡ n) ->
+    --   (Acc <Program p)
+    -- <Program-wf-3 p n eq = acc {! <Program-wf-3' p n eq  !}
 
-  -- <Program-wf : WellFounded <Program 
-  -- <Program-wf p = acc (<Program-wf' p)
+  <Program-wf'' : 
+    (p : Program) -> 
+    (∀ {s} -> Acc (<Low s) (ExpLowOfProgram p)) ->
+    ∀ {p'} ->
+    (<Program p' p) -> 
+    (Acc <Program p') 
+  <Program-wf'' p ac (<Program< lt) = {!   !} --<Program-wf-2 p _ refl lt
+  <Program-wf'' p acs (<Program= {s = s} eq lt) with acs {s} 
+  ... | acc ac = {!   !} --<Program-wf'' _ (rs {!   !}) {!   !}
 
-  -- acc-translate : ∀ {p} ->
-  --   Acc <Program p ->
-  --   Acc _↤P_ p
-  -- acc-translate (acc rs) = acc λ {p'} -> λ lt -> acc-translate (rs (StepDecrease lt))
+  <Program-wf' : 
+    (p : Program) -> 
+    ∀ {p'} ->
+    (<Program p' p) -> 
+    (Acc <Program p') 
+  <Program-wf' p (<Program< lt) = {!   !} --<Program-wf-2 p _ refl lt
+  <Program-wf' p (<Program= eq lt) = {!   !}
+
+  <Program-wf : WellFounded <Program 
+  <Program-wf p = acc (<Program-wf' p)
+
+  acc-translate : ∀ {p} ->
+    Acc <Program p ->
+    Acc _↤P_ p
+  acc-translate (acc rs) = acc λ {p'} -> λ lt -> acc-translate (rs (StepDecrease lt))
 
   -- ↤P-wf' :
   --   (p : Program) -> 
@@ -694,4 +703,4 @@ module Core.Termination where
   --   (WellTypedProgram p) ->
   --   ∃[ p' ] (p P↦* p') × (SettledProgram p')
   -- TerminationProgram wt = TerminationProgramRec (↤P-wf _) wt
-      
+       
