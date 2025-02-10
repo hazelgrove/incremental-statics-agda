@@ -512,22 +512,33 @@ module Core.Termination where
 
   mutual 
 
-    translate-acc-ap' : ∀ {e1 e2 a} ->
+    translate-acc-ap'' : ∀ {e1 e2 a} ->
       (s1 s2 : Skeleton) ->
+      WellFounded (<Low s1) ->
+      WellFounded (<Low s2) ->
       Acc (<Low s1) e1 ->
       Acc (<Low s2) e2 ->
       ∀ {e'} ->
       (<Mid (S2 s1 s2) e' (EAp e1 a e2)) -> 
       (Acc (<Mid (S2 s1 s2)) e') 
-    translate-acc-ap' s1 s2 (acc ac1) ac2 (<Ap< lt) = translate-acc-ap s1 s2 (ac1 lt) {!   !}
-    translate-acc-ap' s1 s2 ac1 (acc ac2) (<Ap=< lt) = translate-acc-ap s1 s2 ac1 (ac2 lt)
+    translate-acc-ap'' s1 s2 wf1 wf2 (acc ac1) ac2 (<Ap< lt) = translate-acc-ap' s1 s2 wf1 wf2 (ac1 lt) (wf2 _)
+    translate-acc-ap'' s1 s2 wf1 wf2 ac1 (acc ac2) (<Ap=< lt) = translate-acc-ap' s1 s2 wf1 wf2 ac1 (ac2 lt)
 
-    translate-acc-ap : ∀ {e1 e2 a} ->
+    translate-acc-ap' : ∀ {e1 e2 a} ->
       (s1 s2 : Skeleton) ->
+      WellFounded (<Low s1) ->
+      WellFounded (<Low s2) ->
       Acc (<Low s1) e1 ->
       Acc (<Low s2) e2 ->
       Acc (<Mid (S2 s1 s2)) (EAp e1 a e2)
-    translate-acc-ap s1 s2 ac1 ac2 = acc (translate-acc-ap' s1 s2 ac1 ac2)
+    translate-acc-ap' s1 s2 wf1 wf2 ac1 ac2 = acc (translate-acc-ap'' s1 s2 wf1 wf2 ac1 ac2)
+
+    translate-acc-ap : ∀ {e1 e2 a} ->
+      (s1 s2 : Skeleton) ->
+      WellFounded (<Low s1) ->
+      WellFounded (<Low s2) ->
+      Acc (<Mid (S2 s1 s2)) (EAp e1 a e2)
+    translate-acc-ap s1 s2 wf1 wf2 = translate-acc-ap' s1 s2 wf1 wf2 (wf1 _) (wf2 _) 
 
 
   mutual 
@@ -571,9 +582,9 @@ module Core.Termination where
     <Mid-wf' s (EVar _ _) ()
     <Mid-wf' (S1 s) (EAsc _ e) (<Asc lt) = translate-acc-asc s (<Low-wf' s e lt)
     <Mid-wf' (S1 s) (EFun _ _ _ _ e) (<Fun lt) = translate-acc-fun s (<Low-wf' s e lt)
-    <Mid-wf' (S2 s1 s2) (EAp e1 _ e2) (<Ap< {e1 = e3} {e4} lt) with <Low-wf s2 e4
-    ... | weird = translate-acc-ap s1 s2 (<Low-wf s1 _) weird
-    <Mid-wf' (S2 s1 s2) (EAp e1 _ e2) (<Ap=< lt) = translate-acc-ap s1 s2 (<Low-wf s1 e1) (<Low-wf' s2 e2 lt)
+    <Mid-wf' (S2 s1 s2) (EAp e1 _ e2) (<Ap< {e1 = e3} {e4} lt) with <Low-wf s2
+    ... | weird = translate-acc-ap s1 s2 (<Low-wf s1) weird
+    <Mid-wf' (S2 s1 s2) (EAp e1 _ e2) (<Ap=< lt) = translate-acc-ap s1 s2 (<Low-wf s1) (<Low-wf s2)
 
     <Mid-wf : (s : Skeleton) -> WellFounded (<Mid s)
     <Mid-wf s e = acc (<Mid-wf' s e)
