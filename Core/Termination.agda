@@ -1,8 +1,8 @@
 open import Data.Nat 
 open import Data.Nat.Properties
+open import Data.Nat.Induction
 open import Data.Unit 
 open import Data.Empty 
-open import Data.Bool hiding (_<_; _≟_)
 open import Data.List
 open import Data.Sum renaming (inj₁ to Inl ; inj₂ to Inr) hiding (map)
 open import Data.Product hiding (map)
@@ -11,7 +11,6 @@ open import Induction.WellFounded
 open import Relation.Binary.PropositionalEquality hiding (inspect; [_])
 open import Prelude
 open import Agda.Primitive using (Level; lzero; lsuc) renaming (_⊔_ to lmax)
-
 
 open import Core.Core hiding (_⊓_)
 open import Core.WellTyped
@@ -129,7 +128,6 @@ module Core.Termination where
     <Program= : ∀ {p p'} ->
       surface-news-low (ExpLowOfProgram p) ≡ surface-news-low (ExpLowOfProgram p') -> 
       <Low (SkelProgram p) (ExpLowOfProgram p) (ExpLowOfProgram p') ->
-      <Low (SkelProgram p') (ExpLowOfProgram p) (ExpLowOfProgram p') ->
       <Program p p'
 
   data <ExpUp : ExpUp -> ExpUp -> Set where 
@@ -172,7 +170,6 @@ module Core.Termination where
     <Low-skel (<Lower _ eq) = eq
     <Low-skel (<Lower= _ lt) = <Up-skel lt
 
-  
   vars-syn-preserves-surface-news : ∀{x t m e e'} ->
     VarsSynthesize x t m e e' ->
     surface-news-up e ≡ surface-news-up e'
@@ -213,7 +210,7 @@ module Core.Termination where
   StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC refl)
   StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =New-refl (<Upper (<Fun (<Lower= =NewOld (<Upper= <NewC)))))
 
-  -- -- environment stuff
+  -- environment stuff
 
   mutual 
     
@@ -501,14 +498,11 @@ module Core.Termination where
   StepDecrease : ∀ {p p'} ->
     p' ↤P p -> 
     <Program p' p 
-  StepDecrease TopStep = <Program= refl (<Lower= =New-refl (<Upper= <NewC)) (<Lower= =New-refl (<Upper= <NewC))
+  StepDecrease TopStep = <Program= refl (<Lower= =New-refl (<Upper= <NewC)) 
   StepDecrease {p} {p'} (InsideStep step) with StepDecreaseLow step
   ... | <ExpLow< lt = <Program< lt
-  ... | <ExpLow= eq lt = <Program= eq lt lt'
-    where 
-    lt' : <Low (SkelProgram p) (ExpLowOfProgram p') (ExpLowOfProgram p)
-    lt' rewrite sym (<Low-skel lt) = lt
-
+  ... | <ExpLow= eq lt = <Program= eq lt
+  
   -- well-foundedness 
   
   mutual 
@@ -703,83 +697,47 @@ module Core.Termination where
     <Low-wf : (s : Skeleton) -> WellFounded (<Low s)
     <Low-wf s e = acc (<Low-wf' s e)
 
-  -- <Surface : Program -> Program 
-  
-  -- mutual 
-
-    -- <Program-wf-2 : 
-    --   (p : Program) -> 
-    --   (n : ℕ) -> 
-    --   (surface-news-low (ExpLowOfProgram p) ≡ n) ->
-    --   ∀ {p'} ->
-    --   (surface-news-low (ExpLowOfProgram p') <
-    --   surface-news-low (ExpLowOfProgram p)) -> 
-    --   (Acc <Program p')
-    -- <Program-wf-2 p zero eq lt rewrite eq with lt 
-    -- ... | () 
-    -- <Program-wf-2 p (suc n) eq {p'} lt =  <Program-wf-22 p' (surface-news-low (ExpLowOfProgram p')) refl
-
-    -- <Program-wf-22 : 
-    --   (p : Program) -> 
-    --   (n : ℕ) -> 
-    --   (surface-news-low (ExpLowOfProgram p) ≡ n) ->
-    --   (Acc <Program p)
-    -- <Program-wf-22 p n eq = acc helper
-    --   where 
-    --   helper : {y : Program} → <Program y p → Acc <Program y
-    --   helper (<Program< lt) = <Program-wf-2 p _ refl lt
-    --   helper (<Program= eq lt) = {!   !}
-
-    -- <Program-wf-3' : 
-    --   (p : Program) -> 
-    --   (n : ℕ) -> 
-    --   (surface-news-low (ExpLowOfProgram p) ≡ n) ->
-    --   ∀ {p'} ->
-    --   (surface-news-low (ExpLowOfProgram p') <
-    --   surface-news-low (ExpLowOfProgram p)) -> 
-    --   (Acc <Program p')
-    -- <Program-wf-3' = {!   !}
-    
-    -- <Program-wf-3 : 
-    --   (p : Program) -> 
-    --   (n : ℕ) -> 
-    --   (surface-news-low (ExpLowOfProgram p) ≡ n) ->
-    --   (Acc <Program p)
-    -- <Program-wf-3 p n eq = acc {! <Program-wf-3' p n eq  !}
-
   <Program-wf'' : 
     (p : Program) -> 
+    (n : ℕ) -> 
+    (n ≡ surface-news-low (ExpLowOfProgram p)) ->
+    Acc (_<_) n ->
     (s : Skeleton) ->
     (s ≡ SkelProgram p) ->
     Acc (<Low s) (ExpLowOfProgram p) ->
     ∀ {p'} ->
     (<Program p' p) -> 
     (Acc <Program p') 
-  <Program-wf'' p s eq ac (<Program< lt) = {!   !} --<Program-wf-2 p _ refl lt
-  <Program-wf'' p s eq (acc rs) {p'} (<Program= _ lt _) = acc (<Program-wf'' p' s eq' (rs lt'))
+  <Program-wf'' p n eq1 (acc rs) s eq2 ac {p'} (<Program< lt) = acc (<Program-wf'' p' _ refl (rs lt') _ refl (<Low-wf _ _))
+    where 
+    lt' : surface-news-low (ExpLowOfProgram p') < n
+    lt' rewrite eq1 = lt
+  <Program-wf'' p n eq1 ac1 s eq2 (acc rs) {p'} (<Program= eq3 lt) = acc (<Program-wf'' p' n eq1' ac1 s eq2' (rs lt'))
     where 
     lt' : <Low s (ExpLowOfProgram p') (ExpLowOfProgram p)
-    lt' rewrite eq rewrite sym (<Low-skel lt) = lt
-    eq' : s ≡ SkelLow (ExpLowOfProgram p') 
-    eq' rewrite eq = sym (<Low-skel lt)
+    lt' rewrite eq2 rewrite sym (<Low-skel lt) = lt
+    eq1' : n ≡ surface-news-low (ExpLowOfProgram p') 
+    eq1' rewrite eq1 rewrite eq3 = refl
+    eq2' : s ≡ SkelLow (ExpLowOfProgram p') 
+    eq2' rewrite eq2 = sym (<Low-skel lt)
 
   <Program-wf : WellFounded <Program 
-  <Program-wf p = acc (<Program-wf'' p _ refl (<Low-wf _ _))
+  <Program-wf p = acc (<Program-wf'' p _ refl (<-wellFounded _) _ refl (<Low-wf _ _))
 
   acc-translate : ∀ {p} ->
     Acc <Program p ->
     Acc _↤P_ p
   acc-translate (acc rs) = acc λ {p'} -> λ lt -> acc-translate (rs (StepDecrease lt))
 
-  -- ↤P-wf' :
-  --   (p : Program) -> 
-  --   ∀ {p'} -> 
-  --   p' ↤P p -> 
-  --   (Acc _↤P_ p') 
-  -- ↤P-wf' p step = acc-translate (<Program-wf _)
+  ↤P-wf' :
+    (p : Program) -> 
+    ∀ {p'} -> 
+    p' ↤P p -> 
+    (Acc _↤P_ p') 
+  ↤P-wf' p step = acc-translate (<Program-wf _)
 
-  -- ↤P-wf : WellFounded _↤P_
-  -- ↤P-wf p = acc (↤P-wf' p)
+  ↤P-wf : WellFounded _↤P_
+  ↤P-wf p = acc (↤P-wf' p)
 
   -- data _P↦*_ : Program -> Program -> Set where 
   --   P↦0 : ∀ {p} ->
@@ -805,4 +763,4 @@ module Core.Termination where
   --   (WellTypedProgram p) ->
   --   ∃[ p' ] (p P↦* p') × (SettledProgram p')
   -- TerminationProgram wt = TerminationProgramRec (↤P-wf _) wt
-        
+         

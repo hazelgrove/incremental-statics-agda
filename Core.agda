@@ -18,3 +18,5 @@ module Core where
   import Core.ActionPreservation
 
   import Core.Progress
+  import Core.SettledDec
+  import Core.Termination
