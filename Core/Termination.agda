@@ -19,10 +19,6 @@ open import Core.Lemmas-Preservation
 open import Core.VarsSynthesize
 open import Core.Marking
 open import Core.Update
-open import Core.Settled
-open import Core.SettledDec
-open import Core.Progress
-open import Core.UpdatePreservation
 
 module Core.Termination where
 
