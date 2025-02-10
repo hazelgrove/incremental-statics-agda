@@ -120,7 +120,7 @@ module Core.Validity where
   validity : ∀ {p} ->
     WellTypedProgram p ->
     SettledProgram p ->
-    ∃[ e ] ∃[ t ] (p ≡ Root (e ⇒ (■ t , Old)) Old) × ((EraseProgram p) ~> p ⇒ t)
+    ((EraseProgram p) ~> p)
   validity {p = Root e n} (WTProg ana) (SettledRoot settled) with validity-low ana settled BarrenCtxEmpty EmptyAllOld 
-  ... | ValidityLowSyn syn = _ , _ , refl , MarkProgram syn
+  ... | ValidityLowSyn syn = MarkProgram syn
  

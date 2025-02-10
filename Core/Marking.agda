@@ -103,7 +103,7 @@ mutual
       t-asc ~ t-in-ana , m-asc ->
       Γ ⊢ (BareEFun x t-asc b-body) ~> (((EFun x (t-asc , Old) (m-ana) (m-asc) e-body) ⇒ (□ , Old)) [ ✔ ]⇐ ((■ t-ana , Old))) ⇐ t-ana
   
-data _~>_⇒_ : BareProgram -> Program -> Type -> Set where 
+data _~>_ : BareProgram -> Program -> Set where 
   MarkProgram : ∀ {b e t} ->
     ∅ ⊢ b ~> e ⇒ t -> 
-    (BareRoot b) ~> (Root e Old) ⇒ t 
+    (BareRoot b) ~> (Root e Old) 

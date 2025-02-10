@@ -27,28 +27,41 @@ module Core.Main where
   --   ConvergeDone : ∀ {S e} ->
   --     (e Up̸↦) -> (SetEmpty S) -> (Converge e S e)
   
-  data _,_AS↦_ : (List Action) -> Program -> Program -> Set where 
+  data _,_AS↦*_ : (List Action) -> Program -> Program -> Set where 
     ASStepAct : ∀{α αs p p' p''} ->
       α , p AP↦ p' -> 
-      αs , p' AS↦ p'' ->
-      (α ∷ αs) , p AS↦ p'' 
+      αs , p' AS↦* p'' ->
+      (α ∷ αs) , p AS↦* p'' 
     ASStepUpdate : ∀{αs p p' p''} ->
       p P↦ p' -> 
-      αs , p' AS↦ p'' ->
-      αs , p AS↦ p'' 
+      αs , p' AS↦* p'' ->
+      αs , p AS↦* p'' 
     ASStepDone : ∀{αs p} ->
       ¬ (∃[ p' ] p P↦ p') -> 
-      αs , p AS↦ p
+      αs , p AS↦* p
 
 
-  -- main-theorem-valid : ∀ {e1 e2 b1 b2 S} ->
-  --   αs , p AS↦ p' ->
-  --   ∃[ τ ] ∅ ⊢ b2 ~> e2 ⇒ τ
-  -- main-theorem-valid = {!   !}
+  main-theorem-valid : ∀ {αs p p'} ->
+    αs , p AS↦* p' ->
+    (EraseProgram p') ~> p'
+  main-theorem-valid = {!   !}
 
-  -- main-theorem-convergent : ∀ {e e1 e2 S} ->
-  --   Converge e S e1 ->
-  --   Converge e S e2 ->
-  --   e1 ≡ e2
-  -- main-theorem-convergent = {!   !}
+  main-theorem-convergent : ∀ {αs p p' p''} ->
+    αs , p AS↦* p' ->
+    αs , p AS↦* p'' ->
+    p' ≡ p''
+  main-theorem-convergent = {!   !}
+
+  main-theorem-total : 
+    (αs : List Action) -> 
+    (p : Program) ->
+    ∃[ p' ] αs , p AS↦* p'
+  main-theorem-total = {!   !}
+
+  main-theorem-termination : 
+    (f : ℕ -> Program) ->
+    ((n : ℕ) -> (f n) P↦ (f (suc n))) ->
+    ⊥
+  main-theorem-termination = {!   !}
+
     
