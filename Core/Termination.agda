@@ -645,9 +645,7 @@ module Core.Termination where
     -- <Mid-wf e = acc (<Mid-wf' e)
 
     <Low-wf-old' : 
-      (b : BareExp) -> 
       (e : ExpUp) -> 
-      (BarrenExpUp e b) ->
       ∀ {m t} -> 
       ∀ {e'} ->
       (<Low e' (e [ m ]⇐ (t , Old))) -> 
@@ -655,17 +653,13 @@ module Core.Termination where
     <Low-wf-old' e (<Lower= =NewOld lt) = translate-acc-low-old (<Up-wf' _ lt)
     
     <Low-wf-old : 
-      (b : BareExp) -> 
       (e : ExpUp) -> 
-      (BarrenExpUp e b) ->
       ∀ {m t} -> 
       (Acc <Low (e [ m ]⇐ (t , Old))) 
     <Low-wf-old e = acc (<Low-wf-old' e)
 
     <Low-wf' : 
-      (b : BareExp) -> 
       (e : ExpLow) -> 
-      (BarrenExpLow e b) ->
       ∀ {e'} ->
       (<Low e' e) -> 
       (Acc <Low e') 
