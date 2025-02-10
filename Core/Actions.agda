@@ -58,7 +58,7 @@ module Core.Actions where
   data _,_AB↦_ : LocalizedAction -> BareExp -> BareExp -> Set where
     ABareDone : ∀ {α e e'} ->
       α , e αB↦ e' ->
-      (α , []) , e AB↦ e
+      (α , []) , e AB↦ e'
     ABareAsc : ∀ {α l e e' a1} ->
       (α , l) , e AB↦ e' ->
       (α , One ∷ l) , (BareEAsc a1 e) AB↦ (BareEAsc a1 e')

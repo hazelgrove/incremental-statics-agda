@@ -4,9 +4,9 @@ module Core where
   import Core.Environment
 
   import Core.Marking
-  import Core.MarkingUnicity
   import Core.WellTyped
   import Core.Settled
+  
   import Core.Validity
   
   import Core.VarsSynthesize
@@ -21,3 +21,10 @@ module Core where
   import Core.Progress
   import Core.SettledDec
   import Core.Termination
+
+  import Core.MarkingUnicity
+  import Core.ActionUnicity
+  import Core.ActionErasure
+  import Core.UpdateErasure
+
+  import Core.Main

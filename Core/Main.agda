@@ -21,32 +21,53 @@ open import Core.Progress
 open import Core.Marking
 open import Core.Termination
 
+open import Core.MarkingUnicity
+open import Core.ActionUnicity
+open import Core.ActionErasure
+open import Core.UpdateErasure
+
 module Core.Main where
 
+  data _,_AB↦*_ : (List LocalizedAction) -> BareExp -> BareExp -> Set where 
+    AB*StepAct : ∀{A As e e' e''} ->
+      A , e AB↦ e' -> 
+      As , e' AB↦* e'' ->
+      (A ∷ As) , e AB↦* e'' 
+    AB*StepDone : ∀{e} ->
+      [] , e AB↦* e
+
   data _,_AP↦*_ : (List LocalizedAction) -> Program -> Program -> Set where 
-    AP*StepAct : ∀{α αs p p' p''} ->
-      α , p AP↦ p' -> 
-      αs , p' AP↦* p'' ->
-      (α ∷ αs) , p AP↦* p'' 
-    AP*StepUpdate : ∀{αs p p' p''} ->
+    AP*StepAct : ∀{A As p p' p''} ->
+      A , p AP↦ p' -> 
+      As , p' AP↦* p'' ->
+      (A ∷ As) , p AP↦* p'' 
+    AP*StepUpdate : ∀{As p p' p''} ->
       p P↦ p' -> 
-      αs , p' AP↦* p'' ->
-      αs , p AP↦* p'' 
+      As , p' AP↦* p'' ->
+      As , p AP↦* p'' 
     AP*StepDone : ∀{p} ->
       ¬ (∃[ p' ] p P↦ p') -> 
       [] , p AP↦* p
 
-  data _,_AB↦*_ : (List LocalizedAction) -> BareExp -> BareExp -> Set where 
-    AB*StepAct : ∀{α αs e e' e''} ->
-      α , e AB↦ e' -> 
-      αs , e' AB↦* e'' ->
-      (α ∷ αs) , e AB↦* e'' 
-    AB*StepDone : ∀{e} ->
-      [] , e AB↦* e
+  AB↦*-unicity : ∀ {As e e' e''} ->
+    As , e AB↦* e' ->
+    As , e AB↦* e'' ->
+    e' ≡ e''
+  AB↦*-unicity AB*StepDone AB*StepDone = refl
+  AB↦*-unicity (AB*StepAct step1 steps1) (AB*StepAct step2 steps2) 
+    rewrite AB↦-unicity step1 step2 
+    rewrite AB↦*-unicity steps1 steps2 = refl
 
-  main-theorem-valid : ∀ {p p' αs} ->
+  AP↦*-erase : ∀ {As p p'} ->
+    (As , p AP↦* p') ->
+    (As , (EraseProgram p) AB↦* (EraseProgram p'))
+  AP↦*-erase (AP*StepAct step steps) = AB*StepAct (AP↦-erase step) (AP↦*-erase steps)
+  AP↦*-erase (AP*StepUpdate step steps) rewrite P↦-erase step = AP↦*-erase steps
+  AP↦*-erase (AP*StepDone nostep) = AB*StepDone
+
+  main-theorem-valid : ∀ {p p' As} ->
     WellTypedProgram p ->
-    αs , p AP↦* p' ->
+    As , p AP↦* p' ->
     (EraseProgram p') ~> p'
   main-theorem-valid wt (AP*StepAct step steps) = main-theorem-valid (ActionPreservationProgram wt step) steps
   main-theorem-valid wt (AP*StepUpdate step steps) = main-theorem-valid (UpdatePreservationProgram wt step) steps
@@ -54,64 +75,26 @@ module Core.Main where
   ... | Inl step = ⊥-elim (nostep step)
   ... | Inr settled = validity wt settled
 
-  mutual 
-    action-erase-low : ∀ {Γ α e e'} ->
-      (Γ ⊢ α , e AL↦ e') ->
-      (α , (EraseLow e) AB↦ (EraseLow e'))
-    action-erase-low step = {!   !}
-
-  action-erase : ∀ {α p p'} ->
-    (α , p AP↦ p') ->
-    (α , (EraseProgram p) AB↦ (EraseProgram p'))
-  action-erase (AStepProgram x) = {!   !}
-
-  update-erase : ∀ {p p'} ->
-    (p P↦ p') ->
-    (EraseProgram p) ≡ (EraseProgram p')
-  update-erase step = {!   !}
-
-  
-  -- action-unicity : 
-  --   (α : Action) -> 
-  --   (p : Program) ->
-  --   ∃[ p' ] α , p AP↦ p'
-  -- actions-total α p with low-actions-total α (ExpLowOfProgram p)
-  -- ... | e' , step = {!   !}
-  
-
-  main-bare-step-unicity : ∀ {αs e e' e''} ->
-    αs , e AB↦* e' ->
-    αs , e AB↦* e'' ->
-    e' ≡ e''
-  main-bare-step-unicity = {!   !}
-
-  main-step-erase : ∀ {αs p p'} ->
-    (αs , p AP↦* p') ->
-    (αs , (EraseProgram p) AB↦* (EraseProgram p'))
-  main-step-erase (AP*StepAct step steps) = AB*StepAct (action-erase step) (main-step-erase steps)
-  main-step-erase (AP*StepUpdate step steps) rewrite update-erase step = main-step-erase steps
-  main-step-erase (AP*StepDone nostep) = AB*StepDone
-
-  main-theorem-convergent : ∀ {αs p p' p''} ->
+  main-theorem-convergent : ∀ {As p p' p''} ->
     WellTypedProgram p ->
-    αs , p AP↦* p' ->
-    αs , p AP↦* p'' ->
+    As , p AP↦* p' ->
+    As , p AP↦* p'' ->
     p' ≡ p''
-  main-theorem-convergent wt steps1 steps2 with main-step-erase steps1 | main-step-erase steps2
-  ... | steps1' | steps2' with main-bare-step-unicity steps1' steps2' | main-theorem-valid wt steps1 | main-theorem-valid wt steps2
+  main-theorem-convergent wt steps1 steps2 with AP↦*-erase steps1 | AP↦*-erase steps2
+  ... | steps1' | steps2' with AB↦*-unicity steps1' steps2' | main-theorem-valid wt steps1 | main-theorem-valid wt steps2
   ... | eq | mark1 | mark2 rewrite eq = marking-unicity mark1 mark2 
-
-  main-theorem-termination' : 
-    (p : ℕ -> Program) ->
-    (Acc _↤P_ (p 0)) ->
-    ((n : ℕ) -> (p n) P↦ (p (suc n))) ->
-    ⊥
-  main-theorem-termination' p (acc ac) steps = main-theorem-termination' (λ n -> (p (suc n))) (ac (steps 0)) λ n -> (steps (suc n))
 
   main-theorem-termination : 
     (p : ℕ -> Program) ->
     ((n : ℕ) -> (p n) P↦ (p (suc n))) ->
     ⊥
-  main-theorem-termination p = main-theorem-termination' p (↤P-wf (p 0))
-   
+  main-theorem-termination p = helper p (↤P-wf (p 0))
+    where 
+    helper : 
+      (p : ℕ -> Program) ->
+      (Acc _↤P_ (p 0)) ->
+      ((n : ℕ) -> (p n) P↦ (p (suc n))) -> ⊥
+    helper p (acc ac) steps = helper (λ n -> (p (suc n))) (ac (steps 0)) λ n -> (steps (suc n))
+
+    
     
