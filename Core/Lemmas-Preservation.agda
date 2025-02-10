@@ -13,6 +13,7 @@ open import Core.Core
 open import Core.Environment
 open import Core.WellTyped
 open import Core.VarsSynthesize
+open import Core.MarkingUnicity
 
 module Core.Lemmas-Preservation where
 
@@ -151,14 +152,7 @@ module Core.Lemmas-Preservation where
   ~N-dec (syn-d , syn-n) (ana-d , ana-n) with ~D-dec syn-d ana-d
   ... | m , consist = (m , (syn-n ⊓ ana-n)) , ~N-pair consist
 
-  ▸TArrow-unicity : ∀ {t t-in t-in' t-out t-out' m m'} ->
-    t ▸TArrow t-in , t-out , m -> 
-    t ▸TArrow t-in' , t-out' , m' -> 
-    (t-in ≡ t-in' × t-out ≡ t-out' × m ≡ m')
-  ▸TArrow-unicity MArrowBase MArrowBase = refl , refl , refl
-  ▸TArrow-unicity MArrowHole MArrowHole = refl , refl , refl
-  ▸TArrow-unicity MArrowArrow MArrowArrow = refl , refl , refl
-
+  
   ▸DTArrow-unicity : ∀ {d t-in t-in' t-out t-out' m m'} ->
     d ▸DTArrow t-in , t-out , m -> 
     d ▸DTArrow t-in' , t-out' , m' -> 
@@ -173,21 +167,6 @@ module Core.Lemmas-Preservation where
     (t-in ≡ t-in' × t-out ≡ t-out' × m ≡ m')
   ▸NTArrow-unicity (NTArrowC match1) (NTArrowC match2) with ▸DTArrow-unicity match1 match2 
   ... | refl , refl , refl = refl , refl , refl
-
-  ~-unicity : ∀ {syn ana m m'} ->
-    syn ~ ana , m -> 
-    syn ~ ana , m' ->
-    m ≡ m'
-  ~-unicity ConsistBase ConsistBase = refl
-  ~-unicity ConsistHoleL ConsistHoleL = refl
-  ~-unicity ConsistHoleL ConsistHoleR = refl
-  ~-unicity ConsistHoleR ConsistHoleL = refl
-  ~-unicity ConsistHoleR ConsistHoleR = refl
-  ~-unicity InconsistBaseArr InconsistBaseArr = refl
-  ~-unicity InconsistArrBase InconsistArrBase = refl
-  ~-unicity (ConsistArr con1 con2) (ConsistArr con3 con4) 
-    rewrite ~-unicity con1 con3 
-    rewrite ~-unicity con2 con4 = refl
 
   ~D-unicity : ∀ {syn ana m m'} ->
     syn ~D ana , m -> 
@@ -205,6 +184,7 @@ module Core.Lemmas-Preservation where
     m ≡ m'
   ~N-unicity (~N-pair consist1) (~N-pair consist2) rewrite ~D-unicity consist1 consist2 = refl
 
+
   ∈N-unicity : ∀ {x t t' Γ m m'} ->
     x , t ∈N Γ , m ->
     x , t' ∈N Γ , m' ->
@@ -214,6 +194,7 @@ module Core.Lemmas-Preservation where
   ∈N-unicity InCtxFound (InCtxSkip neq _) = ⊥-elim (neq refl)
   ∈N-unicity (InCtxSkip neq _) InCtxFound = ⊥-elim (neq refl)
   ∈N-unicity (InCtxSkip neq in-ctx) (InCtxSkip neq' in-ctx') = ∈N-unicity in-ctx in-ctx'
+
 
   beyond-▸NTArrow : ∀ {syn syn' t-in t-in' t-out t-out' m m'} ->
     =▷ syn syn' ->

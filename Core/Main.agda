@@ -23,42 +23,42 @@ open import Core.Termination
 
 module Core.Main where
 
-  data _,_AS↦*_ : (List Action) -> Program -> Program -> Set where 
-    ASStepAct : ∀{α αs p p' p''} ->
+  data _,_AP↦*_ : (List LocalizedAction) -> Program -> Program -> Set where 
+    AP*StepAct : ∀{α αs p p' p''} ->
       α , p AP↦ p' -> 
-      αs , p' AS↦* p'' ->
-      (α ∷ αs) , p AS↦* p'' 
-    ASStepUpdate : ∀{αs p p' p''} ->
+      αs , p' AP↦* p'' ->
+      (α ∷ αs) , p AP↦* p'' 
+    AP*StepUpdate : ∀{αs p p' p''} ->
       p P↦ p' -> 
-      αs , p' AS↦* p'' ->
-      αs , p AS↦* p'' 
-    ASStepDone : ∀{p} ->
+      αs , p' AP↦* p'' ->
+      αs , p AP↦* p'' 
+    AP*StepDone : ∀{p} ->
       ¬ (∃[ p' ] p P↦ p') -> 
-      [] , p AS↦* p
+      [] , p AP↦* p
 
-  data _,_ABS↦*_ : (List Action) -> BareExp -> BareExp -> Set where 
-    ABSStepAct : ∀{α αs e e' e''} ->
+  data _,_AB↦*_ : (List LocalizedAction) -> BareExp -> BareExp -> Set where 
+    AB*StepAct : ∀{α αs e e' e''} ->
       α , e AB↦ e' -> 
-      αs , e' ABS↦* e'' ->
-      (α ∷ αs) , e ABS↦* e'' 
-    ASStepDone : ∀{e} ->
-      [] , e ABS↦* e
+      αs , e' AB↦* e'' ->
+      (α ∷ αs) , e AB↦* e'' 
+    AB*StepDone : ∀{e} ->
+      [] , e AB↦* e
 
   main-theorem-valid : ∀ {p p' αs} ->
     WellTypedProgram p ->
-    αs , p AS↦* p' ->
+    αs , p AP↦* p' ->
     (EraseProgram p') ~> p'
-  main-theorem-valid wt (ASStepAct step steps) = main-theorem-valid (ActionPreservationProgram wt step) steps
-  main-theorem-valid wt (ASStepUpdate step steps) = main-theorem-valid (UpdatePreservationProgram wt step) steps
-  main-theorem-valid {p} wt (ASStepDone nostep) with ProgressProgram wt
+  main-theorem-valid wt (AP*StepAct step steps) = main-theorem-valid (ActionPreservationProgram wt step) steps
+  main-theorem-valid wt (AP*StepUpdate step steps) = main-theorem-valid (UpdatePreservationProgram wt step) steps
+  main-theorem-valid {p} wt (AP*StepDone nostep) with ProgressProgram wt
   ... | Inl step = ⊥-elim (nostep step)
   ... | Inr settled = validity wt settled
 
   mutual 
     action-erase-low : ∀ {Γ α e e'} ->
-      (Γ ⊢ α , e ALow↦ e') ->
+      (Γ ⊢ α , e AL↦ e') ->
       (α , (EraseLow e) AB↦ (EraseLow e'))
-    action-erase-low (AStepLow x x₁ x₂) = {!   !}
+    action-erase-low step = {!   !}
 
   action-erase : ∀ {α p p'} ->
     (α , p AP↦ p') ->
@@ -70,67 +70,36 @@ module Core.Main where
     (EraseProgram p) ≡ (EraseProgram p')
   update-erase step = {!   !}
 
+  
+  -- action-unicity : 
+  --   (α : Action) -> 
+  --   (p : Program) ->
+  --   ∃[ p' ] α , p AP↦ p'
+  -- actions-total α p with low-actions-total α (ExpLowOfProgram p)
+  -- ... | e' , step = {!   !}
+  
+
   main-bare-step-unicity : ∀ {αs e e' e''} ->
-    αs , e ABS↦* e' ->
-    αs , e ABS↦* e'' ->
+    αs , e AB↦* e' ->
+    αs , e AB↦* e'' ->
     e' ≡ e''
   main-bare-step-unicity = {!   !}
 
-  marking-unicity : ∀ {p p' p''} ->
-    p ~> p' ->
-    p ~> p'' ->
-    p' ≡ p''
-  marking-unicity = {!   !}
-
-  low-actions-total : ∀{Γ} ->
-    (α : Action) -> 
-    (e : ExpLow) ->
-    ∃[ e' ] Γ ⊢ α , e ALow↦ e'
-  low-actions-total = {!   !}
-
-  actions-total : 
-    (α : Action) -> 
-    (p : Program) ->
-    ∃[ p' ] α , p AP↦ p'
-  actions-total α p with low-actions-total α (ExpLowOfProgram p)
-  ... | e' , step = {!   !}
-  
-
   main-step-erase : ∀ {αs p p'} ->
-    (αs , p AS↦* p') ->
-    (αs , (EraseProgram p) ABS↦* (EraseProgram p'))
-  main-step-erase (ASStepAct step steps) = ABSStepAct (action-erase step) (main-step-erase steps)
-  main-step-erase (ASStepUpdate step steps) rewrite update-erase step = main-step-erase steps
-  main-step-erase (ASStepDone nostep) = ASStepDone
+    (αs , p AP↦* p') ->
+    (αs , (EraseProgram p) AB↦* (EraseProgram p'))
+  main-step-erase (AP*StepAct step steps) = AB*StepAct (action-erase step) (main-step-erase steps)
+  main-step-erase (AP*StepUpdate step steps) rewrite update-erase step = main-step-erase steps
+  main-step-erase (AP*StepDone nostep) = AB*StepDone
 
   main-theorem-convergent : ∀ {αs p p' p''} ->
     WellTypedProgram p ->
-    αs , p AS↦* p' ->
-    αs , p AS↦* p'' ->
+    αs , p AP↦* p' ->
+    αs , p AP↦* p'' ->
     p' ≡ p''
   main-theorem-convergent wt steps1 steps2 with main-step-erase steps1 | main-step-erase steps2
   ... | steps1' | steps2' with main-bare-step-unicity steps1' steps2' | main-theorem-valid wt steps1 | main-theorem-valid wt steps2
   ... | eq | mark1 | mark2 rewrite eq = marking-unicity mark1 mark2 
-
-  main-theorem-total-update : 
-    (p : Program) ->
-    WellTypedProgram p ->
-    Acc _↤P_ p ->
-    ∃[ p' ] [] , p AS↦* p'
-  main-theorem-total-update p wt ac with ProgressProgram wt 
-  main-theorem-total-update p wt (acc ac) | Inl (p' , step) with main-theorem-total-update p' (UpdatePreservationProgram wt step) (ac step)
-  main-theorem-total-update p wt ac | Inl (p' , step) | p'' , steps = p'' , ASStepUpdate step steps
-  main-theorem-total-update p wt ac | Inr settled = p , (ASStepDone (λ x → UnProgressProgram wt (proj₂ x) settled))
-
-  main-theorem-total : 
-    (αs : List Action) -> 
-    (p : Program) ->
-    WellTypedProgram p ->
-    ∃[ p' ] αs , p AS↦* p'
-  main-theorem-total [] p wt = main-theorem-total-update p wt (↤P-wf _)
-  main-theorem-total (α ∷ αs) p wt with actions-total α p
-  ... | p' , step with main-theorem-total αs p' (ActionPreservationProgram wt step)
-  ... | p'' , steps = p'' , (ASStepAct step steps)
 
   main-theorem-termination' : 
     (p : ℕ -> Program) ->

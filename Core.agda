@@ -4,6 +4,7 @@ module Core where
   import Core.Environment
 
   import Core.Marking
+  import Core.MarkingUnicity
   import Core.WellTyped
   import Core.Settled
   import Core.Validity

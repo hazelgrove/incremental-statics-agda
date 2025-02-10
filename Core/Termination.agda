@@ -189,13 +189,13 @@ module Core.Termination where
   vars-syn?-preserves-surface-news {BVar x} = vars-syn-preserves-surface-news
 
   StepDecreaseU : ∀ {e e'} ->
-    e U↦ e' -> 
+    e u↦ e' -> 
     <ExpUp e' e
   StepDecreaseU StepAsc = <ExpUp< (n<1+n _)
   StepDecreaseU (StepAp x) = <ExpUp= refl (<Upper (<Ap< (<Lower= =New-refl (<Upper= <NewC)) refl))
 
   StepDecreaseL : ∀ {e e'} ->
-    e L↦ e' -> 
+    e l↦ e' -> 
     <ExpLow e' e
   StepDecreaseL (StepNewAnnFun {e-body = e} {e-body' = e'} _ _ vars-syn) = <ExpLow< helper
     where 
@@ -486,7 +486,7 @@ module Core.Termination where
     fill' rewrite sym (skel-ul-comm fill1) = FillUEnvLow-<Low fill1 fill2 lt 
   
   StepDecreaseLow : ∀ {e e'} ->
-    e Low↦ e' -> 
+    e L↦ e' -> 
     <ExpLow e' e
   StepDecreaseLow (StepLow fill1 step fill2) = FillLEnvLow-<ExpLow fill2 fill1 (StepDecreaseL step)
   StepDecreaseLow (StepUp fill1 step fill2) = FillUEnvLow-<ExpLow fill2 fill1 (StepDecreaseU step)
