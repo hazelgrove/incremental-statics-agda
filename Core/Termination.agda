@@ -106,6 +106,7 @@ module Core.Termination where
         <Mid (S1 s) (EFun a1 a2 a3 a4 e1) (EFun a5 a6 a7 a8 e2)
       <Ap< : ∀ {s1 a1 a2 e1 e2 e3 e4} ->
         <Low s1 e1 e3 -> 
+        (SkelLow e2) ≡ (SkelLow e4) ->
         <Mid (S2 s1 (SkelLow e2)) (EAp e1 a1 e2) (EAp e3 a2 e4)
       <Ap=< : ∀ {s2 a1 a2 e1 e2 e3} ->
         <Low s2 e2 e3 -> 
@@ -114,6 +115,7 @@ module Core.Termination where
     data <Low : Skeleton -> ExpLow -> ExpLow -> Set where 
       <Lower : ∀ {e1 e2 a1 a2 ana1 ana2} ->
         <New ana1 ana2 ->  
+        (SkelUp e1) ≡ (SkelUp e2) ->
         <Low (SkelUp e1) (e1 [ a1 ]⇐ ana1) (e2 [ a2 ]⇐ ana2)
       <Lower= : ∀ {s e1 e2 a1 a2 ana1 ana2} ->
         =New ana1 ana2 ->  
@@ -127,6 +129,7 @@ module Core.Termination where
     <Program= : ∀ {p p'} ->
       surface-news-low (ExpLowOfProgram p) ≡ surface-news-low (ExpLowOfProgram p') -> 
       <Low (SkelProgram p) (ExpLowOfProgram p) (ExpLowOfProgram p') ->
+      <Low (SkelProgram p') (ExpLowOfProgram p) (ExpLowOfProgram p') ->
       <Program p p'
 
   data <ExpUp : ExpUp -> ExpUp -> Set where 
@@ -146,6 +149,29 @@ module Core.Termination where
       surface-news-low e ≡ surface-news-low e' -> 
       <Low (SkelLow e) e e' ->
       <ExpLow e e'
+
+  mutual 
+
+    <Up-skel : ∀{s e1 e2} -> 
+      <Up s e1 e2 -> 
+      (s ≡ (SkelUp e2))
+    <Up-skel (<Upper lt) = <Mid-skel lt
+    <Up-skel (<Upper= _) = refl
+
+    <Mid-skel : ∀{s e1 e2} -> 
+      <Mid s e1 e2 -> 
+      (s ≡ (SkelMid e2))
+    <Mid-skel (<Asc x) rewrite (<Low-skel x) = refl
+    <Mid-skel (<Fun x) rewrite (<Low-skel x) = refl
+    <Mid-skel (<Ap< x eq) rewrite (<Low-skel x) rewrite eq = refl
+    <Mid-skel (<Ap=< x) rewrite (<Low-skel x) = refl
+    
+    <Low-skel : ∀{s e1 e2} -> 
+      <Low s e1 e2 -> 
+      (s ≡ (SkelLow e2))
+    <Low-skel (<Lower _ eq) = eq
+    <Low-skel (<Lower= _ lt) = <Up-skel lt
+
   
   vars-syn-preserves-surface-news : ∀{x t m e e'} ->
     VarsSynthesize x t m e e' ->
@@ -173,7 +199,7 @@ module Core.Termination where
     e U↦ e' -> 
     <ExpUp e' e
   StepDecreaseU StepAsc = <ExpUp< (n<1+n _)
-  StepDecreaseU (StepAp x) = <ExpUp= refl (<Upper (<Ap< (<Lower= =New-refl (<Upper= <NewC))))
+  StepDecreaseU (StepAp x) = <ExpUp= refl (<Upper (<Ap< (<Lower= =New-refl (<Upper= <NewC)) refl))
 
   StepDecreaseL : ∀ {e e'} ->
     e L↦ e' -> 
@@ -183,8 +209,8 @@ module Core.Termination where
     helper : surface-news-mid e' < suc (surface-news-mid e)
     helper rewrite (vars-syn?-preserves-surface-news vars-syn) = ≤-refl
   StepDecreaseL (StepNewSynConsist x) = <ExpLow= refl (<Lower= =NewOld (<Upper= <NewC))
-  StepDecreaseL (StepNewAnaConsist x x₁) = <ExpLow= refl (<Lower <NewC)
-  StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC)
+  StepDecreaseL (StepNewAnaConsist x x₁) = <ExpLow= refl (<Lower <NewC refl)
+  StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC refl)
   StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =New-refl (<Upper (<Fun (<Lower= =NewOld (<Upper= <NewC)))))
 
   -- -- environment stuff
@@ -382,7 +408,7 @@ module Core.Termination where
       <Mid (SkelFill s (skel-lm ε)) e' e
     FillLEnvMid-<Mid (FillLEnvAsc fill1) (FillLEnvAsc fill2) lt = <Asc (FillLEnvLow-<Low fill1 fill2 lt)
     FillLEnvMid-<Mid (FillLEnvFun fill1) (FillLEnvFun fill2) lt = <Fun (FillLEnvLow-<Low fill1 fill2 lt)
-    FillLEnvMid-<Mid (FillLEnvAp1 fill1) (FillLEnvAp1 fill2) lt = <Ap< (FillLEnvLow-<Low fill1 fill2 lt)
+    FillLEnvMid-<Mid (FillLEnvAp1 fill1) (FillLEnvAp1 fill2) lt = <Ap< (FillLEnvLow-<Low fill1 fill2 lt) refl
     FillLEnvMid-<Mid (FillLEnvAp2 fill1) (FillLEnvAp2 fill2) lt = <Ap=< (FillLEnvLow-<Low fill1 fill2 lt)
 
     FillLEnvLow-<Low : ∀ {ε e e' e-in e-in' s} ->
@@ -410,7 +436,7 @@ module Core.Termination where
       <Mid (SkelFill s (skel-um ε)) e' e
     FillUEnvMid-<Mid (FillUEnvAsc fill1) (FillUEnvAsc fill2) lt = <Asc (FillUEnvLow-<Low fill1 fill2 lt)
     FillUEnvMid-<Mid (FillUEnvFun fill1) (FillUEnvFun fill2) lt = <Fun (FillUEnvLow-<Low fill1 fill2 lt)
-    FillUEnvMid-<Mid (FillUEnvAp1 fill1) (FillUEnvAp1 fill2) lt = <Ap< (FillUEnvLow-<Low fill1 fill2 lt)
+    FillUEnvMid-<Mid (FillUEnvAp1 fill1) (FillUEnvAp1 fill2) lt = <Ap< (FillUEnvLow-<Low fill1 fill2 lt) refl
     FillUEnvMid-<Mid (FillUEnvAp2 fill1) (FillUEnvAp2 fill2) lt = <Ap=< (FillUEnvLow-<Low fill1 fill2 lt)
 
     FillUEnvLow-<Low : ∀ {ε e e' e-in e-in' s} ->
@@ -475,10 +501,13 @@ module Core.Termination where
   StepDecrease : ∀ {p p'} ->
     p' ↤P p -> 
     <Program p' p 
-  StepDecrease TopStep = <Program= refl (<Lower= =New-refl (<Upper= <NewC))
-  StepDecrease (InsideStep step) with StepDecreaseLow step
+  StepDecrease TopStep = <Program= refl (<Lower= =New-refl (<Upper= <NewC)) (<Lower= =New-refl (<Upper= <NewC))
+  StepDecrease {p} {p'} (InsideStep step) with StepDecreaseLow step
   ... | <ExpLow< lt = <Program< lt
-  ... | <ExpLow= eq lt = <Program= eq lt
+  ... | <ExpLow= eq lt = <Program= eq lt lt'
+    where 
+    lt' : <Low (SkelProgram p) (ExpLowOfProgram p') (ExpLowOfProgram p)
+    lt' rewrite sym (<Low-skel lt) = lt
 
   -- well-foundedness 
   
@@ -537,7 +566,7 @@ module Core.Termination where
       ∀ {e'} ->
       (<Low s e' (e [ m ]⇐ ana)) -> 
       (Acc (<Low s) e') 
-    translate-acc-low'' s wf ac (<Lower <NewC) = translate-acc-low-old s (wf _)
+    translate-acc-low'' s wf ac (<Lower <NewC eq) = translate-acc-low-old s (wf _)
     translate-acc-low'' s wf (acc rs) (<Lower= eq lt) = translate-acc-low' s wf (rs lt)
 
     translate-acc-low' : ∀{e m ana} ->
@@ -596,7 +625,7 @@ module Core.Termination where
       ∀ {e'} ->
       (<Mid (S2 s1 s2) e' (EAp e1 a e2)) -> 
       (Acc (<Mid (S2 s1 s2)) e') 
-    translate-acc-ap'' s1 s2 wf1 wf2 (acc ac1) ac2 (<Ap< lt) = translate-acc-ap' s1 s2 wf1 wf2 (ac1 lt) (wf2 _)
+    translate-acc-ap'' s1 s2 wf1 wf2 (acc ac1) ac2 (<Ap< lt eq) = translate-acc-ap' s1 s2 wf1 wf2 (ac1 lt) (wf2 _)
     translate-acc-ap'' s1 s2 wf1 wf2 ac1 (acc ac2) (<Ap=< lt) = translate-acc-ap' s1 s2 wf1 wf2 ac1 (ac2 lt)
 
     translate-acc-ap' : ∀ {e1 e2 a} ->
@@ -656,7 +685,7 @@ module Core.Termination where
     <Mid-wf' s (EVar _ _) ()
     <Mid-wf' (S1 s) (EAsc _ e) (<Asc lt) = translate-acc-asc s (<Low-wf' s e lt)
     <Mid-wf' (S1 s) (EFun _ _ _ _ e) (<Fun lt) = translate-acc-fun s (<Low-wf' s e lt)
-    <Mid-wf' (S2 s1 s2) (EAp e1 _ e2) (<Ap< {e1 = e3} {e4} lt) with <Low-wf s2
+    <Mid-wf' (S2 s1 s2) (EAp e1 _ e2) (<Ap< {e1 = e3} {e4} lt eq) with <Low-wf s2
     ... | weird = translate-acc-ap s1 s2 (<Low-wf s1) weird
     <Mid-wf' (S2 s1 s2) (EAp e1 _ e2) (<Ap=< lt) = translate-acc-ap s1 s2 (<Low-wf s1) (<Low-wf s2)
 
@@ -720,23 +749,22 @@ module Core.Termination where
 
   <Program-wf'' : 
     (p : Program) -> 
-    Acc (<Low (SkelProgram p)) (ExpLowOfProgram p) ->
+    (s : Skeleton) ->
+    (s ≡ SkelProgram p) ->
+    Acc (<Low s) (ExpLowOfProgram p) ->
     ∀ {p'} ->
     (<Program p' p) -> 
     (Acc <Program p') 
-  <Program-wf'' p ac (<Program< lt) = {!   !} --<Program-wf-2 p _ refl lt
-  <Program-wf'' p acs (<Program= eq lt) = {!   !} --<Program-wf'' _ (rs {!   !}) {!   !}
-
-  <Program-wf' : 
-    (p : Program) -> 
-    ∀ {p'} ->
-    (<Program p' p) -> 
-    (Acc <Program p') 
-  <Program-wf' p (<Program< lt) = {!   !} --<Program-wf-2 p _ refl lt
-  <Program-wf' p (<Program= eq lt) = {!   !}
+  <Program-wf'' p s eq ac (<Program< lt) = {!   !} --<Program-wf-2 p _ refl lt
+  <Program-wf'' p s eq (acc rs) {p'} (<Program= _ lt _) = acc (<Program-wf'' p' s eq' (rs lt'))
+    where 
+    lt' : <Low s (ExpLowOfProgram p') (ExpLowOfProgram p)
+    lt' rewrite eq rewrite sym (<Low-skel lt) = lt
+    eq' : s ≡ SkelLow (ExpLowOfProgram p') 
+    eq' rewrite eq = sym (<Low-skel lt)
 
   <Program-wf : WellFounded <Program 
-  <Program-wf p = acc (<Program-wf' p)
+  <Program-wf p = acc (<Program-wf'' p _ refl (<Low-wf _ _))
 
   acc-translate : ∀ {p} ->
     Acc <Program p ->
