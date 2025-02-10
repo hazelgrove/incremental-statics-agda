@@ -44,15 +44,14 @@ module Core.Validity where
   all-old-lookup InCtxFound (ConsAllOld ctx-old) = _ , refl
   all-old-lookup (InCtxSkip neq in-ctx) (ConsAllOld ctx-old) = all-old-lookup in-ctx ctx-old
 
-  barren-subsumable : ∀ {e b} ->
+  barren-subsumable : ∀ {e} ->
     SubsumableMid e ->
-    BarrenExpMid e b ->
-    BareSubsumable b
-  barren-subsumable SubsumableConst BarrenConst = BareSubsumableConst
-  barren-subsumable SubsumableHole BarrenHole = BareSubsumableHole
-  barren-subsumable SubsumableAp (BarrenAp _ _) = BareSubsumableAp
-  barren-subsumable SubsumableVar BarrenVar = BareSubsumableVar
-  barren-subsumable SubsumableAsc (BarrenAsc _) = BareSubsumableAsc
+    BareSubsumable (EraseMid e)
+  barren-subsumable SubsumableConst = BareSubsumableConst
+  barren-subsumable SubsumableHole = BareSubsumableHole
+  barren-subsumable SubsumableAp = BareSubsumableAp
+  barren-subsumable SubsumableVar = BareSubsumableVar
+  barren-subsumable SubsumableAsc = BareSubsumableAsc
 
   ana-edge-wt : ∀ {Γ e m t} ->
     Γ ⊢ (e ⇒ (■ t , Old)) [ m ]⇐ (□ , Old) ⇐ -> 
@@ -80,51 +79,48 @@ module Core.Validity where
 
   mutual 
       
-    validity-up : ∀ {Γ Γ' e b} ->
+    validity-up : ∀ {Γ Γ' e} ->
       Γ ⊢ e ⇒ ->
       SettledUp e ->
-      BarrenExpUp e b ->
       BarrenCtx Γ Γ' ->
       CtxAllOld Γ -> 
-      ValidityUp Γ' b e
-    validity-up (SynConst (▷Pair ▶Old)) (SettledUpC SettledConst) (BarrenUp BarrenConst) bare-ctx ctx-old = ValidityUpSyn MarkConst
-    validity-up (SynHole (▷Pair ▶Old)) (SettledUpC SettledHole) (BarrenUp BarrenHole) bare-ctx ctx-old = ValidityUpSyn MarkHole
-    validity-up (SynAp (NTArrowC marrow) (▷Pair ▶Old) (▷Pair ▶Old) ▶Old syn ana) (SettledUpC (SettledAp (SettledLowC settled1) (SettledLowC settled2))) (BarrenUp (BarrenAp x₈ x₉)) bare-ctx ctx-old with validity-low syn (SettledLowC settled1) x₈ bare-ctx ctx-old | validity-low ana (SettledLowC settled2) x₉ bare-ctx ctx-old
+      ValidityUp Γ' (EraseUp e) e
+    validity-up (SynConst (▷Pair ▶Old)) (SettledUpC SettledConst) bare-ctx ctx-old = ValidityUpSyn MarkConst
+    validity-up (SynHole (▷Pair ▶Old)) (SettledUpC SettledHole) bare-ctx ctx-old = ValidityUpSyn MarkHole
+    validity-up (SynAp (NTArrowC marrow) (▷Pair ▶Old) (▷Pair ▶Old) ▶Old syn ana) (SettledUpC (SettledAp (SettledLowC settled1) (SettledLowC settled2))) bare-ctx ctx-old with validity-low syn (SettledLowC settled1) bare-ctx ctx-old | validity-low ana (SettledLowC settled2) bare-ctx ctx-old
     ... | ValidityLowSyn syn' | ValidityLowAna ana' with marrow
     ... | DTArrowSome marrow = ValidityUpSyn (MarkAp syn' marrow ana')
-    validity-up (SynVar in-ctx consist) (SettledUpC SettledVar) (BarrenUp BarrenVar) bare-ctx ctx-old with all-old-lookup in-ctx ctx-old | consist
+    validity-up (SynVar in-ctx consist) (SettledUpC SettledVar) bare-ctx ctx-old with all-old-lookup in-ctx ctx-old | consist
     ... | _ , refl | ▷Pair ▶Old = ValidityUpSyn (MarkVar (∈-of-∈N in-ctx bare-ctx))
-    validity-up (SynAsc (▷Pair ▶Old) (▷Pair ▶Old) ana) (SettledUpC (SettledAsc x₃)) (BarrenUp (BarrenAsc x₄)) bare-ctx ctx-old with validity-low ana x₃ x₄ bare-ctx ctx-old 
+    validity-up (SynAsc (▷Pair ▶Old) (▷Pair ▶Old) ana) (SettledUpC (SettledAsc x₃)) bare-ctx ctx-old with validity-low ana x₃ bare-ctx ctx-old 
     ... | ValidityLowAna ana' = ValidityUpSyn (MarkAsc ana') 
 
-    validity-low : ∀ {Γ Γ' e b} ->
+    validity-low : ∀ {Γ Γ' e} ->
       Γ ⊢ e ⇐ ->
       SettledLow e ->
-      BarrenExpLow e b ->
       BarrenCtx Γ Γ' ->
       CtxAllOld Γ -> 
-      ValidityLow Γ' b e
-    validity-low (AnaSubsume {ana-all = □ , n} x consist m-consist x₃) (SettledLowC settled) (BarrenLow bare) bare-ctx ctx-old with validity-up x₃ settled bare bare-ctx ctx-old 
+      ValidityLow Γ' (EraseLow e) e
+    validity-low (AnaSubsume {ana-all = □ , n} x consist m-consist x₃) (SettledLowC settled) bare-ctx ctx-old with validity-up x₃ settled bare-ctx ctx-old 
     ... | ValidityUpSyn syn with consist | m-consist
     ... | ~N-pair ~DVoidR | ▶Old = ValidityLowSyn syn
-    validity-low (AnaSubsume {ana-all = ■ t , n} subsumable consist m-consist syn) (SettledLowC settled) (BarrenLow (BarrenUp bare)) bare-ctx ctx-old with validity-up syn settled (BarrenUp bare) bare-ctx ctx-old 
+    validity-low (AnaSubsume {ana-all = ■ t , n} subsumable consist m-consist syn) (SettledLowC settled) bare-ctx ctx-old with validity-up syn settled bare-ctx ctx-old 
     ... | ValidityUpSyn syn' with consist | m-consist
-    ... | (~N-pair (~DSome consist)) | ▶Old = ValidityLowAna (MarkSubsume syn' (barren-subsumable subsumable bare) consist)
-    validity-low (AnaFun {ana-all = □ , n} (NTArrowC DTArrowNone) consist (▷Pair ▶Old) ▶Old c3 c4 (~N-pair consist') c5 ana) (SettledLowC (SettledUpC (SettledFun settled))) (BarrenLow (BarrenUp (BarrenFun bare))) bare-ctx ctx-old with validity-low ana settled bare (BarrenCtxCons? bare-ctx) (ConsAllOld? ctx-old)
+    ... | (~N-pair (~DSome consist)) | ▶Old = ValidityLowAna (MarkSubsume syn' (barren-subsumable subsumable) consist)
+    validity-low (AnaFun {ana-all = □ , n} (NTArrowC DTArrowNone) consist (▷Pair ▶Old) ▶Old c3 c4 (~N-pair consist') c5 ana) (SettledLowC (SettledUpC (SettledFun settled))) bare-ctx ctx-old with validity-low ana settled (BarrenCtxCons? bare-ctx) (ConsAllOld? ctx-old)
     ... | ValidityLowSyn syn with consist | c3 | c4 | c5
     ... | ■~N-pair (~N-pair ~DVoidR) | ▶Old | ▷Pair ▶Old | ▶Old with ~DVoid-right consist' 
     ... | refl = ValidityLowSyn (MarkSynFun syn)
-    validity-low (AnaFun {ana-all = ■ t , .Old} (NTArrowC (DTArrowSome marrow)) (■~N-pair (~N-pair (~DSome consist))) (▷Pair ▶Old) ▶Old ▶Old (▷Pair ▶Old) consist' c5 ana) (SettledLowC (SettledUpC (SettledFun settled))) (BarrenLow (BarrenUp (BarrenFun bare))) bare-ctx ctx-old with validity-low ana settled bare (BarrenCtxCons? bare-ctx) (ConsAllOld? ctx-old)
+    validity-low (AnaFun {ana-all = ■ t , .Old} (NTArrowC (DTArrowSome marrow)) (■~N-pair (~N-pair (~DSome consist))) (▷Pair ▶Old) ▶Old ▶Old (▷Pair ▶Old) consist' c5 ana) (SettledLowC (SettledUpC (SettledFun settled))) bare-ctx ctx-old with validity-low ana settled (BarrenCtxCons? bare-ctx) (ConsAllOld? ctx-old)
     ... | ValidityLowAna ana' with consist' | c5 
     ... | ~N-pair ~DVoidL | ▶Old = ValidityLowAna (MarkAnaFun marrow ana' consist)
 
   -- could be made even better by having the barren function be output rather than input 
 
-  validity : ∀ {p b} ->
+  validity : ∀ {p} ->
     WellTypedProgram p ->
     SettledProgram p ->
-    BarrenProgram p b ->   
-    ∃[ e ] ∃[ t ] (p ≡ Root (e ⇒ (■ t , Old)) Old) × (b ~> p ⇒ t)
-  validity {p = Root e n} (WTProg ana) (SettledRoot settled) (BarrenP bare) with validity-low ana settled bare BarrenCtxEmpty EmptyAllOld 
+    ∃[ e ] ∃[ t ] (p ≡ Root (e ⇒ (■ t , Old)) Old) × ((EraseProgram p) ~> p ⇒ t)
+  validity {p = Root e n} (WTProg ana) (SettledRoot settled) with validity-low ana settled BarrenCtxEmpty EmptyAllOld 
   ... | ValidityLowSyn syn = _ , _ , refl , MarkProgram syn
  

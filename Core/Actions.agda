@@ -27,6 +27,30 @@ module Core.Actions where
     Delete : Action 
     Unwrap : Child -> Action
 
+  data _,_AB↦_ : Action -> BareExp -> BareExp -> Set where
+    ActInsertConst : 
+      InsertConst , BareEHole AB↦ BareEConst
+    ActWrapFun : ∀ {x e} ->
+      WrapFun x , e AB↦ (BareEFun x THole e)
+    ActWrapApOne : ∀ {e} ->
+      (WrapAp One) , e AB↦ (BareEAp e BareEHole)
+    ActWrapApTwo : ∀ {e} ->
+      (WrapAp Two) , e AB↦ (BareEAp BareEHole e)
+    ActInsertVar : ∀ {x} ->
+      (InsertVar x) , BareEHole AB↦ (BareEVar x)
+    ActWrapAsc : ∀ {e} ->
+      WrapAsc , e AB↦ (BareEAsc THole e)
+    ActDelete : ∀ {e} ->
+      Delete , e AB↦ BareEHole
+    ActUnwrapFun : ∀ {x asc e} ->
+      (Unwrap One) , (BareEFun x asc e) AB↦ e
+    ActUnwrapApOne : ∀ {e e-arg} ->
+      (Unwrap One) , (BareEAp e e-arg) AB↦ e
+    ActUnwrapApTwo : ∀ {e e-fun} ->
+      (Unwrap Two) , (BareEAp e-fun e) AB↦ e
+    ActUnwrapAsc : ∀ {asc e} ->
+      (Unwrap One) , (BareEAsc asc e) AB↦ e
+
   data _⊢_,_AU↦_ : Ctx -> Action -> ExpUp -> ExpUp -> Set where 
     ActInsertConst : ∀ {Γ syn} ->
       Γ ⊢ InsertConst , (EHole ⇒ syn) AU↦ (EConst ⇒ (■ TBase , New))
