@@ -82,11 +82,18 @@ module Core.Main where
     p' ≡ p''
   marking-unicity = {!   !}
 
+  low-actions-total : ∀{Γ} ->
+    (α : Action) -> 
+    (e : ExpLow) ->
+    ∃[ e' ] Γ ⊢ α , e ALow↦ e'
+  low-actions-total = {!   !}
+
   actions-total : 
     (α : Action) -> 
     (p : Program) ->
     ∃[ p' ] α , p AP↦ p'
-  actions-total = {!   !}
+  actions-total α p with low-actions-total α (ExpLowOfProgram p)
+  ... | e' , step = {!   !}
   
 
   main-step-erase : ∀ {αs p p'} ->
