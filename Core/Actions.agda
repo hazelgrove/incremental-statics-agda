@@ -80,19 +80,10 @@ module Core.Actions where
     ActUnwrapAsc : ∀ {Γ asc e t n m ana syn} ->
       Γ ⊢ (Unwrap One) , ((EAsc asc ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) A↦ (e ⇒ (t , New))
 
-  mutual 
-    CtxOfUEnvUp : UEnvUp -> Ctx -> Ctx
-    CtxOfUEnvUp U⊙ Γ = Γ
-    CtxOfUEnvUp (UEnvUpRec ε _) Γ = CtxOfUEnvMid ε Γ 
-
-    CtxOfUEnvMid : UEnvMid -> Ctx -> Ctx
-    CtxOfUEnvMid (UEnvFun x t _ _ ε) Γ = CtxOfUEnvLow ε (x ∶ t ∷? Γ)
-    CtxOfUEnvMid (UEnvAp1 ε _ _) Γ = CtxOfUEnvLow ε Γ 
-    CtxOfUEnvMid (UEnvAp2 _ _ ε) Γ = CtxOfUEnvLow ε Γ 
-    CtxOfUEnvMid (UEnvAsc _ ε) Γ = CtxOfUEnvLow ε Γ 
-
-    CtxOfUEnvLow : UEnvLow -> Ctx -> Ctx
-    CtxOfUEnvLow (UEnvLowRec ε _ _) Γ = CtxOfUEnvUp ε Γ
+  data _⊢_,_AL↦_ : Ctx -> Action -> ExpLow -> ExpLow -> Set where 
+    ALC : ∀ {Γ α e e' m t n} ->
+        Γ ⊢ α , e  A↦ e' ->
+        Γ ⊢ α , e [ m ]⇐ (t , n) AL↦ (e' [ m ]⇐ (t , New))
 
   LocalizedAction : Set
   LocalizedAction = Action × (List Child)
@@ -100,9 +91,6 @@ module Core.Actions where
   mutual 
 
     data _⊢_,_AUp↦_ : (Γ : Ctx) -> (α : LocalizedAction) -> (e : ExpUp) -> (e' : ExpUp) -> Set where
-      AUpDone : ∀ {Γ α e e'} ->
-        Γ ⊢ α , e A↦ e' ->
-        Γ ⊢ (α , []) , e AUp↦ e'
       AUpMid : ∀ {Γ α e e' syn} ->
         Γ ⊢ α , e  AMid↦ e' ->
         Γ ⊢ α , (e ⇒ syn) AUp↦ (e' ⇒ syn) 
@@ -122,6 +110,9 @@ module Core.Actions where
         Γ ⊢ (α , Two ∷ l) , (EAp e1 m e2) AMid↦ (EAp e1 m e2')
     
     data _⊢_,_ALow↦_ : (Γ : Ctx) -> (α : LocalizedAction) -> (e : ExpLow) -> (e' : ExpLow) -> Set where
+      ALowDone : ∀ {Γ α e e'} ->
+        Γ ⊢ α , e AL↦ e' ->
+        Γ ⊢ (α , []) , e ALow↦ e'
       ALowUp : ∀ {Γ α e e' m ana} ->
         Γ ⊢ α , e  AUp↦ e' ->
         Γ ⊢ α , e [ m ]⇐ ana ALow↦ (e' [ m ]⇐ ana)
