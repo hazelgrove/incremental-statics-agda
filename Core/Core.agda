@@ -31,9 +31,6 @@ module Core.Core where
     BareEVar : Var -> BareExp 
     BareEAsc : Type -> BareExp -> BareExp 
 
-  data BareProgram : Set where 
-    BareRoot : BareExp -> BareProgram
-
   data BareSubsumable : BareExp -> Set where 
     BareSubsumableConst : BareSubsumable BareEConst
     BareSubsumableHole : BareSubsumable BareEHole

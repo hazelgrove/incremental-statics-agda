@@ -62,8 +62,8 @@ mutual
   EraseLow : ExpLow -> BareExp
   EraseLow (e [ m ]⇐ ana) = EraseUp e
 
-EraseProgram : Program -> BareProgram
-EraseProgram p = BareRoot (EraseLow (ExpLowOfProgram p)) 
+EraseProgram : Program -> BareExp
+EraseProgram p = EraseLow (ExpLowOfProgram p) 
 
 -- This version of marking uses side conditions (matched arrow, consistency, or 
 -- variable lookup in the context) that are total functions which also return a
@@ -103,7 +103,7 @@ mutual
       t-asc ~ t-in-ana , m-asc ->
       Γ ⊢ (BareEFun x t-asc b-body) ~> (((EFun x (t-asc , Old) (m-ana) (m-asc) e-body) ⇒ (□ , Old)) [ ✔ ]⇐ ((■ t-ana , Old))) ⇐ t-ana
   
-data _~>_ : BareProgram -> Program -> Set where 
+data _~>_ : BareExp -> Program -> Set where 
   MarkProgram : ∀ {b e t} ->
     ∅ ⊢ b ~> e ⇒ t -> 
-    (BareRoot b) ~> (Root e Old) 
+    b ~> (Root e Old) 
