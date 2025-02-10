@@ -455,28 +455,28 @@ module Core.Termination where
 
   mutual
 
-    translate-acc-low-2 : ∀{e m ana} ->
+    translate-acc-low'' : ∀{e m ana} ->
       (s : Skeleton) ->
+      WellFounded (<Up s) ->
       (Acc (<Up s) e) -> 
       ∀ {e'} ->
       (<Low s e' (e [ m ]⇐ ana)) -> 
       (Acc (<Low s) e') 
-    translate-acc-low-2 = {!   !}
+    translate-acc-low'' s wf ac (<Lower <NewC) = translate-acc-low-old s (wf _)
+    translate-acc-low'' s wf (acc rs) (<Lower= eq lt) = translate-acc-low' s wf (rs lt)
 
     translate-acc-low' : ∀{e m ana} ->
       (s : Skeleton) ->
       WellFounded (<Up s) ->
-      ∀ {e'} ->
-      (<Low s e' (e [ m ]⇐ ana)) -> 
-      (Acc (<Low s) e') 
-    translate-acc-low' s ac (<Lower <NewC) = translate-acc-low-old s {!   !}
-    translate-acc-low' s wf (<Lower= {e1 = e1} eq lt) = {!   !}
-
+      (Acc (<Up s) e) -> 
+      Acc (<Low s) (e [ m ]⇐ ana)
+    translate-acc-low' s wf ac = acc (translate-acc-low'' s wf ac)
+    
     translate-acc-low : ∀{e m ana} ->
       (s : Skeleton) ->
       WellFounded (<Up s) ->
       Acc (<Low s) (e [ m ]⇐ ana)
-    translate-acc-low s wf = acc (translate-acc-low' s wf)
+    translate-acc-low s wf = translate-acc-low' s wf (wf _)
     
   mutual 
 
@@ -539,7 +539,7 @@ module Core.Termination where
       ∀ {e'} ->
       (<Up s e' (e ⇒ (t , Old))) -> 
       (Acc (<Up s) e') 
-    <Up-wf-old' s e (<Upper lt) = {!   !} --translate-acc-up (<Mid-wf' _ lt)
+    <Up-wf-old' s e (<Upper lt) = translate-acc-up s (<Mid-wf' s _ lt)
 
     <Up-wf-old : 
       (s : Skeleton) ->
@@ -555,7 +555,10 @@ module Core.Termination where
       (<Up s e' e) -> 
       (Acc (<Up s) e') 
     <Up-wf' s (e ⇒ _) (<Upper= <NewC) = <Up-wf-old s e
-    <Up-wf' s e (<Upper lt) = {!   !} --translate-acc-up (<Mid-wf' _ lt)
+    <Up-wf' s e (<Upper lt) = translate-acc-up s (<Mid-wf s _)
+    
+    <Up-wf : (s : Skeleton) -> WellFounded (<Up s)
+    <Up-wf s e = acc (<Up-wf' s e)
 
     <Mid-wf' : 
       (s : Skeleton) ->
@@ -566,27 +569,30 @@ module Core.Termination where
     <Mid-wf' s EConst ()
     <Mid-wf' s EHole ()
     <Mid-wf' s (EVar _ _) ()
-    <Mid-wf' s (EAsc _ e) (<Asc lt) = {!   !} --translate-acc-asc (<Low-wf' e lt)
-    <Mid-wf' s (EFun _ _ _ _ e) (<Fun lt) = {!   !} --translate-acc-fun (<Low-wf' e lt)
-    <Mid-wf' s (EAp e1 _ e2) (<Ap< lt) with <Low-wf {!   !} e2
-    ... | thing = {!   !} --translate-acc-ap (<Low-wf' e1 lt) {!   !}
-    <Mid-wf' s (EAp e1 _ e2) (<Ap=< lt) = {!   !} --translate-acc-ap (<Low-wf e1) (<Low-wf' e2 lt)
+    <Mid-wf' (S1 s) (EAsc _ e) (<Asc lt) = translate-acc-asc s (<Low-wf' s e lt)
+    <Mid-wf' (S1 s) (EFun _ _ _ _ e) (<Fun lt) = translate-acc-fun s (<Low-wf' s e lt)
+    <Mid-wf' (S2 s1 s2) (EAp e1 _ e2) (<Ap< {e1 = e3} {e4} lt) with <Low-wf s2 e4
+    ... | weird = translate-acc-ap s1 s2 (<Low-wf s1 _) weird
+    <Mid-wf' (S2 s1 s2) (EAp e1 _ e2) (<Ap=< lt) = translate-acc-ap s1 s2 (<Low-wf s1 e1) (<Low-wf' s2 e2 lt)
 
-    <Low-wf-old' : 
-      (s : Skeleton) ->
-      (e : ExpUp) -> 
-      ∀ {m t} -> 
-      ∀ {e'} ->
-      (<Low s e' (e [ m ]⇐ (t , Old))) -> 
-      (Acc (<Low s) e') 
-    <Low-wf-old' s e (<Lower= =NewOld lt) = {!   !} --translate-acc-low-old (<Up-wf' _ lt)
+    <Mid-wf : (s : Skeleton) -> WellFounded (<Mid s)
+    <Mid-wf s e = acc (<Mid-wf' s e)
+
+    -- <Low-wf-old' : 
+    --   (s : Skeleton) ->
+    --   (e : ExpUp) -> 
+    --   ∀ {m t} -> 
+    --   ∀ {e'} ->
+    --   (<Low s e' (e [ m ]⇐ (t , Old))) -> 
+    --   (Acc (<Low s) e') 
+    -- <Low-wf-old' s e (<Lower= =NewOld lt) = {!   !} --translate-acc-low-old (<Up-wf' _ lt)
     
-    <Low-wf-old : 
-      (s : Skeleton) ->
-      (e : ExpUp) -> 
-      ∀ {m t} -> 
-      (Acc (<Low s) (e [ m ]⇐ (t , Old))) 
-    <Low-wf-old s e = acc (<Low-wf-old' s e)
+    -- <Low-wf-old : 
+    --   (s : Skeleton) ->
+    --   (e : ExpUp) -> 
+    --   ∀ {m t} -> 
+    --   (Acc (<Low s) (e [ m ]⇐ (t , Old))) 
+    -- <Low-wf-old s e = acc (<Low-wf-old' s e)
 
     <Low-wf' : 
       (s : Skeleton) ->
@@ -594,10 +600,10 @@ module Core.Termination where
       ∀ {e'} ->
       (<Low s e' e) -> 
       (Acc (<Low s) e') 
-    <Low-wf' s (e [ m ]⇐ (t , New)) {e' [ m' ]⇐ (t' , Old)} (<Lower <NewC) with <Low-wf-old s e 
-    ... | thing = {!   !} --<Low-wf-old e'
-    <Low-wf' s (e [ m ]⇐ (t , n)) (<Lower= =NewOld lt) = {!   !} -- translate-acc-low (<Up-wf' _ lt)
-    <Low-wf' s (e [ m ]⇐ (t , n)) (<Lower= =NewNew lt) = {!   !} --translate-acc-low (<Up-wf' _ lt)
+    <Low-wf' s e {x [ x₁ ]⇐ x₂} lt = translate-acc-low s (<Up-wf s)
+    -- <Low-wf' s (e [ m ]⇐ (t , New)) {e' [ m' ]⇐ (t' , Old)} (<Lower <NewC) = translate-acc-low s (<Up-wf s) 
+    -- <Low-wf' s (e [ m ]⇐ (t , n)) (<Lower= =NewOld lt) = translate-acc-low (<Up-wf' _ lt)
+    -- <Low-wf' s (e [ m ]⇐ (t , n)) (<Lower= =NewNew lt) = {!   !} --translate-acc-low (<Up-wf' _ lt)
 
     <Low-wf : (s : Skeleton) -> WellFounded (<Low s)
     <Low-wf s e = acc (<Low-wf' s e)
