@@ -13,45 +13,45 @@ module Core.Settled where
 
 mutual 
 
-  data SettledUp : ExpUp -> Set where 
-    SettledUpC : ∀ {e t} ->
-      SettledMid e -> 
-      SettledUp (e ⇒ (t , Old))
+  data _U̸↦ : ExpUp -> Set where 
+    SettledUp : ∀ {e t} ->
+      e M̸↦ -> 
+      (e ⇒ (t , Old)) U̸↦
 
-  data SettledMid : ExpMid -> Set where 
+  data _M̸↦ : ExpMid -> Set where 
     SettledConst :
-      SettledMid EConst
+      EConst M̸↦
     SettledHole : 
-      SettledMid (EHole)
+      EHole M̸↦
     SettledFun : ∀ {x t e m1 m2} ->
-      SettledLow e ->
-      SettledMid ((EFun x (t , Old) m1 m2 e))
+      e L̸↦ ->
+      ((EFun x (t , Old) m1 m2 e)) M̸↦
     SettledAp : ∀ {m e1 e2} ->
-      SettledLow e1 -> 
-      SettledLow e2 -> 
-      SettledMid ((EAp e1 m e2))
+      e1 L̸↦ -> 
+      e2 L̸↦ -> 
+      ((EAp e1 m e2)) M̸↦
     SettledVar : ∀ {x m} ->
-      SettledMid (EVar x m)
+      (EVar x m) M̸↦
     SettledAsc : ∀ {t e} ->
-      SettledLow e -> 
-      SettledMid (EAsc (t , Old) e)
+      e L̸↦ -> 
+      (EAsc (t , Old) e) M̸↦
 
-  data SettledLow : ExpLow -> Set where 
-    SettledLowC : ∀ {t e m} ->
-      SettledUp e ->
-      SettledLow (e [ m ]⇐ (t , Old))
+  data _L̸↦ : ExpLow -> Set where 
+    SettledLow : ∀ {t e m} ->
+      e U̸↦ ->
+      (e [ m ]⇐ (t , Old)) L̸↦
 
-data AlmostSettledUp : ExpUp -> Set where 
-  AlmostSettledUpC : ∀ {n e t} ->
-    SettledMid e -> 
-    AlmostSettledUp (e ⇒ (t , n))
+data _almost-U̸↦ : ExpUp -> Set where 
+  AlmostSettledUp : ∀ {n e t} ->
+    e M̸↦ -> 
+    (e ⇒ (t , n)) almost-U̸↦
 
-data AlmostSettledLow : ExpLow -> Set where 
-  AlmostSettledLowC : ∀ {t e m} ->
-    AlmostSettledUp e ->
-    AlmostSettledLow (e [ m ]⇐ (t , Old))
+data _almost-L̸↦ : ExpLow -> Set where 
+  AlmostSettledLow : ∀ {t e m} ->
+    e almost-U̸↦ ->
+    (e [ m ]⇐ (t , Old)) almost-L̸↦
 
-data SettledProgram : Program -> Set where 
-  SettledRoot : ∀ {p} ->
-    SettledLow (ExpLowOfProgram p) -> 
-    SettledProgram p
+data _P̸↦ : Program -> Set where 
+  SettledProgram : ∀ {p} ->
+    (ExpLowOfProgram p) L̸↦  -> 
+    p P̸↦

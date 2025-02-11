@@ -97,11 +97,6 @@ module Core.WellTyped where
   NArrow : NewType -> NewData -> NewData 
   NArrow (t , n1) (d , n2) = (DArrow t d , n1 ⊓ n2)
 
-  -- -- Note: this version is not actually bidirectional. The two judgments are for
-  -- -- upper and lower expressions. The bidirectional invariant doesn't work; at a 
-  -- -- high level this is because mode is non-local, while the invariant must be 
-  -- -- local.
-
   mutual 
 
     data _U⊢_ : (Γ : Ctx) (e : ExpUp) -> Set where 
@@ -137,17 +132,14 @@ module Core.WellTyped where
         Γ U⊢ (e-all ⇒ syn-all) -> 
         Γ L⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all)
       AnaFun : ∀ {Γ x e-body syn-all syn-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana m-all-ana} ->
-        -- analytic flow
         ana-all ▸NTArrow t-in-ana , t-out-ana , m-ana-ana -> 
         t-asc ■~N t-in-ana , m-asc-ana ->
         ▷ t-out-ana ana-body ->
         ▶ m-ana-ana m-ana -> 
         ▶ m-asc-ana m-asc -> 
-        -- synthetic flow
         ▷ (NUnless (NArrow t-asc syn-body) ana-all) syn-all -> -- <-- this step also flows from ana
         syn-all ~N ana-all , m-all-ana ->
         ▶ m-all-ana m-all -> 
-        -- recursive call
         (x ∶ t-asc ∷? Γ) L⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ->
         Γ L⊢ (((EFun x t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all)  
       
