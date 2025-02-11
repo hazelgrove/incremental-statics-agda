@@ -8,26 +8,26 @@ module Core.Marking where
 
   mutual 
 
-    EraseUp : ExpUp -> BareExp
-    EraseUp (e ⇒ syn) = EraseMid e
+    U◇ : ExpUp -> BareExp
+    U◇ (e ⇒ syn) = M◇ e
 
-    EraseMid : ExpMid -> BareExp 
-    EraseMid EConst = BareEConst
-    EraseMid EHole = BareEHole
-    EraseMid (EVar x m) = (BareEVar x)
-    EraseMid (EAsc (asc , n) e) = (BareEAsc asc (EraseLow e))
-    EraseMid (EFun x (asc , n) m1 m2 e) = (BareEFun x asc (EraseLow e))
-    EraseMid (EAp e1 m2 e2) = (BareEAp (EraseLow e1) (EraseLow e2))
+    M◇ : ExpMid -> BareExp 
+    M◇ EConst = BareEConst
+    M◇ EHole = BareEHole
+    M◇ (EVar x m) = (BareEVar x)
+    M◇ (EAsc (asc , n) e) = (BareEAsc asc (L◇ e))
+    M◇ (EFun x (asc , n) m1 m2 e) = (BareEFun x asc (L◇ e))
+    M◇ (EAp e1 m2 e2) = (BareEAp (L◇ e1) (L◇ e2))
     
-    EraseLow : ExpLow -> BareExp
-    EraseLow (e [ m ]⇐ ana) = EraseUp e
+    L◇ : ExpLow -> BareExp
+    L◇ (e [ m ]⇐ ana) = U◇ e
 
-  EraseProgram : Program -> BareExp
-  EraseProgram p = EraseLow (ExpLowOfProgram p) 
+  P◇ : Program -> BareExp
+  P◇ p = L◇ (ExpLowOfProgram p) 
 
-  EraseCtx : Ctx -> BareCtx 
-  EraseCtx ∅ = ∅
-  EraseCtx (x ∶ t , _ ∷ Γ) = x ∶ t ∷ EraseCtx Γ
+  Γ◇ : Ctx -> BareCtx 
+  Γ◇ ∅ = ∅
+  Γ◇ (x ∶ t , _ ∷ Γ) = x ∶ t ∷ Γ◇ Γ
 
   mutual 
 

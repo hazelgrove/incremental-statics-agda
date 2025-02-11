@@ -11,7 +11,7 @@ open import Prelude
 open import Core.Core
 open import Core.WellTyped
 open import Core.Environment
-open import Core.Lemmas-Preservation
+open import Core.Lemmas
 open import Core.VarsSynthesize
 open import Core.Update
 open import Core.Settled

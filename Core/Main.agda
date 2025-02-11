@@ -60,7 +60,7 @@ module Core.Main where
 
   AP↦*-erase : ∀ {As p p'} ->
     (As , p AP↦* p') ->
-    (As , (EraseProgram p) AB↦* (EraseProgram p'))
+    (As , (P◇ p) AB↦* (P◇ p'))
   AP↦*-erase (AP*StepAct step steps) = AB*StepAct (AP↦-erase step) (AP↦*-erase steps)
   AP↦*-erase (AP*StepUpdate step steps) rewrite P↦-erase step = AP↦*-erase steps
   AP↦*-erase (AP*StepDone nostep) = AB*StepDone
@@ -68,7 +68,7 @@ module Core.Main where
   main-theorem-valid : ∀ {p p' As} ->
     P⊢ p ->
     As , p AP↦* p' ->
-    (EraseProgram p') ~> p'
+    (P◇ p') ~> p'
   main-theorem-valid wt (AP*StepAct step steps) = main-theorem-valid (ActionPreservationProgram wt step) steps
   main-theorem-valid wt (AP*StepUpdate step steps) = main-theorem-valid (UpdatePreservationProgram wt step) steps
   main-theorem-valid {p} wt (AP*StepDone nostep) with ProgressProgram wt

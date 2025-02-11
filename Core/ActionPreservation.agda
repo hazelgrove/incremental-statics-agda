@@ -13,7 +13,8 @@ open import Core.Environment
 open import Core.WellTyped
 open import Core.VarsSynthesize
 open import Core.Actions
-open import Core.Lemmas-Preservation
+open import Core.Lemmas
+open import Core.VarsSynthesizePreservation
 
 module Core.ActionPreservation where
 
@@ -136,7 +137,7 @@ module Core.ActionPreservation where
     PreservationAna ana (ALowDone step) = PreservationStep ana step 
     PreservationAna (AnaSubsume subsumable consist-t consist-m syn) (ALowUp {e' = e' ⇒ syn'} (AUpMid step)) = AnaSubsume (subsumable-AM↦ subsumable step) consist-t consist-m (PreservationSyn syn (AUpMid step))
     PreservationAna (AnaFun {t-asc = t-asc} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (ALowUp (AUpMid (AMidFun {e' = (e' ⇒ _) [ _ ]⇐ _} step))) 
-      = AnaFun marrow consist (beyond-▷-contra (beyond-AL↦ step) consist-ana) consist-asc consist-body  (preservation-lambda-lemma-3 {t = t-asc} (beyond-AL↦-inner step) consist-syn) consist-all consist-m-all (PreservationAna ana step)
+      = AnaFun marrow consist (beyond-▷-contra (beyond-AL↦ step) consist-ana) consist-asc consist-body  (preservation-lambda-lemma {t = t-asc} (beyond-AL↦-inner step) consist-syn) consist-all consist-m-all (PreservationAna ana step)
 
   PreservationProgram :   
     ∀ {A p p'} ->  

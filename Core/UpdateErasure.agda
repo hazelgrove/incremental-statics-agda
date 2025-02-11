@@ -21,13 +21,13 @@ module Core.UpdateErasure where
 
   u↦-erase : ∀ {e e'} ->
     (e u↦ e') ->
-    (EraseUp e) ≡ (EraseUp e')
+    (U◇ e) ≡ (U◇ e')
   u↦-erase (StepAp _) = refl
   u↦-erase StepAsc = refl
 
   l↦-erase : ∀ {e e'} ->
     (e l↦ e') ->
-    (EraseLow e) ≡ (EraseLow e')
+    (L◇ e) ≡ (L◇ e')
   l↦-erase (StepNewSynConsist _) = refl
   l↦-erase (StepNewAnaConsist _ _) = refl
   l↦-erase (StepAnaFun _ _) = refl
@@ -40,16 +40,16 @@ module Core.UpdateErasure where
     fill-uu-erase : ∀{ε e e' e-in e-in'} ->
       ε U⟦ e-in ⟧U≡ e ->
       ε U⟦ e-in' ⟧U≡ e' ->
-      (EraseUp e-in) ≡ (EraseUp e-in') ->
-      (EraseUp e) ≡ (EraseUp e')
+      (U◇ e-in) ≡ (U◇ e-in') ->
+      (U◇ e) ≡ (U◇ e')
     fill-uu-erase FillU⊙ FillU⊙ eq = eq
     fill-uu-erase (FillUEnvUpRec fill1) (FillUEnvUpRec fill2) eq = fill-um-erase fill1 fill2 eq
 
     fill-um-erase : ∀{ε e e' e-in e-in'} ->
       ε U⟦ e-in ⟧M≡ e ->
       ε U⟦ e-in' ⟧M≡ e' ->
-      (EraseUp e-in) ≡ (EraseUp e-in') ->
-      (EraseMid e) ≡ (EraseMid e')
+      (U◇ e-in) ≡ (U◇ e-in') ->
+      (M◇ e) ≡ (M◇ e')
     fill-um-erase (FillUEnvFun fill1) (FillUEnvFun fill2) eq 
       rewrite fill-ul-erase fill1 fill2 eq = refl
     fill-um-erase (FillUEnvAp1 fill1) (FillUEnvAp1 fill2) eq 
@@ -62,8 +62,8 @@ module Core.UpdateErasure where
     fill-ul-erase : ∀{ε e e' e-in e-in'} ->
       ε U⟦ e-in ⟧L≡ e ->
       ε U⟦ e-in' ⟧L≡ e' ->
-      (EraseUp e-in) ≡ (EraseUp e-in') ->
-      (EraseLow e) ≡ (EraseLow e')
+      (U◇ e-in) ≡ (U◇ e-in') ->
+      (L◇ e) ≡ (L◇ e')
     fill-ul-erase (FillUEnvLowRec fill1) (FillUEnvLowRec fill2) eq = fill-uu-erase fill1 fill2 eq
 
   mutual 
@@ -71,15 +71,15 @@ module Core.UpdateErasure where
     fill-lu-erase : ∀{ε e e' e-in e-in'} ->
       ε L⟦ e-in ⟧U≡ e ->
       ε L⟦ e-in' ⟧U≡ e' ->
-      (EraseLow e-in) ≡ (EraseLow e-in') ->
-      (EraseUp e) ≡ (EraseUp e')
+      (L◇ e-in) ≡ (L◇ e-in') ->
+      (U◇ e) ≡ (U◇ e')
     fill-lu-erase (FillLEnvUpRec fill1) (FillLEnvUpRec fill2) eq = fill-lm-erase fill1 fill2 eq
 
     fill-lm-erase : ∀{ε e e' e-in e-in'} ->
       ε L⟦ e-in ⟧M≡ e ->
       ε L⟦ e-in' ⟧M≡ e' ->
-      (EraseLow e-in) ≡ (EraseLow e-in') ->
-      (EraseMid e) ≡ (EraseMid e')
+      (L◇ e-in) ≡ (L◇ e-in') ->
+      (M◇ e) ≡ (M◇ e')
     fill-lm-erase (FillLEnvFun fill1) (FillLEnvFun fill2) eq 
       rewrite fill-ll-erase fill1 fill2 eq = refl
     fill-lm-erase (FillLEnvAp1 fill1) (FillLEnvAp1 fill2) eq 
@@ -92,14 +92,14 @@ module Core.UpdateErasure where
     fill-ll-erase : ∀{ε e e' e-in e-in'} ->
       ε L⟦ e-in ⟧L≡ e ->
       ε L⟦ e-in' ⟧L≡ e' ->
-      (EraseLow e-in) ≡ (EraseLow e-in') ->
-      (EraseLow e) ≡ (EraseLow e')
+      (L◇ e-in) ≡ (L◇ e-in') ->
+      (L◇ e) ≡ (L◇ e')
     fill-ll-erase FillL⊙ FillL⊙ eq = eq
     fill-ll-erase (FillLEnvLowRec fill1) (FillLEnvLowRec fill2) eq = fill-lu-erase fill1 fill2 eq
 
   U↦-erase : ∀ {e e'} ->
     (e U↦ e') ->
-    (EraseUp e) ≡ (EraseUp e')
+    (U◇ e) ≡ (U◇ e')
   U↦-erase (StepUp FillU⊙ step FillU⊙) = u↦-erase step
   U↦-erase (StepUp (FillUEnvUpRec (FillUEnvFun fill1)) step (FillUEnvUpRec (FillUEnvFun fill2))) 
     rewrite fill-ul-erase fill1 fill2 (u↦-erase step) = refl
@@ -120,13 +120,13 @@ module Core.UpdateErasure where
 
   L↦-erase : ∀ {e e'} ->
     (e L↦ e') ->
-    (EraseLow e) ≡ (EraseLow e')
+    (L◇ e) ≡ (L◇ e')
   L↦-erase (StepLow FillL⊙ step FillL⊙) = l↦-erase step
   L↦-erase (StepLow (FillLEnvLowRec fill1) step (FillLEnvLowRec fill2)) = U↦-erase (StepLow fill1 step fill2)
   L↦-erase (StepUp (FillUEnvLowRec fill1) step (FillUEnvLowRec fill2)) = U↦-erase (StepUp fill1 step fill2)
 
   P↦-erase : ∀ {p p'} -> 
     (p P↦ p') ->   
-    (EraseProgram p) ≡ (EraseProgram p')
+    (P◇ p) ≡ (P◇ p')
   P↦-erase TopStep = refl      
   P↦-erase (InsideStep step) = L↦-erase step

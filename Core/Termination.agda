@@ -15,7 +15,7 @@ open import Agda.Primitive using (Level; lzero; lsuc) renaming (_⊔_ to lmax)
 open import Core.Core hiding (_⊓_)
 open import Core.WellTyped
 open import Core.Environment
-open import Core.Lemmas-Preservation
+open import Core.Lemmas
 open import Core.VarsSynthesize
 open import Core.Marking
 open import Core.Update

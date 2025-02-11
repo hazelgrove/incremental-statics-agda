@@ -10,8 +10,10 @@ module Core where
   
   import Core.Validity
   
+  import Core.Lemmas
+  
   import Core.VarsSynthesize
-  import Core.Lemmas-Preservation
+  import Core.VarsSynthesizePreservation
 
   import Core.Update
   import Core.UpdatePreservation
@@ -28,4 +30,4 @@ module Core where
   import Core.ActionErasure
   import Core.UpdateErasure
 
-  import Core.Main
+  import Core.Main 

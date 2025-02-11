@@ -19,7 +19,7 @@ module Core.ActionErasure where
 
   vars-syn-erase : ∀{x t m e e'} ->
     VarsSynthesize x t m e e' ->
-    (EraseUp e) ≡ (EraseUp e')
+    (U◇ e) ≡ (U◇ e')
   vars-syn-erase VSConst = refl
   vars-syn-erase VSHole = refl
   vars-syn-erase VSFunEq = refl
@@ -35,13 +35,13 @@ module Core.ActionErasure where
 
   vars-syn?-erase : ∀{x t m e e'} ->
     VarsSynthesize? x t m e e' ->
-    (EraseUp e) ≡ (EraseUp e')
+    (U◇ e) ≡ (U◇ e')
   vars-syn?-erase {BHole} refl = refl
   vars-syn?-erase {BVar x} vs = vars-syn-erase vs
   
   αU↦-erase : ∀ {Γ α e e'} ->
     (Γ ⊢ α , e αU↦ e') ->
-    (α , (EraseUp e) αB↦ (EraseUp e'))
+    (α , (U◇ e) αB↦ (U◇ e'))
   αU↦-erase ActInsertConst = ActInsertConst
   αU↦-erase ActWrapApOne = ActWrapApOne
   αU↦-erase ActWrapApTwo = ActWrapApTwo
@@ -58,18 +58,18 @@ module Core.ActionErasure where
 
   αL↦-erase : ∀ {Γ α e e'} ->
     (Γ ⊢ α , e αL↦ e') ->
-    (α , (EraseLow e) αB↦ (EraseLow e'))
+    (α , (L◇ e) αB↦ (L◇ e'))
   αL↦-erase (ALC x) = αU↦-erase x
 
   mutual 
     AU↦-erase : ∀ {Γ A e e'} ->
       (Γ ⊢ A , e AU↦ e') ->
-      (A , (EraseUp e) AB↦ (EraseUp e'))
+      (A , (U◇ e) AB↦ (U◇ e'))
     AU↦-erase (AUpMid step) = AM↦-erase step
 
     AM↦-erase : ∀ {Γ A e e'} ->
       (Γ ⊢ A , e AM↦ e') ->
-      (A , (EraseMid e) AB↦ (EraseMid e'))
+      (A , (M◇ e) AB↦ (M◇ e'))
     AM↦-erase (AMidAsc step) = ABareAsc (AL↦-erase step)
     AM↦-erase (AMidFun step) = ABareFun (AL↦-erase step)
     AM↦-erase (AMidApOne step) = ABareApOne (AL↦-erase step)
@@ -77,11 +77,11 @@ module Core.ActionErasure where
  
     AL↦-erase : ∀ {Γ A e e'} ->
       (Γ ⊢ A , e AL↦ e') ->
-      (A , (EraseLow e) AB↦ (EraseLow e')) 
+      (A , (L◇ e) AB↦ (L◇ e')) 
     AL↦-erase (ALowDone step) = ABareDone (αL↦-erase step)
     AL↦-erase (ALowUp step) = AU↦-erase step
 
   AP↦-erase : ∀ {A p p'} -> 
     (A , p AP↦ p') ->
-    (A , (EraseProgram p) AB↦ (EraseProgram p'))
+    (A , (P◇ p) AB↦ (P◇ p'))
   AP↦-erase (AStepProgram step) = AL↦-erase step
