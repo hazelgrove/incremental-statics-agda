@@ -86,9 +86,9 @@ module Core.UpdatePreservation where
 
   PreservationStepSyn :  
     ∀ {Γ e e'} ->
-    (Γ ⊢ e ⇒) ->
+    (Γ U⊢ e) ->
     (e u↦ e') ->   
-    (Γ ⊢ e' ⇒)
+    (Γ U⊢ e')
   PreservationStepSyn (SynConst _) ()
   PreservationStepSyn (SynHole _) ()
   PreservationStepSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (StepAp marrow') = SynAp (NTArrowC marrow') (▷Pair ▶Old) (▷Pair ▶Old) ▶Old (oldify-syn-inner syn) (small-newify-ana ana)
@@ -97,9 +97,9 @@ module Core.UpdatePreservation where
   
   PreservationStepAna :  
     ∀ {Γ e e'} ->
-    (Γ ⊢ e ⇐) ->
+    (Γ L⊢ e) ->
     (e l↦ e') ->   
-    (Γ ⊢ e' ⇐)
+    (Γ L⊢ e')
   PreservationStepAna (AnaSubsume subsumable (~N-pair consist-t) consist-m syn) (StepNewSynConsist consist) with consist-t 
   ... | consist-t rewrite ~D-unicity consist consist-t = AnaSubsume subsumable (~N-pair consist-t) ▶Old (oldify-syn syn)
   PreservationStepAna (AnaSubsume subsumable (~N-pair consist-t) consist-m syn) (StepNewAnaConsist subsumable' consist) with ~D-unicity consist consist-t 
@@ -116,9 +116,9 @@ module Core.UpdatePreservation where
 
     PreservationSyn :  
       ∀ {Γ e e'} ->
-      (Γ ⊢ e ⇒) ->
+      (Γ U⊢ e) ->
       (e U↦ e') ->   
-      (Γ ⊢ e' ⇒)
+      (Γ U⊢ e')
     PreservationSyn syn (StepUp FillU⊙ step FillU⊙) = PreservationStepSyn syn step
     PreservationSyn (SynConst _) (StepUp (FillUEnvUpRec ()) step (FillUEnvUpRec fill2))
     PreservationSyn (SynConst _) (StepLow (FillLEnvUpRec ()) _ (FillLEnvUpRec _))
@@ -144,9 +144,9 @@ module Core.UpdatePreservation where
 
     PreservationAna :  
       ∀ {Γ e e'} -> 
-      (Γ ⊢ e ⇐) ->
+      (Γ L⊢ e) ->
       (e L↦ e') ->   
-      (Γ ⊢ e' ⇐) 
+      (Γ L⊢ e') 
     PreservationAna ana (StepLow FillL⊙ step FillL⊙) = PreservationStepAna ana step
     PreservationAna (AnaSubsume {ana-all = ana-all} subsumable consist-t consist-m syn) (StepUp {e-in' = e-all' ⇒ syn-all'} (FillUEnvLowRec FillU⊙) step (FillUEnvLowRec FillU⊙)) with ~N-dec syn-all' ana-all 
     ... | m' , consist-t' = AnaSubsume (step-subsumable step subsumable) consist-t' (beyond-▶ (beyond-through-~N (beyond-u↦ step) consist-t consist-t') consist-m) (PreservationSyn syn (StepUp FillU⊙ step FillU⊙))    
@@ -160,16 +160,8 @@ module Core.UpdatePreservation where
 
   PreservationProgram :  
     ∀ {p p'} ->
-    (WellTypedProgram p) ->
+    (P⊢ p) ->
     (p P↦ p') ->   
-    (WellTypedProgram p')
+    (P⊢ p')
   PreservationProgram (WTProg ana) (InsideStep step) = WTProg (PreservationAna ana step)
   PreservationProgram (WTProg ana) TopStep = WTProg (oldify-syn-inner ana)
-
-  InitProgram : Program 
-  InitProgram = Root (EHole ⇒ (■ THole , Old)) Old
- 
-  InitWellTyped : WellTypedProgram InitProgram 
-  InitWellTyped = WTProg (AnaSubsume SubsumableHole (~N-pair ~DVoidR) ▶Old (SynHole (▷Pair ▶Old)))
-
-    

@@ -77,7 +77,7 @@ module Core.ActionPreservation where
 
   SynSubsume :  
     ∀ {Γ e t} ->
-    (Γ ⊢ (e ⇒ (t , New)) ⇒) ->
+    Γ U⊢ (e ⇒ (t , New)) ->
     Subsumable (e ⇒ (t , New))
   SynSubsume (SynConst x) = SubsumableConst
   SynSubsume (SynHole x) = SubsumableHole
@@ -87,16 +87,16 @@ module Core.ActionPreservation where
     
   WrapSubsume :  
     ∀ {Γ e t m ana} ->
-    (Γ ⊢ (e ⇒ (t , New)) ⇒) ->
-    (Γ ⊢ (e ⇒ (t , New)) [ m ]⇐ ana ⇐)
+    Γ U⊢ (e ⇒ (t , New)) ->
+    Γ L⊢ ((e ⇒ (t , New)) [ m ]⇐ ana)
   WrapSubsume {t = t} {ana = ana} syn with ~N-dec (t , New) ana
   ... | _ , ~N-pair x = AnaSubsume (SynSubsume syn) (~N-pair x) ▶New syn
 
   PreservationStep :  
     ∀ {Γ α e e'} ->
-    (Γ ⊢ e ⇐) ->
+    (Γ L⊢ e) ->
     (Γ ⊢ α , e αL↦ e') ->   
-    (Γ ⊢ e' ⇐)
+    (Γ L⊢ e')
   PreservationStep ana (ALC ActDelete) = WrapSubsume (SynHole (▷Pair ▶Old))
   PreservationStep ana (ALC ActInsertConst) = WrapSubsume (SynConst (▷Pair ▶Old))
   PreservationStep ana (ALC (ActInsertVar in-ctx)) = WrapSubsume (SynVar in-ctx (▷Pair ▶Same))
@@ -117,9 +117,9 @@ module Core.ActionPreservation where
 
     PreservationSyn :  
       ∀ {Γ A e e'} ->
-      (Γ ⊢ e ⇒) ->
+      (Γ U⊢ e) ->
       (Γ ⊢ A , e AU↦ e') ->   
-      (Γ ⊢ e' ⇒)
+      (Γ U⊢ e')
     PreservationSyn (SynAsc a1 (▷Pair a2) ana) (AUpMid (AMidAsc {e' = e' [ _ ]⇐ _} step)) with beyond-AL↦ step 
     ... | ◁▷C = SynAsc a1 (▷Pair a2) (PreservationAna ana step) 
     PreservationSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (AUpMid (AMidApOne {e1' = (e-fun' ⇒ syn-fun') [ _ ]⇐ _} step)) with ▸NTArrow-dec syn-fun' 
@@ -130,9 +130,9 @@ module Core.ActionPreservation where
 
     PreservationAna :  
       ∀ {Γ A e e'} ->
-      (Γ ⊢ e ⇐) ->
+      (Γ L⊢ e) ->
       (Γ ⊢ A , e AL↦ e') ->   
-      (Γ ⊢ e' ⇐)
+      (Γ L⊢ e')
     PreservationAna ana (ALowDone step) = PreservationStep ana step 
     PreservationAna (AnaSubsume subsumable consist-t consist-m syn) (ALowUp {e' = e' ⇒ syn'} (AUpMid step)) = AnaSubsume (subsumable-AM↦ subsumable step) consist-t consist-m (PreservationSyn syn (AUpMid step))
     PreservationAna (AnaFun {t-asc = t-asc} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (ALowUp (AUpMid (AMidFun {e' = (e' ⇒ _) [ _ ]⇐ _} step))) 
@@ -140,7 +140,7 @@ module Core.ActionPreservation where
 
   PreservationProgram :   
     ∀ {A p p'} ->  
-    (WellTypedProgram p) ->  
+    (P⊢ p) ->  
     (A , p AP↦ p') ->      
-    (WellTypedProgram p')             
+    (P⊢ p')             
   PreservationProgram (WTProg ana) (AStepProgram step) = WTProg (PreservationAna ana step)    

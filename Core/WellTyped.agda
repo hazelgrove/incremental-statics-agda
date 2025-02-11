@@ -104,38 +104,38 @@ module Core.WellTyped where
 
   mutual 
 
-    data _⊢_⇒ : (Γ : Ctx) (e : ExpUp) -> Set where 
+    data _U⊢_ : (Γ : Ctx) (e : ExpUp) -> Set where 
       SynConst : ∀ {Γ syn-all} ->
         ▷ (■ TBase , Old) syn-all ->
-        Γ ⊢ (EConst ⇒ syn-all) ⇒
+        Γ U⊢ (EConst ⇒ syn-all)
       SynHole : ∀ {Γ syn-all} ->
         ▷ (■ THole , Old) syn-all ->
-        Γ ⊢ (EHole ⇒ syn-all) ⇒
+        Γ U⊢ (EHole ⇒ syn-all)
       SynAp : ∀ {Γ e-fun e-arg syn-all syn-fun ana-arg t-in-fun t-out-fun m-all m-fun m-arg n} ->
         syn-fun ▸NTArrow t-in-fun , t-out-fun , m-fun -> 
         ▷ t-out-fun syn-all -> 
         ▷ t-in-fun ana-arg -> 
         ▶ m-fun m-all -> 
-        Γ ⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) ⇐ ->
-        Γ ⊢ (e-arg [ m-arg ]⇐ ana-arg) ⇐ ->
-        Γ ⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all) ⇒
+        Γ L⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) ->
+        Γ L⊢ (e-arg [ m-arg ]⇐ ana-arg) ->
+        Γ U⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all)
       SynVar : ∀ {Γ x syn-all t-var m-var n-syn} ->
         x , t-var ∈N Γ , m-var ->
         ▷ t-var (syn-all , n-syn) ->
-        Γ ⊢ ((EVar x m-var) ⇒ (■ syn-all , n-syn)) ⇒
+        Γ U⊢ ((EVar x m-var) ⇒ (■ syn-all , n-syn))
       SynAsc : ∀ {Γ e-body syn-all ana-body t-asc m-body n-syn n-ana} ->
         ▷ t-asc (syn-all , n-syn) -> 
         ▷ t-asc (ana-body , n-ana) -> 
-        Γ ⊢ (e-body [ m-body ]⇐ (■ ana-body , n-ana)) ⇐ ->
-        Γ ⊢ ((EAsc t-asc (e-body [ m-body ]⇐ (■ ana-body , n-ana))) ⇒ (■ syn-all , n-syn)) ⇒
+        Γ L⊢ (e-body [ m-body ]⇐ (■ ana-body , n-ana)) ->
+        Γ U⊢ ((EAsc t-asc (e-body [ m-body ]⇐ (■ ana-body , n-ana))) ⇒ (■ syn-all , n-syn))
 
-    data _⊢_⇐ : (Γ : Ctx) (e : ExpLow) -> Set where 
+    data _L⊢_ : (Γ : Ctx) (e : ExpLow) -> Set where 
       AnaSubsume : ∀ {Γ e-all syn-all ana-all m-all m-consist} ->
         SubsumableMid e-all ->
         syn-all ~N ana-all , m-consist ->
         ▶ m-consist m-all ->
-        Γ ⊢ (e-all ⇒ syn-all) ⇒ -> 
-        Γ ⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐ 
+        Γ U⊢ (e-all ⇒ syn-all) -> 
+        Γ L⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all)
       AnaFun : ∀ {Γ x e-body syn-all syn-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana m-all-ana} ->
         -- analytic flow
         ana-all ▸NTArrow t-in-ana , t-out-ana , m-ana-ana -> 
@@ -148,10 +148,10 @@ module Core.WellTyped where
         syn-all ~N ana-all , m-all-ana ->
         ▶ m-all-ana m-all -> 
         -- recursive call
-        (x ∶ t-asc ∷? Γ) ⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ⇐ ->
-        Γ ⊢ (((EFun x t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all) ⇐  
+        (x ∶ t-asc ∷? Γ) L⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ->
+        Γ L⊢ (((EFun x t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all)  
       
-  data WellTypedProgram : Program -> Set where 
+  data P⊢ : Program -> Set where 
     WTProg : ∀ {p} ->
-      ∅ ⊢ (ExpLowOfProgram p) ⇐ ->
-      WellTypedProgram p
+      ∅ L⊢ (ExpLowOfProgram p) ->
+      P⊢ p

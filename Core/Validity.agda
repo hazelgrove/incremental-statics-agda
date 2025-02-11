@@ -58,7 +58,7 @@ module Core.Validity where
   barren-subsumable SubsumableAsc = BareSubsumableAsc
 
   ana-edge-wt : ∀ {Γ e m t} ->
-    Γ ⊢ (e ⇒ (■ t , Old)) [ m ]⇐ (□ , Old) ⇐ -> 
+    Γ L⊢ ((e ⇒ (■ t , Old)) [ m ]⇐ (□ , Old)) -> 
     m ≡ ✔
   ana-edge-wt (AnaSubsume _ (~N-pair ~DVoidR) ▶Old _) = refl
   ana-edge-wt (AnaFun _ _ _ _ _ _ (~N-pair ~DVoidR) ▶Old _) = refl
@@ -84,7 +84,7 @@ module Core.Validity where
   mutual 
       
     validity-up : ∀ {Γ e} ->
-      Γ ⊢ e ⇒ ->
+      Γ U⊢ e ->
       SettledUp e ->
       CtxAllOld Γ -> 
       ValidityUp (EraseCtx Γ) (EraseUp e) e
@@ -99,7 +99,7 @@ module Core.Validity where
     ... | ValidityLowAna ana' = ValidityUpSyn (MarkAsc ana') 
 
     validity-low : ∀ {Γ e} ->
-      Γ ⊢ e ⇐ ->
+      Γ L⊢ e ->
       SettledLow e ->
       CtxAllOld Γ -> 
       ValidityLow (EraseCtx Γ) (EraseLow e) e
@@ -118,10 +118,8 @@ module Core.Validity where
     ... | ValidityLowAna ana' rewrite erase-∷? {x} {t'} {Old} {Γ} with consist' | c5 
     ... | ~N-pair ~DVoidL | ▶Old = ValidityLowAna (MarkAnaFun marrow ana' consist)
 
-  -- could be made even better by having the barren function be output rather than input 
-
   validity : ∀ {p} ->
-    WellTypedProgram p ->
+    P⊢ p ->
     SettledProgram p ->
     ((EraseProgram p) ~> p)
   validity {p = Root e n} (WTProg ana) (SettledRoot settled) with validity-low ana settled EmptyAllOld 

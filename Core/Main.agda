@@ -66,7 +66,7 @@ module Core.Main where
   AP↦*-erase (AP*StepDone nostep) = AB*StepDone
 
   main-theorem-valid : ∀ {p p' As} ->
-    WellTypedProgram p ->
+    P⊢ p ->
     As , p AP↦* p' ->
     (EraseProgram p') ~> p'
   main-theorem-valid wt (AP*StepAct step steps) = main-theorem-valid (ActionPreservationProgram wt step) steps
@@ -76,7 +76,7 @@ module Core.Main where
   ... | Inr settled = validity wt settled
 
   main-theorem-convergent : ∀ {As p p' p''} ->
-    WellTypedProgram p ->
+    P⊢ p ->
     As , p AP↦* p' ->
     As , p AP↦* p'' ->
     p' ≡ p''
@@ -95,6 +95,11 @@ module Core.Main where
       (Acc _↤P_ (p 0)) ->
       ((n : ℕ) -> (p n) P↦ (p (suc n))) -> ⊥
     helper p (acc ac) steps = helper (λ n -> (p (suc n))) (ac (steps 0)) λ n -> (steps (suc n))
-
     
+  InitProgram : Program 
+  InitProgram = Root (EHole ⇒ (■ THole , Old)) Old
+ 
+  InitWellTyped : P⊢ InitProgram 
+  InitWellTyped = WTProg (AnaSubsume SubsumableHole (~N-pair ~DVoidR) ▶Old (SynHole (▷Pair ▶Old)))
+
     

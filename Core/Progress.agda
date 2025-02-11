@@ -23,7 +23,7 @@ module Core.Progress where
     productive-syn-syn : ∀{Γ e t n} ->
       SubsumableMid e ->
       SettledMid e -> 
-      Γ ⊢ (e ⇒ (t , n)) ⇒ ->
+      Γ U⊢ (e ⇒ (t , n)) ->
       ∃[ t' ] (t ≡ ■ t') 
     productive-syn-syn SubsumableConst SettledConst (SynConst (▷Pair ▶Old)) = _ , refl
     productive-syn-syn SubsumableHole SettledHole (SynHole (▷Pair ▶Old)) = _ , refl
@@ -34,14 +34,14 @@ module Core.Progress where
 
     productive-syn-ana : ∀{Γ e t m n} ->
       SettledMid e -> 
-      Γ ⊢ (e ⇒ (t , n)) [ m ]⇐ (□ , Old) ⇐ ->
+      Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ (□ , Old)) ->
       ∃[ t' ] (t ≡ ■ t') 
     productive-syn-ana settled (AnaSubsume x x₁ x₂ x₃) = productive-syn-syn x settled x₃
     productive-syn-ana (SettledFun (SettledLowC (SettledUpC settled))) (AnaFun (NTArrowC DTArrowNone) a2 (▷Pair ▶Old) a4 a5 a6 a7 a8 ana) with productive-syn-ana settled ana | a6
     ... | t , refl | ▷Pair ▶Old = _ , refl
 
   new-ana-steps-syn-inner : ∀ {Γ e m t} ->
-    Γ ⊢ e ⇒ ->
+    Γ U⊢ e ->
     ∃[ e' ] (e [ m ]⇐ (t , New)) l↦ e' 
   new-ana-steps-syn-inner (SynConst (▷Pair x)) = _ , StepNewAnaConsist SubsumableConst (proj₂ (~D-dec _ _)) 
   new-ana-steps-syn-inner (SynHole x) = _ , StepNewAnaConsist SubsumableHole (proj₂ (~D-dec _ _)) 
@@ -50,19 +50,19 @@ module Core.Progress where
   new-ana-steps-syn-inner (SynAsc x x₁ x₂) = _ , StepNewAnaConsist SubsumableAsc (proj₂ (~D-dec _ _)) 
 
   new-ana-steps-syn : ∀ {Γ e m t} ->
-    Γ ⊢ e ⇒ ->
+    Γ U⊢ e ->
     ∃[ e' ] (e [ m ]⇐ (t , New)) L↦ e' 
   new-ana-steps-syn syn with new-ana-steps-syn-inner syn 
   ... | e' , step = e' , (StepLow FillL⊙ step FillL⊙)
 
   new-ana-steps-inner : ∀ {Γ e m t} ->
-    Γ ⊢ (e [ m ]⇐ (t , New)) ⇐ ->
+    Γ L⊢ ((e [ m ]⇐ (t , New))) ->
     ∃[ e' ] (e [ m ]⇐ (t , New)) l↦ e' 
   new-ana-steps-inner (AnaSubsume x x₁ x₂ syn) = new-ana-steps-syn-inner syn
   new-ana-steps-inner (AnaFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ ana) = _ , (StepAnaFun (proj₂ (proj₂ (proj₂ (▸DTArrow-dec _)))) (■~D-pair (proj₂ (~D-dec _ _))))
 
   new-ana-steps : ∀ {Γ e m t} ->
-    Γ ⊢ (e [ m ]⇐ (t , New)) ⇐ ->
+    Γ L⊢ (e [ m ]⇐ (t , New)) ->
     ∃[ e' ] (e [ m ]⇐ (t , New)) L↦ e' 
   new-ana-steps ana with new-ana-steps-inner ana 
   ... | e' , step = e' , (StepLow FillL⊙ step FillL⊙)
@@ -106,7 +106,7 @@ module Core.Progress where
     
     ProgressUp :  
       ∀ {Γ e} ->
-      (Γ ⊢ e ⇒) ->      
+      (Γ U⊢ e) ->      
       (∃[ e' ] (e U↦ e')) + (AlmostSettledUp e)
     ProgressUp (SynConst consist) = Inr (AlmostSettledUpC SettledConst)
     ProgressUp (SynHole consist) = Inr (AlmostSettledUpC SettledHole)
@@ -126,7 +126,7 @@ module Core.Progress where
 
     ProgressLow :  
       ∀ {Γ e} ->
-      (Γ ⊢ e ⇐) ->      
+      (Γ L⊢ e) ->      
       (∃[ e' ] (e L↦ e')) + (AlmostSettledLow e)
     ProgressLow (AnaSubsume subsumable consist m-consist syn) with ProgressUp syn 
     ProgressLow (AnaSubsume subsumable consist m-consist syn) | Inl (e' , step) = Inl (_ , StepUpLow (FillUEnvLowRec FillU⊙) step (FillUEnvLowRec FillU⊙))
@@ -155,7 +155,7 @@ module Core.Progress where
   step-preserves-program {p = Root e n} (StepLow FillL⊙ StepSynFun FillL⊙) = Root _ _ , refl
 
   ProgressProgram : ∀ {p} ->
-    WellTypedProgram p ->   
+    P⊢ p ->   
     (∃[ p' ] (p P↦ p')) + (SettledProgram p)   
   ProgressProgram (WTProg ana) with ProgressLow ana   
   ProgressProgram (WTProg ana) | Inl (e' , step) with step-preserves-program step 
@@ -166,7 +166,7 @@ module Core.Progress where
   mutual 
     
     UnProgressUp : ∀ {Γ e e'} ->
-      (Γ ⊢ e ⇒) ->  
+      (Γ U⊢ e) ->  
       (e U↦ e') -> 
       (SettledUp e) ->
       ⊥ 
@@ -190,7 +190,7 @@ module Core.Progress where
     UnProgressUp (SynAsc _ _ ana) (StepLow (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc fill2))) (SettledUpC (SettledAsc settled)) = UnProgressLow ana (StepLow fill1 step fill2) settled
 
     UnProgressLow : ∀ {Γ e e'} ->
-      (Γ ⊢ e ⇐) ->  
+      (Γ L⊢ e) ->  
       (e L↦ e') -> 
       (SettledLow e) ->
       ⊥ 
@@ -202,7 +202,7 @@ module Core.Progress where
     UnProgressLow (AnaFun _ _ _ _ _ _ _ _ ana) (StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun fill1))) step (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun fill2)))) (SettledLowC (SettledUpC (SettledFun settled))) = UnProgressLow ana (StepLow fill1 step fill2) settled
 
   UnProgressProgram : ∀ {p p'} ->  
-    WellTypedProgram p ->   
+    P⊢ p ->   
     (p P↦ p') ->   
     (SettledProgram p) ->
     ⊥       
