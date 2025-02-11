@@ -100,13 +100,13 @@ module Core.WellTyped where
   mutual 
 
     data _U⊢_ : (Γ : Ctx) (e : ExpUp) -> Set where 
-      SynConst : ∀ {Γ syn-all} ->
+      WTConst : ∀ {Γ syn-all} ->
         ▷ (■ TBase , Old) syn-all ->
         Γ U⊢ (EConst ⇒ syn-all)
-      SynHole : ∀ {Γ syn-all} ->
+      WTHole : ∀ {Γ syn-all} ->
         ▷ (■ THole , Old) syn-all ->
         Γ U⊢ (EHole ⇒ syn-all)
-      SynAp : ∀ {Γ e-fun e-arg syn-all syn-fun ana-arg t-in-fun t-out-fun m-all m-fun m-arg n} ->
+      WTAp : ∀ {Γ e-fun e-arg syn-all syn-fun ana-arg t-in-fun t-out-fun m-all m-fun m-arg n} ->
         syn-fun ▸NTArrow t-in-fun , t-out-fun , m-fun -> 
         ▷ t-out-fun syn-all -> 
         ▷ t-in-fun ana-arg -> 
@@ -114,24 +114,24 @@ module Core.WellTyped where
         Γ L⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) ->
         Γ L⊢ (e-arg [ m-arg ]⇐ ana-arg) ->
         Γ U⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all)
-      SynVar : ∀ {Γ x syn-all t-var m-var n-syn} ->
+      WTVar : ∀ {Γ x syn-all t-var m-var n-syn} ->
         x , t-var ∈N Γ , m-var ->
         ▷ t-var (syn-all , n-syn) ->
         Γ U⊢ ((EVar x m-var) ⇒ (■ syn-all , n-syn))
-      SynAsc : ∀ {Γ e-body syn-all ana-body t-asc m-body n-syn n-ana} ->
+      WTAsc : ∀ {Γ e-body syn-all ana-body t-asc m-body n-syn n-ana} ->
         ▷ t-asc (syn-all , n-syn) -> 
         ▷ t-asc (ana-body , n-ana) -> 
         Γ L⊢ (e-body [ m-body ]⇐ (■ ana-body , n-ana)) ->
         Γ U⊢ ((EAsc t-asc (e-body [ m-body ]⇐ (■ ana-body , n-ana))) ⇒ (■ syn-all , n-syn))
 
     data _L⊢_ : (Γ : Ctx) (e : ExpLow) -> Set where 
-      AnaSubsume : ∀ {Γ e-all syn-all ana-all m-all m-consist} ->
+      WTUp : ∀ {Γ e-all syn-all ana-all m-all m-consist} ->
         SubsumableMid e-all ->
         syn-all ~N ana-all , m-consist ->
         ▶ m-consist m-all ->
         Γ U⊢ (e-all ⇒ syn-all) -> 
         Γ L⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all)
-      AnaFun : ∀ {Γ x e-body syn-all syn-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana m-all-ana} ->
+      WTFun : ∀ {Γ x e-body syn-all syn-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana m-all-ana} ->
         ana-all ▸NTArrow t-in-ana , t-out-ana , m-ana-ana -> 
         t-asc ■~N t-in-ana , m-asc-ana ->
         ▷ t-out-ana ana-body ->
@@ -144,6 +144,6 @@ module Core.WellTyped where
         Γ L⊢ (((EFun x t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all)  
       
   data P⊢ : Program -> Set where 
-    WTProg : ∀ {p} ->
+    WTProgram : ∀ {p} ->
       ∅ L⊢ (ExpLowOfProgram p) ->
       P⊢ p

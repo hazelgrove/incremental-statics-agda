@@ -233,27 +233,27 @@ module Core.Lemmas where
   oldify-syn : ∀ {Γ e t n n'} ->
     Γ U⊢ (e ⇒ (t , n)) ->
     Γ U⊢ (e ⇒ (t , n'))
-  oldify-syn (SynConst (▷Pair consist)) = SynConst (▷Pair consist) 
-  oldify-syn (SynHole (▷Pair consist)) = SynHole (▷Pair consist)
-  oldify-syn (SynAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana) = SynAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana
-  oldify-syn (SynVar in-ctx (▷Pair consist)) = SynVar in-ctx (▷Pair consist)
-  oldify-syn (SynAsc (▷Pair consist-syn) consist-ana ana) = SynAsc (▷Pair consist-syn) consist-ana ana
+  oldify-syn (WTConst (▷Pair consist)) = WTConst (▷Pair consist) 
+  oldify-syn (WTHole (▷Pair consist)) = WTHole (▷Pair consist)
+  oldify-syn (WTAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana) = WTAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana
+  oldify-syn (WTVar in-ctx (▷Pair consist)) = WTVar in-ctx (▷Pair consist)
+  oldify-syn (WTAsc (▷Pair consist-syn) consist-ana ana) = WTAsc (▷Pair consist-syn) consist-ana ana
 
   oldify-syn-inner : ∀ {Γ e t m n n'} ->
     Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ (□ , n')) ->
     Γ L⊢ ((e ⇒ (t , Old)) [ ✔ ]⇐ (□ , n'))
-  oldify-syn-inner (AnaSubsume subsumable (~N-pair consist) consist-m syn) = AnaSubsume subsumable (~N-pair ~DVoidR) ▶Same (oldify-syn syn)
-  oldify-syn-inner (AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ x₅ x₆ x₇ syn)  = AnaFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ (beyond-▷-contra ◁▷C x₅) (~N-pair ~DVoidR) ▶Same syn
+  oldify-syn-inner (WTUp subsumable (~N-pair consist) consist-m syn) = WTUp subsumable (~N-pair ~DVoidR) ▶Same (oldify-syn syn)
+  oldify-syn-inner (WTFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ x₅ x₆ x₇ syn) = WTFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ (beyond-▷-contra ◁▷C x₅) (~N-pair ~DVoidR) ▶Same syn
 
   newify-ana : ∀ {Γ e n n' m m' ana t t'} ->
     Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ ana) -> 
     Γ L⊢ ((e ⇒ (t , n')) [ m' ]⇐ (t' , New))
-  newify-ana {n' = n'} {t = t} {t' = t'} (AnaSubsume {syn-all = syn-all} subsumable consist-t consist-m syn) with ~N-dec (t , n') (t' , New)
-  ... | _ , (~N-pair consist-t') = AnaSubsume subsumable (~N-pair consist-t') ▶New-max-r (oldify-syn syn)
-  newify-ana {t = t} {t' = t'} (AnaFun {syn-all = syn-all} {syn-body = syn-body , n-body} {t-asc = t-asc , n-asc} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ▸NTArrow-dec (t' , New)
+  newify-ana {n' = n'} {t = t} {t' = t'} (WTUp {syn-all = syn-all} subsumable consist-t consist-m syn) with ~N-dec (t , n') (t' , New)
+  ... | _ , (~N-pair consist-t') = WTUp subsumable (~N-pair consist-t') ▶New-max-r (oldify-syn syn)
+  newify-ana {t = t} {t' = t'} (WTFun {syn-all = syn-all} {syn-body = syn-body , n-body} {t-asc = t-asc , n-asc} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ▸NTArrow-dec (t' , New)
   ... | (t-in , New) , (t-out , New) , (m , New) , NTArrowC marrow with ~N-dec (■ t-asc , n-asc) (t-in , New) | ~N-dec (t , New) (t' , New)
   ... | m' , consist | _ , ~N-pair consist' with new-through-~N-left consist 
-  ... | _ , refl = AnaFun (NTArrowC marrow) (■~N-pair consist) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair consist') ▶New-max-r ana
+  ... | _ , refl = WTFun (NTArrowC marrow) (■~N-pair consist) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair consist') ▶New-max-r ana
 
   small-newify-ana : ∀ {Γ e m m' ana t} ->
     Γ L⊢ (e [ m ]⇐ ana) -> 

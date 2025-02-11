@@ -80,39 +80,39 @@ module Core.ActionPreservation where
     ∀ {Γ e t} ->
     Γ U⊢ (e ⇒ (t , New)) ->
     Subsumable (e ⇒ (t , New))
-  SynSubsume (SynConst x) = SubsumableConst
-  SynSubsume (SynHole x) = SubsumableHole
-  SynSubsume (SynAp x x₁ x₂ x₃ x₄ x₅) = SubsumableAp
-  SynSubsume (SynVar x x₁) = SubsumableVar
-  SynSubsume (SynAsc x x₁ x₂) = SubsumableAsc
+  SynSubsume (WTConst x) = SubsumableConst
+  SynSubsume (WTHole x) = SubsumableHole
+  SynSubsume (WTAp x x₁ x₂ x₃ x₄ x₅) = SubsumableAp
+  SynSubsume (WTVar x x₁) = SubsumableVar
+  SynSubsume (WTAsc x x₁ x₂) = SubsumableAsc
     
   WrapSubsume :  
     ∀ {Γ e t m ana} ->
     Γ U⊢ (e ⇒ (t , New)) ->
     Γ L⊢ ((e ⇒ (t , New)) [ m ]⇐ ana)
   WrapSubsume {t = t} {ana = ana} syn with ~N-dec (t , New) ana
-  ... | _ , ~N-pair x = AnaSubsume (SynSubsume syn) (~N-pair x) ▶New syn
+  ... | _ , ~N-pair x = WTUp (SynSubsume syn) (~N-pair x) ▶New syn
 
   PreservationStep :  
     ∀ {Γ α e e'} ->
     (Γ L⊢ e) ->
     (Γ ⊢ α , e αL↦ e') ->   
     (Γ L⊢ e')
-  PreservationStep ana (ALC ActDelete) = WrapSubsume (SynHole (▷Pair ▶Old))
-  PreservationStep ana (ALC ActInsertConst) = WrapSubsume (SynConst (▷Pair ▶Old))
-  PreservationStep ana (ALC (ActInsertVar in-ctx)) = WrapSubsume (SynVar in-ctx (▷Pair ▶Same))
-  PreservationStep ana (ALC ActWrapAsc) = WrapSubsume (SynAsc (▷Pair ▶New) (▷Pair ▶New) (newify-ana ana))
-  PreservationStep ana (ALC ActWrapApTwo) = WrapSubsume (SynAp (NTArrowC (DTArrowSome MArrowHole)) (▷Pair ▶Old) (▷Pair ▶Old) ▶Old (AnaSubsume SubsumableHole (~N-pair ~DVoidR) ▶Old (SynHole (▷Pair ▶Old))) (newify-ana ana))
+  PreservationStep ana (ALC ActDelete) = WrapSubsume (WTHole (▷Pair ▶Old))
+  PreservationStep ana (ALC ActInsertConst) = WrapSubsume (WTConst (▷Pair ▶Old))
+  PreservationStep ana (ALC (ActInsertVar in-ctx)) = WrapSubsume (WTVar in-ctx (▷Pair ▶Same))
+  PreservationStep ana (ALC ActWrapAsc) = WrapSubsume (WTAsc (▷Pair ▶New) (▷Pair ▶New) (newify-ana ana))
+  PreservationStep ana (ALC ActWrapApTwo) = WrapSubsume (WTAp (NTArrowC (DTArrowSome MArrowHole)) (▷Pair ▶Old) (▷Pair ▶Old) ▶Old (WTUp SubsumableHole (~N-pair ~DVoidR) ▶Old (WTHole (▷Pair ▶Old))) (newify-ana ana))
   PreservationStep ana (ALC {t = t} {n = n} (ActWrapFun {t = t'} {n = n'} vars-syn)) with ▸NTArrow-dec (t , New) | ~N-dec (t' , n') (t , New)
   ... | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist | m' , consist-syn with ~N-dec (■ THole , New) (t-in , New) | new-through-~N-left consist-syn
-  ... | _ , (~N-pair consist') | _ , refl = AnaFun (NTArrowC consist) (■~N-pair (~N-pair consist')) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ consist-syn ▶New (newify-ana (preservation-vars-ana?-alt ana vars-syn))
+  ... | _ , (~N-pair consist') | _ , refl = WTFun (NTArrowC consist) (■~N-pair (~N-pair consist')) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ consist-syn ▶New (newify-ana (preservation-vars-ana?-alt ana vars-syn))
   PreservationStep ana (ALC {t = t} (ActWrapApOne {t = t'} {n = n'})) with ~N-dec (t' , n') (t , New) | ▸NTArrow-dec (t' , New) 
-  ... | _ , (~N-pair consist) | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist' = AnaSubsume SubsumableAp (~N-pair consist) ▶New-max-r (SynAp (NTArrowC consist') (▷Pair ▶New) (▷Pair ▶New) ▶New (newify-ana ana) (AnaSubsume SubsumableHole (~N-pair ~DVoidR) ▶Old (SynHole (▷Pair ▶Old))))
+  ... | _ , (~N-pair consist) | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist' = WTUp SubsumableAp (~N-pair consist) ▶New-max-r (WTAp (NTArrowC consist') (▷Pair ▶New) (▷Pair ▶New) ▶New (newify-ana ana) (WTUp SubsumableHole (~N-pair ~DVoidR) ▶Old (WTHole (▷Pair ▶Old))))
 
-  PreservationStep (AnaSubsume subsumable consist-t consist-m (SynAsc consist-syn consist-ana ana)) (ALC ActUnwrapAsc) = newify-ana ana
-  PreservationStep (AnaSubsume subsumable consist-t consist-m (SynAp marrow consist-syn consist-ana consist-mark syn ana)) (ALC ActUnwrapApOne) = newify-ana syn
-  PreservationStep (AnaSubsume subsumable consist-t consist-m (SynAp marrow consist-syn consist-ana consist-mark syn ana)) (ALC ActUnwrapApTwo) = newify-ana ana
-  PreservationStep (AnaFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (ALC (ActUnwrapFun in-ctx vars-syn)) = newify-ana (preservation-vars-unwrap in-ctx ana vars-syn)
+  PreservationStep (WTUp subsumable consist-t consist-m (WTAsc consist-syn consist-ana ana)) (ALC ActUnwrapAsc) = newify-ana ana
+  PreservationStep (WTUp subsumable consist-t consist-m (WTAp marrow consist-syn consist-ana consist-mark syn ana)) (ALC ActUnwrapApOne) = newify-ana syn
+  PreservationStep (WTUp subsumable consist-t consist-m (WTAp marrow consist-syn consist-ana consist-mark syn ana)) (ALC ActUnwrapApTwo) = newify-ana ana
+  PreservationStep (WTFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (ALC (ActUnwrapFun in-ctx vars-syn)) = newify-ana (preservation-vars-unwrap in-ctx ana vars-syn)
 
   mutual 
 
@@ -121,13 +121,13 @@ module Core.ActionPreservation where
       (Γ U⊢ e) ->
       (Γ ⊢ A , e AU↦ e') ->   
       (Γ U⊢ e')
-    PreservationSyn (SynAsc a1 (▷Pair a2) ana) (AUpMid (AMidAsc {e' = e' [ _ ]⇐ _} step)) with beyond-AL↦ step 
-    ... | ◁▷C = SynAsc a1 (▷Pair a2) (PreservationAna ana step) 
-    PreservationSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (AUpMid (AMidApOne {e1' = (e-fun' ⇒ syn-fun') [ _ ]⇐ _} step)) with ▸NTArrow-dec syn-fun' 
+    PreservationSyn (WTAsc a1 (▷Pair a2) ana) (AUpMid (AMidAsc {e' = e' [ _ ]⇐ _} step)) with beyond-AL↦ step 
+    ... | ◁▷C = WTAsc a1 (▷Pair a2) (PreservationAna ana step) 
+    PreservationSyn (WTAp marrow consist-syn consist-ana consist-mark syn ana) (AUpMid (AMidApOne {e1' = (e-fun' ⇒ syn-fun') [ _ ]⇐ _} step)) with ▸NTArrow-dec syn-fun' 
     ... | t-in-fun' , t-out-fun' , m-fun' , marrow' with beyond-▸NTArrow (beyond-AL↦-inner step) marrow marrow' | same-mark-AL↦ step | beyond-AL↦ step
-    ... | t-in-beyond , t-out-beyond , m-beyond | refl | ◁▷C = SynAp marrow' (beyond-▷ t-out-beyond consist-syn) (beyond-▷ t-in-beyond consist-ana) (beyond-▶ m-beyond consist-mark) (PreservationAna syn step) ana
-    PreservationSyn (SynAp marrow consist-syn consist-ana consist-mark syn ana) (AUpMid (AMidApTwo {e2' = (e-arg' ⇒ syn-arg') [ _ ]⇐ _} step)) 
-      = SynAp marrow consist-syn (beyond-▷-contra (beyond-AL↦ step) consist-ana) consist-mark syn (PreservationAna ana step)
+    ... | t-in-beyond , t-out-beyond , m-beyond | refl | ◁▷C = WTAp marrow' (beyond-▷ t-out-beyond consist-syn) (beyond-▷ t-in-beyond consist-ana) (beyond-▶ m-beyond consist-mark) (PreservationAna syn step) ana
+    PreservationSyn (WTAp marrow consist-syn consist-ana consist-mark syn ana) (AUpMid (AMidApTwo {e2' = (e-arg' ⇒ syn-arg') [ _ ]⇐ _} step)) 
+      = WTAp marrow consist-syn (beyond-▷-contra (beyond-AL↦ step) consist-ana) consist-mark syn (PreservationAna ana step)
 
     PreservationAna :  
       ∀ {Γ A e e'} ->
@@ -135,13 +135,13 @@ module Core.ActionPreservation where
       (Γ ⊢ A , e AL↦ e') ->   
       (Γ L⊢ e')
     PreservationAna ana (ALowDone step) = PreservationStep ana step 
-    PreservationAna (AnaSubsume subsumable consist-t consist-m syn) (ALowUp {e' = e' ⇒ syn'} (AUpMid step)) = AnaSubsume (subsumable-AM↦ subsumable step) consist-t consist-m (PreservationSyn syn (AUpMid step))
-    PreservationAna (AnaFun {t-asc = t-asc} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (ALowUp (AUpMid (AMidFun {e' = (e' ⇒ _) [ _ ]⇐ _} step))) 
-      = AnaFun marrow consist (beyond-▷-contra (beyond-AL↦ step) consist-ana) consist-asc consist-body  (preservation-lambda-lemma {t = t-asc} (beyond-AL↦-inner step) consist-syn) consist-all consist-m-all (PreservationAna ana step)
+    PreservationAna (WTUp subsumable consist-t consist-m syn) (ALowUp {e' = e' ⇒ syn'} (AUpMid step)) = WTUp (subsumable-AM↦ subsumable step) consist-t consist-m (PreservationSyn syn (AUpMid step))
+    PreservationAna (WTFun {t-asc = t-asc} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (ALowUp (AUpMid (AMidFun {e' = (e' ⇒ _) [ _ ]⇐ _} step))) 
+      = WTFun marrow consist (beyond-▷-contra (beyond-AL↦ step) consist-ana) consist-asc consist-body  (preservation-lambda-lemma {t = t-asc} (beyond-AL↦-inner step) consist-syn) consist-all consist-m-all (PreservationAna ana step)
 
   PreservationProgram :   
     ∀ {A p p'} ->  
     (P⊢ p) ->  
     (A , p AP↦ p') ->      
     (P⊢ p')             
-  PreservationProgram (WTProg ana) (AStepProgram step) = WTProg (PreservationAna ana step)    
+  PreservationProgram (WTProgram ana) (AStepProgram step) = WTProgram (PreservationAna ana step)    

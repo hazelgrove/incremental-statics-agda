@@ -100,6 +100,6 @@ module Core.Main where
   InitProgram = Root (EHole ⇒ (■ THole , Old)) Old
  
   InitWellTyped : P⊢ InitProgram 
-  InitWellTyped = WTProg (AnaSubsume SubsumableHole (~N-pair ~DVoidR) ▶Old (SynHole (▷Pair ▶Old)))
+  InitWellTyped = WTProgram (WTUp SubsumableHole (~N-pair ~DVoidR) ▶Old (WTHole (▷Pair ▶Old)))
 
     
