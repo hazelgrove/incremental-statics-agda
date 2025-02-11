@@ -1,35 +1,24 @@
 open import Data.Nat 
 open import Data.Nat.Properties
 open import Data.Nat.Induction
-open import Data.Unit 
-open import Data.Empty 
-open import Data.List
-open import Data.Sum renaming (inj₁ to Inl ; inj₂ to Inr) hiding (map)
-open import Data.Product hiding (map)
-open import Relation.Nullary 
+open import Data.Product
+open import Relation.Binary.PropositionalEquality 
 open import Induction.WellFounded 
-open import Relation.Binary.PropositionalEquality hiding (inspect; [_])
-open import Prelude
-open import Agda.Primitive using (Level; lzero; lsuc) renaming (_⊔_ to lmax)
 
-open import Core.Core hiding (_⊓_)
-open import Core.WellTyped
+open import Prelude
+open import Core.Core
 open import Core.Environment
-open import Core.Lemmas
 open import Core.VarsSynthesize
-open import Core.Marking
 open import Core.Update
 
 module Core.Termination where
-
-  _↤P_ : Program -> Program -> Set 
-  p' ↤P p = p P↦ p'
 
   new-number : Newness -> ℕ 
   new-number Old = 0
   new-number New = 1
 
   mutual 
+    
     surface-news-up : ExpUp -> ℕ
     surface-news-up (e ⇒ _) = surface-news-mid e
 
@@ -206,8 +195,6 @@ module Core.Termination where
   StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC refl)
   StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =New-refl (<Upper (<Fun (<Lower= =NewOld (<Upper= <NewC)))))
 
-  -- environment stuff
-
   mutual 
     
     surface-news-uu : UEnvUp -> ℕ
@@ -224,6 +211,7 @@ module Core.Termination where
     surface-news-ul (UEnvLowRec ε _ _) = surface-news-uu ε
 
   mutual
+
     surface-news-lu : LEnvUp -> ℕ
     surface-news-lu (LEnvUpRec ε _) = surface-news-lm ε
 
@@ -301,7 +289,6 @@ module Core.Termination where
     FillLEnvLow-surface FillL⊙ = refl
     FillLEnvLow-surface (FillLEnvLowRec fill) = FillLEnvUp-surface fill 
 
-
   data SkelEnv : Set where 
     S⊙ : SkelEnv
     SE1 : SkelEnv -> SkelEnv
@@ -315,6 +302,7 @@ module Core.Termination where
   SkelFill s (SER s1 e) = S2 s1 (SkelFill s e)
 
   mutual 
+
     skel-lu : LEnvUp -> SkelEnv 
     skel-lu (LEnvUpRec e _) = skel-lm e
 
@@ -329,6 +317,7 @@ module Core.Termination where
     skel-ll (LEnvLowRec e _ _) = skel-lu e
 
   mutual 
+
     skel-uu : UEnvUp -> SkelEnv 
     skel-uu U⊙ = S⊙
     skel-uu (UEnvUpRec e _) = skel-um e
@@ -383,7 +372,6 @@ module Core.Termination where
       ε U⟦ e-in ⟧L≡ e ->
       SkelFill (SkelUp e-in) (skel-ul ε) ≡ SkelLow e
     skel-ul-comm (FillUEnvLowRec x) = skel-uu-comm x
-
 
   mutual 
 
@@ -499,9 +487,8 @@ module Core.Termination where
   ... | <ExpLow< lt = <Program< lt
   ... | <ExpLow= eq lt = <Program= eq lt
   
-  -- well-foundedness 
-  
   mutual 
+
     translate-acc-up-old' : ∀{e t} ->
       (s : Skeleton) ->
       Acc (<Mid s) e ->
@@ -734,29 +721,3 @@ module Core.Termination where
 
   ↤P-wf : WellFounded _↤P_
   ↤P-wf p = acc (↤P-wf' p)
-
-  -- data _P↦*_ : Program -> Program -> Set where 
-  --   P↦0 : ∀ {p} ->
-  --     p P↦* p
-  --   P↦suc : ∀ {p p' p''} ->
-  --     p P↦ p' -> 
-  --     p' P↦* p'' ->
-  --     p P↦* p''
-
-  -- TerminationProgramRec : 
-  --   {p : Program} ->
-  --   (Acc _↤P_ p) ->
-  --   (WellTypedProgram p) ->
-  --   ∃[ p' ] (p P↦* p') × (SettledProgram p')
-  -- TerminationProgramRec {p} (acc recursor) wt with settled-dec p | ProgressProgram wt 
-  -- ... | Inl settled | _ = p , P↦0 , settled
-  -- ... | Inr unsettled | Inr settled = ⊥-elim (unsettled settled)
-  -- ... | Inr unsettled | Inl (p' , step) with TerminationProgramRec {p'} (recursor step) (PreservationProgram wt step)
-  -- ... | p'' , steps , settled = p'' , P↦suc step steps , settled
- 
-  -- TerminationProgram : 
-  --   {p : Program} ->
-  --   (WellTypedProgram p) ->
-  --   ∃[ p' ] (p P↦* p') × (SettledProgram p')
-  -- TerminationProgram wt = TerminationProgramRec (↤P-wf _) wt
-         

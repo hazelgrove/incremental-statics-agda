@@ -82,6 +82,9 @@ module Core.Update where
       p P↦ p'
     TopStep : ∀ {e t n} ->
       (Root (e ⇒ (t , New)) n) P↦ (Root (e ⇒ (t , Old)) n)
+  
+  _↤P_ : Program -> Program -> Set 
+  p' ↤P p = p P↦ p'
 
   StepUpLow : ∀{ε e e' e-in e-in'} ->
     ε U⟦ e-in ⟧L≡ e ->

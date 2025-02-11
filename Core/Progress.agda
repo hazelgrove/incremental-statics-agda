@@ -1,20 +1,18 @@
-open import Data.Nat hiding (_+_)
-open import Data.Unit 
-open import Data.Empty 
-open import Data.Bool hiding (_<_; _≟_)
-open import Data.Sum renaming (_⊎_ to _+_; inj₁ to Inl ; inj₂ to Inr) hiding (map)
-open import Data.Product hiding (map)
-open import Relation.Nullary 
-open import Relation.Binary.PropositionalEquality hiding (inspect)
-open import Prelude
 
+open import Data.Empty 
+open import Data.Sum renaming (_⊎_ to _+_; inj₁ to Inl ; inj₂ to Inr) 
+open import Data.Product 
+open import Relation.Nullary 
+open import Relation.Binary.PropositionalEquality
+
+open import Prelude
 open import Core.Core
-open import Core.WellTyped
 open import Core.Environment
+open import Core.WellTyped
+open import Core.Settled
 open import Core.Lemmas
 open import Core.VarsSynthesize
 open import Core.Update
-open import Core.Settled
 
 module Core.Progress where
 
@@ -66,7 +64,6 @@ module Core.Progress where
     ∃[ e' ] (e [ m ]⇐ (t , New)) L↦ e' 
   new-ana-steps ana with new-ana-steps-inner ana 
   ... | e' , step = e' , (StepLow FillL⊙ step FillL⊙)
-
 
   _≡B?_ : (x y : Binding) -> Dec (x ≡ y) 
   BHole ≡B? BHole = yes refl

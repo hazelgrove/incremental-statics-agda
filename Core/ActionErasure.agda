@@ -1,43 +1,13 @@
-open import Data.Nat hiding (_+_)
-open import Data.Unit 
-open import Data.List 
-open import Data.Bool hiding (_<_; _≟_)
-open import Data.Sum renaming (_⊎_ to _+_; inj₁ to Inl ; inj₂ to Inr) hiding (map)
-open import Data.Product hiding (map)
-open import Relation.Nullary 
-open import Relation.Binary.PropositionalEquality hiding (inspect)
-open import Prelude
 
+open import Relation.Binary.PropositionalEquality
+
+open import Prelude
 open import Core.Core
-open import Core.Environment
-open import Core.VarsSynthesize
-open import Core.WellTyped
-open import Core.Actions
 open import Core.Marking
+open import Core.Actions
+open import Core.VarsSynthesizeErasure
 
 module Core.ActionErasure where
-
-  vars-syn-erase : ∀{x t m e e'} ->
-    VarsSynthesize x t m e e' ->
-    (U◇ e) ≡ (U◇ e')
-  vars-syn-erase VSConst = refl
-  vars-syn-erase VSHole = refl
-  vars-syn-erase VSFunEq = refl
-  vars-syn-erase VSVarEq = refl
-  vars-syn-erase (VSVarNeq x) = refl
-  vars-syn-erase (VSAsc vars-syn) 
-    rewrite vars-syn-erase vars-syn = refl
-  vars-syn-erase (VSFunNeq x vars-syn) 
-    rewrite vars-syn-erase vars-syn = refl
-  vars-syn-erase (VSAp vars-syn1 vars-syn2) 
-    rewrite vars-syn-erase vars-syn1 
-    rewrite vars-syn-erase vars-syn2 = refl
-
-  vars-syn?-erase : ∀{x t m e e'} ->
-    VarsSynthesize? x t m e e' ->
-    (U◇ e) ≡ (U◇ e')
-  vars-syn?-erase {BHole} refl = refl
-  vars-syn?-erase {BVar x} vs = vars-syn-erase vs
   
   αU↦-erase : ∀ {Γ α e e'} ->
     (Γ ⊢ α , e αU↦ e') ->

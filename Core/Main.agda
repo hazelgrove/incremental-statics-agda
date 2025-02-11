@@ -1,30 +1,28 @@
-open import Data.Nat hiding (_+_)
-open import Data.Unit 
-open import Data.Empty 
-open import Data.List 
-open import Data.Bool hiding (_<_; _≟_)
-open import Data.Sum renaming (_⊎_ to _+_; inj₁ to Inl ; inj₂ to Inr) hiding (map)
-open import Data.Product hiding (map)
-open import Induction.WellFounded 
-open import Relation.Nullary 
-open import Relation.Binary.PropositionalEquality hiding (inspect)
-open import Prelude
 
+open import Data.Empty 
+open import Data.Nat hiding (_+_)
+open import Data.List 
+open import Data.Sum renaming (_⊎_ to _+_; inj₁ to Inl ; inj₂ to Inr) hiding (map)
+open import Data.Product
+open import Relation.Nullary 
+open import Relation.Binary.PropositionalEquality 
+open import Induction.WellFounded 
+
+open import Prelude
 open import Core.Core
-open import Core.Update
+open import Core.Marking
 open import Core.WellTyped
 open import Core.Validity
+open import Core.Update
 open import Core.Actions
 open import Core.UpdatePreservation renaming (PreservationProgram to UpdatePreservationProgram)
 open import Core.ActionPreservation renaming (PreservationProgram to ActionPreservationProgram)
-open import Core.Progress
-open import Core.Marking
-open import Core.Termination
-
 open import Core.MarkingUnicity
 open import Core.ActionUnicity
-open import Core.ActionErasure
 open import Core.UpdateErasure
+open import Core.ActionErasure
+open import Core.Progress
+open import Core.Termination
 
 module Core.Main where
 
