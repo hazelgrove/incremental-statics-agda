@@ -59,26 +59,26 @@ module Core.Update where
 
   data _U↦_ : (e e' : ExpUp) -> Set where
     StepUp : ∀{ε e e' e-in e-in'} ->
-      ε U⟦ e-in ⟧Up== e ->
+      ε U⟦ e-in ⟧U≡ e ->
       e-in u↦ e-in' ->
-      ε U⟦ e-in' ⟧Up== e' ->
+      ε U⟦ e-in' ⟧U≡ e' ->
       e U↦ e'
     StepLow : ∀{ε e e' e-in e-in'} ->
-      ε L⟦ e-in ⟧Up== e ->
+      ε L⟦ e-in ⟧U≡ e ->
       e-in l↦ e-in' ->
-      ε L⟦ e-in' ⟧Up== e' ->
+      ε L⟦ e-in' ⟧U≡ e' ->
       e U↦ e'
 
   data _L↦_ : (e e' : ExpLow) -> Set where
     StepUp : ∀{ε e e' e-in e-in'} ->
-      ε U⟦ e-in ⟧Low== e ->
+      ε U⟦ e-in ⟧L≡ e ->
       e-in u↦ e-in' ->
-      ε U⟦ e-in' ⟧Low== e' ->
+      ε U⟦ e-in' ⟧L≡ e' ->
       e L↦ e'
     StepLow : ∀{ε e e' e-in e-in'} ->
-      ε L⟦ e-in ⟧Low== e ->
+      ε L⟦ e-in ⟧L≡ e ->
       e-in l↦ e-in' ->
-      ε L⟦ e-in' ⟧Low== e' ->
+      ε L⟦ e-in' ⟧L≡ e' ->
       e L↦ e'
 
   data _P↦_ : (p p' : Program) -> Set where
@@ -89,25 +89,25 @@ module Core.Update where
       (Root (e ⇒ (t , New)) n) P↦ (Root (e ⇒ (t , Old)) n)
 
   StepUpLow : ∀{ε e e' e-in e-in'} ->
-    ε U⟦ e-in ⟧Low== e ->
+    ε U⟦ e-in ⟧L≡ e ->
     e-in U↦ e-in' ->
-    ε U⟦ e-in' ⟧Low== e' ->
+    ε U⟦ e-in' ⟧L≡ e' ->
     e L↦ e'
   StepUpLow fill1 (StepUp fill2 step fill3) fill4 = StepUp (FillUUL fill2 fill1) step (FillUUL fill3 fill4)
   StepUpLow fill1 (StepLow fill2 step fill3) fill4 = StepLow (FillLUL fill2 fill1) step (FillLUL fill3 fill4)
 
   StepLowLow : ∀{ε e e' e-in e-in'} ->
-    ε L⟦ e-in ⟧Low== e ->
+    ε L⟦ e-in ⟧L≡ e ->
     e-in L↦ e-in' ->
-    ε L⟦ e-in' ⟧Low== e' ->
+    ε L⟦ e-in' ⟧L≡ e' ->
     e L↦ e'
   StepLowLow fill1 (StepUp fill2 step fill3) fill4 = StepUp (FillULL fill2 fill1) step (FillULL fill3 fill4)
   StepLowLow fill1 (StepLow fill2 step fill3) fill4 = StepLow (FillLLL fill2 fill1) step (FillLLL fill3 fill4)
 
   StepLowUp : ∀{ε e e' e-in e-in'} ->
-    ε L⟦ e-in ⟧Up== e ->
+    ε L⟦ e-in ⟧U≡ e ->
     e-in L↦ e-in' ->
-    ε L⟦ e-in' ⟧Up== e' ->
+    ε L⟦ e-in' ⟧U≡ e' ->
     e U↦ e'
   StepLowUp fill1 (StepUp fill2 step fill3) fill4 = StepUp (FillULU fill2 fill1) step (FillULU fill3 fill4)
   StepLowUp fill1 (StepLow fill2 step fill3) fill4 = StepLow (FillLLU fill2 fill1) step (FillLLU fill3 fill4)

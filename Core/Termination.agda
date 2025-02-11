@@ -240,13 +240,13 @@ module Core.Termination where
   mutual 
 
     FillUEnvUp-surface : ∀ {ε e e-in} ->
-      ε U⟦ e-in ⟧Up== e ->
+      ε U⟦ e-in ⟧U≡ e ->
       surface-news-up e ≡ surface-news-uu ε + surface-news-up e-in
     FillUEnvUp-surface FillU⊙ = refl
     FillUEnvUp-surface (FillUEnvUpRec fill) = FillUEnvMid-surface fill
 
     FillUEnvMid-surface : ∀ {ε e e-in} ->
-      ε U⟦ e-in ⟧Mid== e ->
+      ε U⟦ e-in ⟧M≡ e ->
       surface-news-mid e ≡ surface-news-um ε + surface-news-up e-in 
     FillUEnvMid-surface {e-in = e-in} (FillUEnvAsc {ε = ε} {t = (_ , n)} fill) 
       rewrite FillUEnvLow-surface fill 
@@ -265,19 +265,19 @@ module Core.Termination where
       = sym (+-assoc (surface-news-low e1) (surface-news-ul ε) (surface-news-up e-in))
 
     FillUEnvLow-surface : ∀ {ε e e-in} ->
-      ε U⟦ e-in ⟧Low== e ->
+      ε U⟦ e-in ⟧L≡ e ->
       surface-news-low e ≡ surface-news-ul ε + surface-news-up e-in
     FillUEnvLow-surface (FillUEnvLowRec fill) = FillUEnvUp-surface fill
 
   mutual 
 
     FillLEnvUp-surface : ∀ {ε e e-in} ->
-      ε L⟦ e-in ⟧Up== e ->
+      ε L⟦ e-in ⟧U≡ e ->
       surface-news-up e ≡ surface-news-lu ε + surface-news-low e-in
     FillLEnvUp-surface (FillLEnvUpRec fill) = FillLEnvMid-surface fill
 
     FillLEnvMid-surface : ∀ {ε e e-in} ->
-      ε L⟦ e-in ⟧Mid== e ->
+      ε L⟦ e-in ⟧M≡ e ->
       surface-news-mid e ≡ surface-news-lm ε + surface-news-low e-in 
     FillLEnvMid-surface {e-in = e-in} (FillLEnvAsc {ε = ε} {t = (_ , n)} fill) 
       rewrite FillLEnvLow-surface fill 
@@ -296,7 +296,7 @@ module Core.Termination where
       = sym (+-assoc (surface-news-low e1) (surface-news-ll ε) (surface-news-low e-in))
 
     FillLEnvLow-surface : ∀ {ε e e-in} ->
-      ε L⟦ e-in ⟧Low== e ->
+      ε L⟦ e-in ⟧L≡ e ->
       surface-news-low e ≡ surface-news-ll ε + surface-news-low e-in
     FillLEnvLow-surface FillL⊙ = refl
     FillLEnvLow-surface (FillLEnvLowRec fill) = FillLEnvUp-surface fill 
@@ -345,12 +345,12 @@ module Core.Termination where
   mutual 
 
     skel-lu-comm : ∀ {ε e e-in} ->
-      ε L⟦ e-in ⟧Up== e ->
+      ε L⟦ e-in ⟧U≡ e ->
       SkelFill (SkelLow e-in) (skel-lu ε) ≡ SkelUp e
     skel-lu-comm (FillLEnvUpRec x) = skel-lm-comm x
 
     skel-lm-comm : ∀ {ε e e-in} ->
-      ε L⟦ e-in ⟧Mid== e ->
+      ε L⟦ e-in ⟧M≡ e ->
       SkelFill (SkelLow e-in) (skel-lm ε) ≡ SkelMid e
     skel-lm-comm (FillLEnvFun x) = cong S1 (skel-ll-comm x)
     skel-lm-comm (FillLEnvAsc x) = cong S1 (skel-ll-comm x)
@@ -358,7 +358,7 @@ module Core.Termination where
     skel-lm-comm (FillLEnvAp2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ll-comm x)
 
     skel-ll-comm : ∀ {ε e e-in} ->
-      ε L⟦ e-in ⟧Low== e ->
+      ε L⟦ e-in ⟧L≡ e ->
       SkelFill (SkelLow e-in) (skel-ll ε) ≡ SkelLow e
     skel-ll-comm FillL⊙ = refl
     skel-ll-comm (FillLEnvLowRec x) = skel-lu-comm x
@@ -366,13 +366,13 @@ module Core.Termination where
   mutual 
 
     skel-uu-comm : ∀ {ε e e-in} ->
-      ε U⟦ e-in ⟧Up== e ->
+      ε U⟦ e-in ⟧U≡ e ->
       SkelFill (SkelUp e-in) (skel-uu ε) ≡ SkelUp e
     skel-uu-comm FillU⊙ = refl
     skel-uu-comm (FillUEnvUpRec x) = skel-um-comm x
 
     skel-um-comm : ∀ {ε e e-in} ->
-      ε U⟦ e-in ⟧Mid== e ->
+      ε U⟦ e-in ⟧M≡ e ->
       SkelFill (SkelUp e-in) (skel-um ε) ≡ SkelMid e
     skel-um-comm (FillUEnvFun x) = cong S1 (skel-ul-comm x)
     skel-um-comm (FillUEnvAsc x) = cong S1 (skel-ul-comm x)
@@ -380,7 +380,7 @@ module Core.Termination where
     skel-um-comm (FillUEnvAp2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ul-comm x)
 
     skel-ul-comm : ∀ {ε e e-in} ->
-      ε U⟦ e-in ⟧Low== e ->
+      ε U⟦ e-in ⟧L≡ e ->
       SkelFill (SkelUp e-in) (skel-ul ε) ≡ SkelLow e
     skel-ul-comm (FillUEnvLowRec x) = skel-uu-comm x
 
@@ -388,15 +388,15 @@ module Core.Termination where
   mutual 
 
     FillLEnvUp-<Up : ∀ {ε e e' e-in e-in' s} ->
-      ε L⟦ e-in' ⟧Up== e' ->
-      ε L⟦ e-in ⟧Up== e ->
+      ε L⟦ e-in' ⟧U≡ e' ->
+      ε L⟦ e-in ⟧U≡ e ->
       <Low s e-in' e-in ->
       <Up (SkelFill s (skel-lu ε)) e' e
     FillLEnvUp-<Up (FillLEnvUpRec fill1) (FillLEnvUpRec fill2) lt = <Upper (FillLEnvMid-<Mid fill1 fill2 lt)
 
     FillLEnvMid-<Mid : ∀ {ε e e' e-in e-in' s} ->
-      ε L⟦ e-in' ⟧Mid== e' ->
-      ε L⟦ e-in ⟧Mid== e ->
+      ε L⟦ e-in' ⟧M≡ e' ->
+      ε L⟦ e-in ⟧M≡ e ->
       <Low s e-in' e-in ->
       <Mid (SkelFill s (skel-lm ε)) e' e
     FillLEnvMid-<Mid (FillLEnvAsc fill1) (FillLEnvAsc fill2) lt = <Asc (FillLEnvLow-<Low fill1 fill2 lt)
@@ -405,8 +405,8 @@ module Core.Termination where
     FillLEnvMid-<Mid (FillLEnvAp2 fill1) (FillLEnvAp2 fill2) lt = <Ap=< (FillLEnvLow-<Low fill1 fill2 lt)
 
     FillLEnvLow-<Low : ∀ {ε e e' e-in e-in' s} ->
-      ε L⟦ e-in' ⟧Low== e' ->
-      ε L⟦ e-in ⟧Low== e ->
+      ε L⟦ e-in' ⟧L≡ e' ->
+      ε L⟦ e-in ⟧L≡ e ->
       <Low s e-in' e-in ->
       <Low (SkelFill s (skel-ll ε)) e' e
     FillLEnvLow-<Low FillL⊙ FillL⊙ lt = lt
@@ -415,16 +415,16 @@ module Core.Termination where
   mutual 
 
     FillUEnvUp-<Up : ∀ {ε e e' e-in e-in' s} ->
-      ε U⟦ e-in' ⟧Up== e' ->
-      ε U⟦ e-in ⟧Up== e ->
+      ε U⟦ e-in' ⟧U≡ e' ->
+      ε U⟦ e-in ⟧U≡ e ->
       <Up s e-in' e-in ->
       <Up (SkelFill s (skel-uu ε)) e' e
     FillUEnvUp-<Up FillU⊙ FillU⊙ lt = lt
     FillUEnvUp-<Up (FillUEnvUpRec fill1) (FillUEnvUpRec fill2) lt = <Upper (FillUEnvMid-<Mid fill1 fill2 lt)
 
     FillUEnvMid-<Mid : ∀ {ε e e' e-in e-in' s} ->
-      ε U⟦ e-in' ⟧Mid== e' ->
-      ε U⟦ e-in ⟧Mid== e ->
+      ε U⟦ e-in' ⟧M≡ e' ->
+      ε U⟦ e-in ⟧M≡ e ->
       <Up s e-in' e-in ->
       <Mid (SkelFill s (skel-um ε)) e' e
     FillUEnvMid-<Mid (FillUEnvAsc fill1) (FillUEnvAsc fill2) lt = <Asc (FillUEnvLow-<Low fill1 fill2 lt)
@@ -433,15 +433,15 @@ module Core.Termination where
     FillUEnvMid-<Mid (FillUEnvAp2 fill1) (FillUEnvAp2 fill2) lt = <Ap=< (FillUEnvLow-<Low fill1 fill2 lt)
 
     FillUEnvLow-<Low : ∀ {ε e e' e-in e-in' s} ->
-      ε U⟦ e-in' ⟧Low== e' ->
-      ε U⟦ e-in ⟧Low== e ->
+      ε U⟦ e-in' ⟧L≡ e' ->
+      ε U⟦ e-in ⟧L≡ e ->
       <Up s e-in' e-in ->
       <Low (SkelFill s (skel-ul ε)) e' e
     FillUEnvLow-<Low (FillUEnvLowRec fill1) (FillUEnvLowRec fill2) lt = <Lower= =New-refl (FillUEnvUp-<Up fill1 fill2 lt)
     
   FillLEnvLow-<ExpLow : ∀ {ε e e' e-in e-in'} ->
-    ε L⟦ e-in' ⟧Low== e' ->
-    ε L⟦ e-in ⟧Low== e ->
+    ε L⟦ e-in' ⟧L≡ e' ->
+    ε L⟦ e-in ⟧L≡ e ->
     <ExpLow e-in' e-in ->
     <ExpLow e' e
   FillLEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpLow< lt) = <ExpLow< lt'
@@ -463,8 +463,8 @@ module Core.Termination where
     fill' rewrite sym (skel-ll-comm fill1) = FillLEnvLow-<Low fill1 fill2 lt 
 
   FillUEnvLow-<ExpLow : ∀ {ε e e' e-in e-in'} ->
-    ε U⟦ e-in' ⟧Low== e' ->
-    ε U⟦ e-in ⟧Low== e ->
+    ε U⟦ e-in' ⟧L≡ e' ->
+    ε U⟦ e-in ⟧L≡ e ->
     <ExpUp e-in' e-in ->
     <ExpLow e' e
   FillUEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpUp< lt) = <ExpLow< lt'

@@ -38,16 +38,16 @@ module Core.UpdateErasure where
   mutual 
 
     fill-uu-erase : ∀{ε e e' e-in e-in'} ->
-      ε U⟦ e-in ⟧Up== e ->
-      ε U⟦ e-in' ⟧Up== e' ->
+      ε U⟦ e-in ⟧U≡ e ->
+      ε U⟦ e-in' ⟧U≡ e' ->
       (EraseUp e-in) ≡ (EraseUp e-in') ->
       (EraseUp e) ≡ (EraseUp e')
     fill-uu-erase FillU⊙ FillU⊙ eq = eq
     fill-uu-erase (FillUEnvUpRec fill1) (FillUEnvUpRec fill2) eq = fill-um-erase fill1 fill2 eq
 
     fill-um-erase : ∀{ε e e' e-in e-in'} ->
-      ε U⟦ e-in ⟧Mid== e ->
-      ε U⟦ e-in' ⟧Mid== e' ->
+      ε U⟦ e-in ⟧M≡ e ->
+      ε U⟦ e-in' ⟧M≡ e' ->
       (EraseUp e-in) ≡ (EraseUp e-in') ->
       (EraseMid e) ≡ (EraseMid e')
     fill-um-erase (FillUEnvFun fill1) (FillUEnvFun fill2) eq 
@@ -60,8 +60,8 @@ module Core.UpdateErasure where
       rewrite fill-ul-erase fill1 fill2 eq = refl
 
     fill-ul-erase : ∀{ε e e' e-in e-in'} ->
-      ε U⟦ e-in ⟧Low== e ->
-      ε U⟦ e-in' ⟧Low== e' ->
+      ε U⟦ e-in ⟧L≡ e ->
+      ε U⟦ e-in' ⟧L≡ e' ->
       (EraseUp e-in) ≡ (EraseUp e-in') ->
       (EraseLow e) ≡ (EraseLow e')
     fill-ul-erase (FillUEnvLowRec fill1) (FillUEnvLowRec fill2) eq = fill-uu-erase fill1 fill2 eq
@@ -69,15 +69,15 @@ module Core.UpdateErasure where
   mutual 
 
     fill-lu-erase : ∀{ε e e' e-in e-in'} ->
-      ε L⟦ e-in ⟧Up== e ->
-      ε L⟦ e-in' ⟧Up== e' ->
+      ε L⟦ e-in ⟧U≡ e ->
+      ε L⟦ e-in' ⟧U≡ e' ->
       (EraseLow e-in) ≡ (EraseLow e-in') ->
       (EraseUp e) ≡ (EraseUp e')
     fill-lu-erase (FillLEnvUpRec fill1) (FillLEnvUpRec fill2) eq = fill-lm-erase fill1 fill2 eq
 
     fill-lm-erase : ∀{ε e e' e-in e-in'} ->
-      ε L⟦ e-in ⟧Mid== e ->
-      ε L⟦ e-in' ⟧Mid== e' ->
+      ε L⟦ e-in ⟧M≡ e ->
+      ε L⟦ e-in' ⟧M≡ e' ->
       (EraseLow e-in) ≡ (EraseLow e-in') ->
       (EraseMid e) ≡ (EraseMid e')
     fill-lm-erase (FillLEnvFun fill1) (FillLEnvFun fill2) eq 
@@ -90,8 +90,8 @@ module Core.UpdateErasure where
       rewrite fill-ll-erase fill1 fill2 eq = refl
 
     fill-ll-erase : ∀{ε e e' e-in e-in'} ->
-      ε L⟦ e-in ⟧Low== e ->
-      ε L⟦ e-in' ⟧Low== e' ->
+      ε L⟦ e-in ⟧L≡ e ->
+      ε L⟦ e-in' ⟧L≡ e' ->
       (EraseLow e-in) ≡ (EraseLow e-in') ->
       (EraseLow e) ≡ (EraseLow e')
     fill-ll-erase FillL⊙ FillL⊙ eq = eq

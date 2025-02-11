@@ -1,14 +1,6 @@
-open import Data.Nat hiding (_+_)
-open import Data.Unit 
-open import Data.Bool hiding (_<_; _≟_)
-open import Data.Sum renaming (_⊎_ to _+_; inj₁ to Inl ; inj₂ to Inr) hiding (map)
-open import Data.Product hiding (map)
-open import Relation.Nullary 
-open import Relation.Binary.PropositionalEquality hiding (inspect)
-open import Prelude
 
+open import Prelude
 open import Core.Core
-open import Core.WellTyped
 
 module Core.Environment where
 
@@ -40,61 +32,61 @@ module Core.Environment where
       UEnvAsc : NewType -> UEnvLow -> UEnvMid 
 
     data UEnvLow : Set where 
-      UEnvLowRec : UEnvUp -> Mark -> NewData -> UEnvLow
+      UEnvLowRec : UEnvUp -> Mark -> NewData -> UEnvLow 
 
   mutual 
-    data _L⟦_⟧Up==_ : (ε : LEnvUp) (e : ExpLow) (e' : ExpUp)  -> Set where
+    data _L⟦_⟧U≡_ : (ε : LEnvUp) (e : ExpLow) (e' : ExpUp)  -> Set where
       FillLEnvUpRec : ∀ {e ε e' syn} ->
-        ε L⟦ e ⟧Mid== e' ->
-        (LEnvUpRec ε syn) L⟦ e ⟧Up== (e' ⇒ syn)
+        ε L⟦ e ⟧M≡ e' ->
+        (LEnvUpRec ε syn) L⟦ e ⟧U≡ (e' ⇒ syn)
 
-    data _L⟦_⟧Mid==_ : (ε : LEnvMid) (e : ExpLow) (e' : ExpMid)  -> Set where
+    data _L⟦_⟧M≡_ : (ε : LEnvMid) (e : ExpLow) (e' : ExpMid)  -> Set where
       FillLEnvFun : ∀ {e ε e' x t m1 m2} ->
-        ε L⟦ e ⟧Low== e' ->
-        (LEnvFun x t m1 m2 ε) L⟦ e ⟧Mid== (EFun x t m1 m2 e')
+        ε L⟦ e ⟧L≡ e' ->
+        (LEnvFun x t m1 m2 ε) L⟦ e ⟧M≡ (EFun x t m1 m2 e')
       FillLEnvAp1 : ∀ {e ε e' e2 m} ->
-        ε L⟦ e ⟧Low== e' ->
-        (LEnvAp1 ε m e2) L⟦ e ⟧Mid== (EAp e' m e2)
+        ε L⟦ e ⟧L≡ e' ->
+        (LEnvAp1 ε m e2) L⟦ e ⟧M≡ (EAp e' m e2)
       FillLEnvAp2 : ∀ {e ε e' e1 m} ->
-        ε L⟦ e ⟧Low== e' ->
-        (LEnvAp2 e1 m ε) L⟦ e ⟧Mid== (EAp e1 m e')
+        ε L⟦ e ⟧L≡ e' ->
+        (LEnvAp2 e1 m ε) L⟦ e ⟧M≡ (EAp e1 m e')
       FillLEnvAsc : ∀ {e ε e' t} ->
-        ε L⟦ e ⟧Low== e' ->
-        (LEnvAsc t ε) L⟦ e ⟧Mid== (EAsc t e')
+        ε L⟦ e ⟧L≡ e' ->
+        (LEnvAsc t ε) L⟦ e ⟧M≡ (EAsc t e')
 
-    data _L⟦_⟧Low==_ : (ε : LEnvLow) (e : ExpLow) (e' : ExpLow)  -> Set where
+    data _L⟦_⟧L≡_ : (ε : LEnvLow) (e : ExpLow) (e' : ExpLow)  -> Set where
       FillL⊙ : ∀ {e} ->
-        L⊙ L⟦ e ⟧Low== e
+        L⊙ L⟦ e ⟧L≡ e
       FillLEnvLowRec : ∀ {e e' ana m ε} ->
-        ε L⟦ e ⟧Up== e' ->
-        LEnvLowRec ε m ana L⟦ e ⟧Low== (e' [ m ]⇐ ana)
+        ε L⟦ e ⟧U≡ e' ->
+        LEnvLowRec ε m ana L⟦ e ⟧L≡ (e' [ m ]⇐ ana)
 
   mutual 
-    data _U⟦_⟧Up==_ : (ε : UEnvUp) (e : ExpUp) (e' : ExpUp)  -> Set where
+    data _U⟦_⟧U≡_ : (ε : UEnvUp) (e : ExpUp) (e' : ExpUp)  -> Set where
       FillU⊙ : ∀ {e} ->
-        U⊙ U⟦ e ⟧Up== e
+        U⊙ U⟦ e ⟧U≡ e
       FillUEnvUpRec : ∀ {e ε e' syn} ->
-        ε U⟦ e ⟧Mid== e' ->
-        (UEnvUpRec ε syn) U⟦ e ⟧Up== (e' ⇒ syn)
+        ε U⟦ e ⟧M≡ e' ->
+        (UEnvUpRec ε syn) U⟦ e ⟧U≡ (e' ⇒ syn)
 
-    data _U⟦_⟧Mid==_ : (ε : UEnvMid) (e : ExpUp) (e' : ExpMid)  -> Set where
+    data _U⟦_⟧M≡_ : (ε : UEnvMid) (e : ExpUp) (e' : ExpMid)  -> Set where
       FillUEnvFun : ∀ {e ε e' x t m1 m2} ->
-        ε U⟦ e ⟧Low== e' ->
-        (UEnvFun x t m1 m2 ε) U⟦ e ⟧Mid== (EFun x t m1 m2 e')
+        ε U⟦ e ⟧L≡ e' ->
+        (UEnvFun x t m1 m2 ε) U⟦ e ⟧M≡ (EFun x t m1 m2 e')
       FillUEnvAp1 : ∀ {e ε e' e2 m} ->
-        ε U⟦ e ⟧Low== e' ->
-        (UEnvAp1 ε m e2) U⟦ e ⟧Mid== (EAp e' m e2)
+        ε U⟦ e ⟧L≡ e' ->
+        (UEnvAp1 ε m e2) U⟦ e ⟧M≡ (EAp e' m e2)
       FillUEnvAp2 : ∀ {e ε e' e1 m} ->
-        ε U⟦ e ⟧Low== e' ->
-        (UEnvAp2 e1 m ε) U⟦ e ⟧Mid== (EAp e1 m e')
+        ε U⟦ e ⟧L≡ e' ->
+        (UEnvAp2 e1 m ε) U⟦ e ⟧M≡ (EAp e1 m e')
       FillUEnvAsc : ∀ {e ε e' t} ->
-        ε U⟦ e ⟧Low== e' ->
-        (UEnvAsc t ε) U⟦ e ⟧Mid== (EAsc t e')
+        ε U⟦ e ⟧L≡ e' ->
+        (UEnvAsc t ε) U⟦ e ⟧M≡ (EAsc t e')
 
-    data _U⟦_⟧Low==_ : (ε : UEnvLow) (e : ExpUp) (e' : ExpLow)  -> Set where
+    data _U⟦_⟧L≡_ : (ε : UEnvLow) (e : ExpUp) (e' : ExpLow)  -> Set where
       FillUEnvLowRec : ∀ {e e' ana m ε} ->
-        ε U⟦ e ⟧Up== e' ->
-        UEnvLowRec ε m ana U⟦ e ⟧Low== (e' [ m ]⇐ ana)
+        ε U⟦ e ⟧U≡ e' ->
+        UEnvLowRec ε m ana U⟦ e ⟧L≡ (e' [ m ]⇐ ana)
 
   mutual 
 
@@ -159,95 +151,95 @@ module Core.Environment where
   mutual 
 
     FillULU : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 U⟦ e1 ⟧Low== e2 -> 
-      ε2 L⟦ e2 ⟧Up== e3 ->
-      (ComposeULU ε1 ε2) U⟦ e1 ⟧Up== e3
+      ε1 U⟦ e1 ⟧L≡ e2 -> 
+      ε2 L⟦ e2 ⟧U≡ e3 ->
+      (ComposeULU ε1 ε2) U⟦ e1 ⟧U≡ e3
     FillULU fill1 (FillLEnvUpRec fill2) = FillUEnvUpRec (FillULM fill1 fill2)
 
     FillULM : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 U⟦ e1 ⟧Low== e2 -> 
-      ε2 L⟦ e2 ⟧Mid== e3 ->
-      (ComposeULM ε1 ε2) U⟦ e1 ⟧Mid== e3
+      ε1 U⟦ e1 ⟧L≡ e2 -> 
+      ε2 L⟦ e2 ⟧M≡ e3 ->
+      (ComposeULM ε1 ε2) U⟦ e1 ⟧M≡ e3
     FillULM fill1 (FillLEnvFun fill2) = FillUEnvFun (FillULL fill1 fill2)
     FillULM fill1 (FillLEnvAp1 fill2) = FillUEnvAp1 (FillULL fill1 fill2)
     FillULM fill1 (FillLEnvAp2 fill2) = FillUEnvAp2 (FillULL fill1 fill2)
     FillULM fill1 (FillLEnvAsc fill2) = FillUEnvAsc (FillULL fill1 fill2)
 
     FillULL : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 U⟦ e1 ⟧Low== e2 -> 
-      ε2 L⟦ e2 ⟧Low== e3 -> 
-      (ComposeULL ε1 ε2) U⟦ e1 ⟧Low== e3
+      ε1 U⟦ e1 ⟧L≡ e2 -> 
+      ε2 L⟦ e2 ⟧L≡ e3 -> 
+      (ComposeULL ε1 ε2) U⟦ e1 ⟧L≡ e3
     FillULL fill1 FillL⊙ = fill1 
     FillULL fill1 (FillLEnvLowRec fill2) = FillUEnvLowRec (FillULU fill1 fill2)
   
   mutual 
 
     FillLLU : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 L⟦ e1 ⟧Low== e2 -> 
-      ε2 L⟦ e2 ⟧Up== e3 ->
-      (ComposeLLU ε1 ε2) L⟦ e1 ⟧Up== e3
+      ε1 L⟦ e1 ⟧L≡ e2 -> 
+      ε2 L⟦ e2 ⟧U≡ e3 ->
+      (ComposeLLU ε1 ε2) L⟦ e1 ⟧U≡ e3
     FillLLU fill1 (FillLEnvUpRec fill2) = FillLEnvUpRec (FillLLM fill1 fill2)
 
     FillLLM : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 L⟦ e1 ⟧Low== e2 -> 
-      ε2 L⟦ e2 ⟧Mid== e3 ->
-      (ComposeLLM ε1 ε2) L⟦ e1 ⟧Mid== e3
+      ε1 L⟦ e1 ⟧L≡ e2 -> 
+      ε2 L⟦ e2 ⟧M≡ e3 ->
+      (ComposeLLM ε1 ε2) L⟦ e1 ⟧M≡ e3
     FillLLM fill1 (FillLEnvFun fill2) = FillLEnvFun (FillLLL fill1 fill2)
     FillLLM fill1 (FillLEnvAp1 fill2) = FillLEnvAp1 (FillLLL fill1 fill2)
     FillLLM fill1 (FillLEnvAp2 fill2) = FillLEnvAp2 (FillLLL fill1 fill2)
     FillLLM fill1 (FillLEnvAsc fill2) = FillLEnvAsc (FillLLL fill1 fill2)
 
     FillLLL : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 L⟦ e1 ⟧Low== e2 -> 
-      ε2 L⟦ e2 ⟧Low== e3 -> 
-      (ComposeLLL ε1 ε2) L⟦ e1 ⟧Low== e3
+      ε1 L⟦ e1 ⟧L≡ e2 -> 
+      ε2 L⟦ e2 ⟧L≡ e3 -> 
+      (ComposeLLL ε1 ε2) L⟦ e1 ⟧L≡ e3
     FillLLL fill1 FillL⊙ = fill1 
     FillLLL fill1 (FillLEnvLowRec fill2) = FillLEnvLowRec (FillLLU fill1 fill2)
 
   mutual 
 
     FillUUU : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 U⟦ e1 ⟧Up== e2 -> 
-      ε2 U⟦ e2 ⟧Up== e3 ->
-      (ComposeUUU ε1 ε2) U⟦ e1 ⟧Up== e3
+      ε1 U⟦ e1 ⟧U≡ e2 -> 
+      ε2 U⟦ e2 ⟧U≡ e3 ->
+      (ComposeUUU ε1 ε2) U⟦ e1 ⟧U≡ e3
     FillUUU fill1 FillU⊙ = fill1 
     FillUUU fill1 (FillUEnvUpRec fill2) = FillUEnvUpRec (FillUUM fill1 fill2)
 
     FillUUM : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 U⟦ e1 ⟧Up== e2 -> 
-      ε2 U⟦ e2 ⟧Mid== e3 ->
-      (ComposeUUM ε1 ε2) U⟦ e1 ⟧Mid== e3
+      ε1 U⟦ e1 ⟧U≡ e2 -> 
+      ε2 U⟦ e2 ⟧M≡ e3 ->
+      (ComposeUUM ε1 ε2) U⟦ e1 ⟧M≡ e3
     FillUUM fill1 (FillUEnvFun fill2) = FillUEnvFun (FillUUL fill1 fill2)
     FillUUM fill1 (FillUEnvAp1 fill2) = FillUEnvAp1 (FillUUL fill1 fill2)
     FillUUM fill1 (FillUEnvAp2 fill2) = FillUEnvAp2 (FillUUL fill1 fill2)
     FillUUM fill1 (FillUEnvAsc fill2) = FillUEnvAsc (FillUUL fill1 fill2)
 
     FillUUL : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 U⟦ e1 ⟧Up== e2 -> 
-      ε2 U⟦ e2 ⟧Low== e3 -> 
-      (ComposeUUL ε1 ε2) U⟦ e1 ⟧Low== e3
+      ε1 U⟦ e1 ⟧U≡ e2 -> 
+      ε2 U⟦ e2 ⟧L≡ e3 -> 
+      (ComposeUUL ε1 ε2) U⟦ e1 ⟧L≡ e3
     FillUUL fill1 (FillUEnvLowRec fill2) = FillUEnvLowRec (FillUUU fill1 fill2)
 
   mutual 
 
     FillLUU : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 L⟦ e1 ⟧Up== e2 -> 
-      ε2 U⟦ e2 ⟧Up== e3 ->
-      (ComposeLUU ε1 ε2) L⟦ e1 ⟧Up== e3
+      ε1 L⟦ e1 ⟧U≡ e2 -> 
+      ε2 U⟦ e2 ⟧U≡ e3 ->
+      (ComposeLUU ε1 ε2) L⟦ e1 ⟧U≡ e3
     FillLUU fill1 FillU⊙ = fill1 
     FillLUU fill1 (FillUEnvUpRec fill2) = FillLEnvUpRec (FillLUM fill1 fill2)
 
     FillLUM : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 L⟦ e1 ⟧Up== e2 -> 
-      ε2 U⟦ e2 ⟧Mid== e3 ->
-      (ComposeLUM ε1 ε2) L⟦ e1 ⟧Mid== e3
+      ε1 L⟦ e1 ⟧U≡ e2 -> 
+      ε2 U⟦ e2 ⟧M≡ e3 ->
+      (ComposeLUM ε1 ε2) L⟦ e1 ⟧M≡ e3
     FillLUM fill1 (FillUEnvFun fill2) = FillLEnvFun (FillLUL fill1 fill2)
     FillLUM fill1 (FillUEnvAp1 fill2) = FillLEnvAp1 (FillLUL fill1 fill2)
     FillLUM fill1 (FillUEnvAp2 fill2) = FillLEnvAp2 (FillLUL fill1 fill2)
     FillLUM fill1 (FillUEnvAsc fill2) = FillLEnvAsc (FillLUL fill1 fill2)
 
     FillLUL : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 L⟦ e1 ⟧Up== e2 -> 
-      ε2 U⟦ e2 ⟧Low== e3 -> 
-      (ComposeLUL ε1 ε2) L⟦ e1 ⟧Low== e3
+      ε1 L⟦ e1 ⟧U≡ e2 -> 
+      ε2 U⟦ e2 ⟧L≡ e3 -> 
+      (ComposeLUL ε1 ε2) L⟦ e1 ⟧L≡ e3
     FillLUL fill1 (FillUEnvLowRec fill2) = FillLEnvLowRec (FillLUU fill1 fill2)

@@ -1,7 +1,9 @@
+
 open import Data.Unit 
 open import Data.Product
 open import Relation.Nullary 
 open import Relation.Binary.PropositionalEquality
+
 open import Prelude
 
 module Core.Core where
@@ -49,6 +51,14 @@ module Core.Core where
   _⊓M_ : Mark -> Mark -> Mark 
   ✔ ⊓M m = m
   ✖ ⊓M m = ✖
+  
+  data _▸TArrow_,_,_ : Type -> Type -> Type -> Mark -> Set where 
+    MArrowBase :
+      TBase ▸TArrow THole , THole , ✖
+    MArrowHole :
+      THole ▸TArrow THole , THole , ✔
+    MArrowArrow : ∀ {t1 t2} -> 
+      (TArrow t1 t2) ▸TArrow t1 , t2 , ✔
 
   data _~_,_ : Type -> Type -> Mark -> Set where 
     ConsistBase : TBase ~ TBase , ✔
@@ -62,14 +72,6 @@ module Core.Core where
       TBase ~ (TArrow t1 t2) , ✖
     InconsistArrBase : ∀ {t1 t2} ->
       (TArrow t1 t2) ~ TBase , ✖
-
-  data _▸TArrow_,_,_ : Type -> Type -> Type -> Mark -> Set where 
-    MArrowBase :
-      TBase ▸TArrow THole , THole , ✖
-    MArrowHole :
-      THole ▸TArrow THole , THole , ✔
-    MArrowArrow : ∀ {t1 t2} -> 
-      (TArrow t1 t2) ▸TArrow t1 , t2 , ✔
 
   data Data : Set where 
     □ : Data
@@ -146,15 +148,3 @@ module Core.Core where
     
   Ctx : Set 
   Ctx = Context NewType
-
-  -- data BarrenCtx : Ctx -> BareCtx -> Set where 
-  --   BarrenCtxEmpty : BarrenCtx ∅ ∅
-  --   BarrenCtxCons : ∀ {x t n Γ Γ'} ->
-  --     BarrenCtx Γ Γ' ->
-  --     BarrenCtx (x ∶ (t , n) ∷ Γ) (x ∶ t ∷ Γ')
-
-  -- BarrenCtxCons? : ∀ {x t n Γ Γ'} ->
-  --   BarrenCtx Γ Γ' -> 
-  --   BarrenCtx (x ∶ (t , n) ∷? Γ) (x ∶ t ∷? Γ')
-  -- BarrenCtxCons? {BHole} ctx-bare = ctx-bare
-  -- BarrenCtxCons? {BVar x} ctx-bare = BarrenCtxCons ctx-bare
