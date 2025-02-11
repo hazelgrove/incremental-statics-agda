@@ -15,11 +15,15 @@ module Core.WellTyped where
     ▶Old : ∀ {a} ->
       ▶ (a , Old) a
 
-  ▷ : {A : Set} -> NEW A -> NEW A -> Set 
-  ▷ (a , n) (a' , n') =  ▶ (a , n) a'
+  data ▷ {A : Set} : NEW A -> NEW A -> Set where 
+    ▷Pair : ∀ {a a' n n'} -> 
+      ▶ (a , n) a' ->
+      ▷ (a , n) (a' , n')
       
-  ▷■ : NewType -> NewData -> Set
-  ▷■ (a , n) (a' , n') = ▷ (■ a , n) (a' , n')
+  data ▷■ : NewType -> NewData -> Set where
+    ▷■Pair : ∀ {a a' n n'} -> 
+      ▷ (■ a , n) (a' , n') ->
+      ▷■ (a , n) (a' , n')
 
   data _▸DTArrow_,_,_ : Data -> Data -> Data -> Mark -> Set where 
     DTArrowSome : ∀ {t t1 t2 m} ->
