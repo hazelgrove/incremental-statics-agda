@@ -30,4 +30,5 @@ module Core where
   import Core.Progress
   import Core.Termination
 
-  import Core.Main 
+  import Core.Main
+  import Core.ActionCompleteness

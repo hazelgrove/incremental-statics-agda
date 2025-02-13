@@ -22,6 +22,8 @@ module Core.ActionUnicity where
   αB↦-unicity ActUnwrapApOne ActUnwrapApOne = refl
   αB↦-unicity ActUnwrapApTwo ActUnwrapApTwo = refl
   αB↦-unicity ActUnwrapAsc ActUnwrapAsc = refl
+  αB↦-unicity ActSetAsc ActSetAsc = refl
+  αB↦-unicity ActSetAnn ActSetAnn = refl
   
   AB↦-unicity : ∀ {A e e' e''} ->
     A , e AB↦ e' ->

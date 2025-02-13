@@ -26,14 +26,6 @@ open import Core.Termination
 
 module Core.Main where
 
-  data _,_AB↦*_ : (List LocalizedAction) -> BareExp -> BareExp -> Set where 
-    AB*StepAct : ∀{A As e e' e''} ->
-      A , e AB↦ e' -> 
-      As , e' AB↦* e'' ->
-      (A ∷ As) , e AB↦* e'' 
-    AB*StepDone : ∀{e} ->
-      [] , e AB↦* e
-
   data _,_AP↦*_ : (List LocalizedAction) -> Program -> Program -> Set where 
     AP*StepAct : ∀{A As p p' p''} ->
       A , p AP↦ p' -> 

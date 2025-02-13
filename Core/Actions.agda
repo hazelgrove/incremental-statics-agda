@@ -21,6 +21,8 @@ module Core.Actions where
     WrapAsc : Action
     Delete : Action 
     Unwrap : Child -> Action
+    SetAsc : Type -> Action
+    SetAnn : Type -> Action
     
   LocalizedAction : Set
   LocalizedAction = Action × (List Child)
@@ -48,6 +50,10 @@ module Core.Actions where
       (Unwrap Two) , (BareEAp e-fun e) αB↦ e
     ActUnwrapAsc : ∀ {asc e} ->
       (Unwrap One) , (BareEAsc asc e) αB↦ e
+    ActSetAsc : ∀ {e t t'} ->
+      (SetAsc t') , (BareEAsc t e) αB↦ (BareEAsc t' e)
+    ActSetAnn : ∀ {x e t t'} ->
+      (SetAnn t') , (BareEFun x t e) αB↦ (BareEFun x t' e)
 
   data _,_AB↦_ : LocalizedAction -> BareExp -> BareExp -> Set where
     ABareDone : ∀ {α e e'} ->
@@ -65,6 +71,14 @@ module Core.Actions where
     ABareApTwo : ∀ {α l e1 e2 e2'} ->
       (α , l) , e2 AB↦ e2' ->
       (α , Two ∷ l) , (BareEAp e1 e2) AB↦ (BareEAp e1 e2')
+  
+  data _,_AB↦*_ : (List LocalizedAction) -> BareExp -> BareExp -> Set where 
+    AB*StepAct : ∀{A As e e' e''} ->
+      A , e AB↦ e' -> 
+      As , e' AB↦* e'' ->
+      (A ∷ As) , e AB↦* e'' 
+    AB*StepDone : ∀{e} ->
+      [] , e AB↦* e
 
   data _⊢_,_αU↦_ : Ctx -> Action -> ExpUp -> ExpUp -> Set where 
     ActInsertConst : ∀ {Γ syn} ->
@@ -93,6 +107,10 @@ module Core.Actions where
       Γ ⊢ (Unwrap Two) , ((EAp e-fun ✔ ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ (e ⇒ (t , New))
     ActUnwrapAsc : ∀ {Γ asc e t n m ana syn} ->
       Γ ⊢ (Unwrap One) , ((EAsc asc ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ (e ⇒ (t , New))
+    ActSetAsc : ∀ {Γ asc e t syn} ->
+      Γ ⊢ (SetAsc t) , ((EAsc asc e) ⇒ syn) αU↦ ((EAsc (t , New) e) ⇒ syn)
+    ActSetAnn : ∀ {Γ x e t ann m1 m2 syn} ->
+      Γ ⊢ (SetAnn t) , ((EFun x ann m1 m2 e) ⇒ syn) αU↦ ((EFun x (t , New) m1 m2 e) ⇒ syn)
 
   data _⊢_,_αL↦_ : Ctx -> Action -> ExpLow -> ExpLow -> Set where 
     ALC : ∀ {Γ α e e' m t n} ->
@@ -132,3 +150,4 @@ module Core.Actions where
     AStepProgram : ∀{α p p'} ->
       ∅ ⊢ α , (ExpLowOfProgram p) AL↦ (ExpLowOfProgram p') ->
       α , p AP↦ p'
+

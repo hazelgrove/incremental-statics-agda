@@ -259,3 +259,59 @@ module Core.Lemmas where
     Γ L⊢ (e [ m ]⇐ ana) -> 
     Γ L⊢ (e [ m' ]⇐ (t , New))
   small-newify-ana {e = e ⇒ (t , n)} ana = newify-ana ana
+
+  data NewerCtx : Ctx -> Ctx -> Set where  
+    NewerCtxRefl : ∀{Γ} ->
+       NewerCtx Γ Γ
+    NewerCtxInit : ∀{x t t' Γ} ->
+       NewerCtx (x ∶ (t' , New) ∷ Γ) (x ∶ t ∷ Γ) 
+    NewerCtxCons : ∀{x t Γ Γ'} ->
+       NewerCtx Γ Γ' -> 
+       NewerCtx (x ∶ t ∷ Γ) (x ∶ t ∷ Γ')
+
+  NewerCtxInit? : ∀{x t t' Γ} ->
+    NewerCtx (x ∶ (t' , New) ∷? Γ) (x ∶ t ∷? Γ)  
+  NewerCtxInit? {BHole} = NewerCtxRefl
+  NewerCtxInit? {BVar x} = NewerCtxInit
+
+  NewerCtxCons? : ∀{x t Γ Γ'} ->
+    NewerCtx Γ Γ' -> 
+    NewerCtx (x ∶ t ∷? Γ) (x ∶ t ∷? Γ')
+  NewerCtxCons? {BHole} newer = newer 
+  NewerCtxCons? {BVar x} = NewerCtxCons
+  
+  newer-ctx-lookup : ∀{Γ Γ' x t m} ->
+    NewerCtx Γ Γ' -> 
+    x , t ∈N Γ' , m ->
+    ∃[ t' ] (x , t' ∈N Γ , m) × (=▷ t t')
+  newer-ctx-lookup NewerCtxRefl in-ctx = _ , in-ctx , =▷Refl
+  newer-ctx-lookup NewerCtxInit InCtxFound = _ , InCtxFound , =▷New
+  newer-ctx-lookup NewerCtxInit (InCtxSkip x in-ctx) = _ , InCtxSkip x in-ctx , =▷Refl
+  newer-ctx-lookup (NewerCtxCons newer) InCtxFound = _ , InCtxFound , =▷Refl
+  newer-ctx-lookup (NewerCtxCons newer) (InCtxSkip x in-ctx) with newer-ctx-lookup newer in-ctx 
+  ... | t' , in-ctx' , beyond = _ , InCtxSkip x in-ctx' , beyond
+
+  mutual 
+
+    newer-ctx-u : ∀{Γ Γ' e} ->
+      NewerCtx Γ Γ' -> 
+      Γ' U⊢ e ->
+      Γ U⊢ e
+    newer-ctx-u newer (WTConst x) = WTConst x
+    newer-ctx-u newer (WTHole x) = WTHole x
+    newer-ctx-u newer (WTAp x x₁ x₂ x₃ x₄ x₅) = WTAp x x₁ x₂ x₃ (newer-ctx-l newer x₄) (newer-ctx-l newer x₅)
+    newer-ctx-u newer (WTAsc x x₁ x₂) = WTAsc x x₁ (newer-ctx-l newer x₂)
+    newer-ctx-u newer (WTVar x x₁) with newer-ctx-lookup newer x 
+    ... | t' , in-ctx' , beyond = WTVar in-ctx' (beyond-▷ beyond x₁)
+
+    newer-ctx-l : ∀{Γ Γ' e} ->
+      NewerCtx Γ Γ' -> 
+      Γ' L⊢ e ->
+      Γ L⊢ e
+    newer-ctx-l newer (WTUp x x₁ x₂ x₃) = WTUp x x₁ x₂ (newer-ctx-u newer x₃)
+    newer-ctx-l newer (WTFun {x = x} x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ wt) = WTFun x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ (newer-ctx-l (NewerCtxCons? {x} newer) wt)
+ 
+  newify-ctx : ∀{Γ x t t' e} ->
+    (x ∶ t ∷? Γ) L⊢ e -> 
+    (x ∶ (t' , New) ∷? Γ) L⊢ e     
+  newify-ctx {x = x} = newer-ctx-l (NewerCtxInit? {x})
