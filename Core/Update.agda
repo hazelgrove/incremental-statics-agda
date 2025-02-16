@@ -30,7 +30,7 @@ module Core.Update where
     StepNewAnnFun : ∀ {x e-body e-body' t-asc n-body n-body' n-ana m-ana m-asc m-body m-all syn-body syn-body' syn-all ana-body ana-all } ->
       VarsSynthesize? x t-asc ✔ (e-body ⇒ (syn-body , n-body)) (e-body' ⇒ (syn-body' , n-body')) ->
       (((EFun x (t-asc , New) m-ana m-asc ((e-body ⇒ (syn-body , n-body)) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (ana-all , n-ana)) l↦
-      (((EFun x (t-asc , Old) m-ana m-asc ((e-body' ⇒ (syn-body' , n-body')) [ m-body ]⇐ ana-body)) ⇒ (DUnless (DArrow t-asc syn-body') ana-all , New)) [ m-all ]⇐ (ana-all , New))
+      (((EFun x (t-asc , Old) m-ana m-asc ((e-body' ⇒ (syn-body' , n-body')) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (ana-all , New))
     StepSynFun : ∀ {x e-body t-asc t-body n-asc m-body syn-all ana-all m1 m2 m3 n-ana n-body} ->
       (((EFun x (t-asc , n-asc) m1 m2 ((e-body ⇒ (t-body , New)) [ m-body ]⇐ (□ , n-body))) ⇒ syn-all) [ m3 ]⇐ (ana-all , n-ana)) l↦
       (((EFun x (t-asc , n-asc) m1 m2 ((e-body ⇒ (t-body , Old)) [ ✔ ]⇐ (□ , n-body) )) ⇒ (DUnless (DArrow t-asc t-body) ana-all , New)) [ m3 ]⇐ (ana-all , n-ana))

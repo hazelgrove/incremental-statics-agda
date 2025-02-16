@@ -40,7 +40,7 @@ module Core.UpdatePreservation where
     =▷ syn syn' 
   beyond-l↦-inner (StepNewAnaConsist _ _) = =▷Refl
   beyond-l↦-inner (StepAnaFun _ _) = =▷New
-  beyond-l↦-inner (StepNewAnnFun _) = =▷New
+  beyond-l↦-inner (StepNewAnnFun _) = =▷Refl
   beyond-l↦-inner StepSynFun = =▷New
 
   beyond-l↦-env-inner : ∀ {ε e e' e-in e-in' syn syn' m m' n-ana ana'} -> 
@@ -79,6 +79,10 @@ module Core.UpdatePreservation where
   random-helper {d = □} = ▷Pair ▶Same
   random-helper {d = ■ x} = ▷Pair ▶Same
 
+  other-random-helper : ∀ {t t' d n d'} -> ▷ (NUnless (NArrow (t , Old) (t' , n)) (d , New)) d'
+  other-random-helper {d = □} = ▷Pair ▶New-max-r
+  other-random-helper {d = ■ x} = ▷Pair ▶New
+
   PreservationStepSyn :  
     ∀ {Γ e e'} ->
     (Γ U⊢ e) ->
@@ -102,7 +106,7 @@ module Core.UpdatePreservation where
   PreservationStepAna (WTFun marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (StepNewSynConsist consist') rewrite ~D-unicity consist' consist-all = WTFun marrow consist consist-ana consist-asc consist-body (beyond-▷-contra ◁▷C consist-syn) (~N-pair consist-all) ▶Same ana
   PreservationStepAna (WTFun {t-asc = t-asc , n-asc} (NTArrowC x) consist (▷Pair ▶New) ▶New consist-body consist-syn consist-all consist-m-all ana) (StepAnaFun marrow' (■~D-pair consist')) = WTFun (NTArrowC marrow') (■~N-pair (~N-pair consist')) (▷Pair ▶Old) ▶Old ▶Same (consist-unless-lemma {n1 = n-asc}) (~N-pair ~D-unless) ▶Same (newify-ana ana)
   PreservationStepAna (WTFun (NTArrowC {d} {n} marrow) (■~N-pair {t} (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (StepNewAnnFun {syn-body' = syn-body'} vars-syn) 
-    = WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair ▶New)  ▶New ▶New random-helper (~N-pair (proj₂ (~D-dec _ _))) ▶New (preservation-vars-ana? ana vars-syn)
+    = WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair ▶New)  ▶New ▶New other-random-helper (~N-pair (proj₂ (~D-dec _ _))) ▶New-max-r (preservation-vars-ana? ana vars-syn)
   PreservationStepAna (WTFun {ana-all = ana-all} (NTArrowC {d} marrow) (■~N-pair {t} {n} (~N-pair consist)) (▷Pair consistm-m-ana) consist-m-ann consist-body consist-syn consist-all consist-m-all ana) (StepSynFun {t-body = t-body}) with ~N-dec (DUnless (DArrow t t-body) d , New) ana-all
   ... | _ , (~N-pair consist'')  = WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair consistm-m-ana) consist-m-ann consist-body random-helper (~N-pair consist'') ▶New (oldify-syn-inner ana)
 
