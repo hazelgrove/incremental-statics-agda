@@ -13,11 +13,11 @@ module Core.Update where
   infix 10 _u↦_ 
 
   data _l↦_ : ExpLow -> ExpLow -> Set where 
-    StepNewSynConsist : ∀ {e-all t-syn t-ana m-all m-all' n-ana} ->
+    StepSynConsist : ∀ {e-all t-syn t-ana m-all m-all' n-ana} ->
       t-syn ~D (■ t-ana) , m-all' ->
       (e-all ⇒ (t-syn , New)) [ m-all ]⇐ (■ t-ana , n-ana) l↦
       (e-all ⇒ (t-syn , Old)) [ m-all' ]⇐ (■ t-ana , n-ana)
-    StepNewAnaConsist : ∀ {e-all t-syn t-ana n-syn m-all m-all'} ->
+    StepAnaConsist : ∀ {e-all t-syn t-ana n-syn m-all m-all'} ->
       SubsumableMid e-all -> 
       t-syn ~D t-ana , m-all' ->
       (e-all ⇒ (t-syn , n-syn)) [ m-all ]⇐ (t-ana , New) l↦
@@ -27,7 +27,7 @@ module Core.Update where
       t-asc ■~D t-in-ana , m-asc' ->
       ((EFun x (t-asc , n-asc) m-ana m-asc ((e-body ⇒ (t-body , n-body)) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (t-ana , New) l↦
       ((EFun x (t-asc , n-asc) m-ana' m-asc' ((e-body ⇒ (t-body , n-body)) [ m-body ]⇐ (t-out-ana , New))) ⇒ ((DUnless (DArrow t-asc t-body) t-ana) , New)) [ ✔ ]⇐ (t-ana , Old)
-    StepNewAnnFun : ∀ {x e-body e-body' t-asc n-body n-body' n-ana m-ana m-asc m-body m-all syn-body syn-body' syn-all ana-body ana-all } ->
+    StepAnnFun : ∀ {x e-body e-body' t-asc n-body n-body' n-ana m-ana m-asc m-body m-all syn-body syn-body' syn-all ana-body ana-all } ->
       VarsSynthesize? x t-asc ✔ (e-body ⇒ (syn-body , n-body)) (e-body' ⇒ (syn-body' , n-body')) ->
       (((EFun x (t-asc , New) m-ana m-asc ((e-body ⇒ (syn-body , n-body)) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (ana-all , n-ana)) l↦
       (((EFun x (t-asc , Old) m-ana m-asc ((e-body' ⇒ (syn-body' , n-body')) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (ana-all , New))

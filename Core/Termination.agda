@@ -186,12 +186,12 @@ module Core.Termination where
   StepDecreaseL : ∀ {e e'} ->
     e l↦ e' -> 
     <ExpLow e' e
-  StepDecreaseL (StepNewAnnFun {e-body = e} {e-body' = e'} vars-syn) = <ExpLow< helper
+  StepDecreaseL (StepAnnFun {e-body = e} {e-body' = e'} vars-syn) = <ExpLow< helper
     where 
     helper : surface-news-mid e' < suc (surface-news-mid e)
     helper rewrite (vars-syn?-preserves-surface-news vars-syn) = ≤-refl
-  StepDecreaseL (StepNewSynConsist x) = <ExpLow= refl (<Lower= =New-refl (<Upper= <NewC))
-  StepDecreaseL (StepNewAnaConsist x x₁) = <ExpLow= refl (<Lower <NewC refl)
+  StepDecreaseL (StepSynConsist x) = <ExpLow= refl (<Lower= =New-refl (<Upper= <NewC))
+  StepDecreaseL (StepAnaConsist x x₁) = <ExpLow= refl (<Lower <NewC refl)
   StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC refl)
   StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =New-refl (<Upper (<Fun (<Lower= =New-refl (<Upper= <NewC)))))
 

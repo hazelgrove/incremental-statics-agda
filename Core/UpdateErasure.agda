@@ -19,11 +19,11 @@ module Core.UpdateErasure where
   l↦-erase : ∀ {e e'} ->
     (e l↦ e') ->
     (L◇ e) ≡ (L◇ e')
-  l↦-erase (StepNewSynConsist _) = refl
-  l↦-erase (StepNewAnaConsist _ _) = refl
+  l↦-erase (StepSynConsist _) = refl
+  l↦-erase (StepAnaConsist _ _) = refl
   l↦-erase (StepAnaFun _ _) = refl
   l↦-erase StepSynFun = refl
-  l↦-erase (StepNewAnnFun vars-syn) 
+  l↦-erase (StepAnnFun vars-syn) 
     rewrite vars-syn?-erase vars-syn = refl
 
   mutual 

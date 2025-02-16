@@ -41,11 +41,11 @@ module Core.Progress where
   new-ana-steps-syn-inner : ∀ {Γ e m t} ->
     Γ U⊢ e ->
     ∃[ e' ] (e [ m ]⇐ (t , New)) l↦ e' 
-  new-ana-steps-syn-inner (WTConst (▷Pair x)) = _ , StepNewAnaConsist SubsumableConst (proj₂ (~D-dec _ _)) 
-  new-ana-steps-syn-inner (WTHole x) = _ , StepNewAnaConsist SubsumableHole (proj₂ (~D-dec _ _)) 
-  new-ana-steps-syn-inner (WTAp x x₁ x₂ x₃ x₄ x₅) = _ , StepNewAnaConsist SubsumableAp (proj₂ (~D-dec _ _)) 
-  new-ana-steps-syn-inner (WTVar x x₁) = _ , StepNewAnaConsist SubsumableVar  (proj₂ (~D-dec _ _)) 
-  new-ana-steps-syn-inner (WTAsc x x₁ x₂) = _ , StepNewAnaConsist SubsumableAsc (proj₂ (~D-dec _ _)) 
+  new-ana-steps-syn-inner (WTConst (▷Pair x)) = _ , StepAnaConsist SubsumableConst (proj₂ (~D-dec _ _)) 
+  new-ana-steps-syn-inner (WTHole x) = _ , StepAnaConsist SubsumableHole (proj₂ (~D-dec _ _)) 
+  new-ana-steps-syn-inner (WTAp x x₁ x₂ x₃ x₄ x₅) = _ , StepAnaConsist SubsumableAp (proj₂ (~D-dec _ _)) 
+  new-ana-steps-syn-inner (WTVar x x₁) = _ , StepAnaConsist SubsumableVar  (proj₂ (~D-dec _ _)) 
+  new-ana-steps-syn-inner (WTAsc x x₁ x₂) = _ , StepAnaConsist SubsumableAsc (proj₂ (~D-dec _ _)) 
 
   new-ana-steps-syn : ∀ {Γ e m t} ->
     Γ U⊢ e ->
@@ -112,13 +112,13 @@ module Core.Progress where
     ProgressUp (WTAp marrow x₁ x₂ x₃ syn ana) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled1)) | progress = Inl (_ , StepUp FillU⊙ (StepAp (proj₂ (proj₂ (proj₂ (▸DTArrow-dec _))))) FillU⊙)
     ProgressUp (WTAp marrow x₁ x₂ x₃ syn ana) | Inr (AlmostSettledLow (AlmostSettledUp {Old} settled1)) | Inl (e' , step) = Inl (_ , StepLowUp (FillLEnvUpRec (FillLEnvAp2 FillL⊙)) step (FillLEnvUpRec (FillLEnvAp2 FillL⊙)))
     ProgressUp (WTAp marrow x₁ x₂ x₃ syn ana) | Inr (AlmostSettledLow (AlmostSettledUp {Old} settled1)) | Inr (AlmostSettledLow (AlmostSettledUp {n} settled2)) with productive-syn-ana settled1 syn | marrow | x₂
-    ProgressUp (WTAp marrow x₁ x₂ x₃ syn ana) | Inr (AlmostSettledLow (AlmostSettledUp {.Old} settled1)) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled2)) | t , refl | NTArrowC (DTArrowSome x) | ▷Pair ▶Old = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAp2 FillL⊙)) (StepNewSynConsist (proj₂ (~D-dec _ _))) (FillLEnvUpRec (FillLEnvAp2 FillL⊙))) 
+    ProgressUp (WTAp marrow x₁ x₂ x₃ syn ana) | Inr (AlmostSettledLow (AlmostSettledUp {.Old} settled1)) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled2)) | t , refl | NTArrowC (DTArrowSome x) | ▷Pair ▶Old = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAp2 FillL⊙)) (StepSynConsist (proj₂ (~D-dec _ _))) (FillLEnvUpRec (FillLEnvAp2 FillL⊙))) 
     ProgressUp (WTAp marrow x₁ x₂ x₃ syn ana) | Inr (AlmostSettledLow (AlmostSettledUp {.Old} settled1)) | Inr (AlmostSettledLow (AlmostSettledUp {Old} settled2)) | t , refl | NTArrowC (DTArrowSome x) | ▷Pair ▶Old = Inr (AlmostSettledUp (SettledAp (SettledLow (SettledUp settled1)) (SettledLow (SettledUp settled2)))) 
     ProgressUp (WTVar x x₁) = Inr (AlmostSettledUp SettledVar)
     ProgressUp (WTAsc {t-asc = (t-asc , New)} x x₁ ana) = Inl (_ , StepUp FillU⊙ StepAsc FillU⊙) 
     ProgressUp (WTAsc {t-asc = (t-asc , Old)} x x₁ ana) with ProgressLow ana 
     ... | Inl (e' , step) = Inl (_ , StepLowUp (FillLEnvUpRec (FillLEnvAsc FillL⊙)) step (FillLEnvUpRec (FillLEnvAsc FillL⊙))) 
-    ... | Inr (AlmostSettledLow (AlmostSettledUp {New} settled)) = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAsc FillL⊙)) (StepNewSynConsist (proj₂ (~D-dec _ _))) (FillLEnvUpRec (FillLEnvAsc FillL⊙))) 
+    ... | Inr (AlmostSettledLow (AlmostSettledUp {New} settled)) = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAsc FillL⊙)) (StepSynConsist (proj₂ (~D-dec _ _))) (FillLEnvUpRec (FillLEnvAsc FillL⊙))) 
     ... | Inr (AlmostSettledLow (AlmostSettledUp {Old} settled)) = Inr (AlmostSettledUp (SettledAsc (SettledLow (SettledUp settled)))) 
 
     ProgressLow :  
@@ -130,14 +130,14 @@ module Core.Progress where
     ProgressLow (WTUp {ana-all = t , New} subsumable consist m-consist syn) | Inr settled = Inl (new-ana-steps-syn syn)
     ProgressLow (WTUp {ana-all = t , Old}  subsumable consist m-consist syn) | Inr settled = Inr (AlmostSettledLow settled)
     ProgressLow (WTFun {ana-all = t , New} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) = Inl (_ , StepLow FillL⊙ (StepAnaFun marrow (■~D-pair consist)) FillL⊙) 
-    ProgressLow (WTFun {ana-all = ana-all , Old} {t-asc = t-asc , New} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) = Inl (_ , StepLow FillL⊙ (StepNewAnnFun (proj₂ (proj₂ (proj₂ vars-syn?-dec-elaborate)))) FillL⊙)
+    ProgressLow (WTFun {ana-all = ana-all , Old} {t-asc = t-asc , New} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) = Inl (_ , StepLow FillL⊙ (StepAnnFun (proj₂ (proj₂ (proj₂ vars-syn?-dec-elaborate)))) FillL⊙)
     
     ProgressLow (WTFun {ana-all = ana-all , Old} {ana-body = ana-body , New} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) = Inl (_ , StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))) (proj₂ (new-ana-steps-inner ana)) (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))))
     ProgressLow (WTFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ProgressLow ana  
     ProgressLow (WTFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inl (e' , step) = Inl (_ , StepLowLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))) step (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))))
     ProgressLow (WTFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled)) with ana-body 
     ProgressLow (WTFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled)) | □ = Inl (_ , StepLow FillL⊙ StepSynFun FillL⊙)
-    ProgressLow (WTFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled)) | ■ _ = Inl (_ , StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))) (StepNewSynConsist (proj₂ (~D-dec _ _))) (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙)))) 
+    ProgressLow (WTFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled)) | ■ _ = Inl (_ , StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))) (StepSynConsist (proj₂ (~D-dec _ _))) (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙)))) 
     ProgressLow (WTFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (AlmostSettledLow (AlmostSettledUp {Old} settled)) = Inr (AlmostSettledLow (AlmostSettledUp (SettledFun (SettledLow (SettledUp settled)))))
 
   step-preserves-program : ∀ {p e} -> 
@@ -145,10 +145,10 @@ module Core.Progress where
     ∃[ p' ] (e ≡ ExpLowOfProgram p')
   step-preserves-program {p = Root e n} (StepUp (FillUEnvLowRec x) step (FillUEnvLowRec x₁)) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow (FillLEnvLowRec x) step (FillLEnvLowRec x₁)) = Root _ _ , refl
-  step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepNewAnaConsist x consist) FillL⊙) with ~DVoid-right consist 
+  step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepAnaConsist x consist) FillL⊙) with ~DVoid-right consist 
   ... | refl = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepAnaFun _ _) FillL⊙) = Root _ _ , refl
-  step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepNewAnnFun _) FillL⊙) = Root _ _ , refl
+  step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepAnnFun _) FillL⊙) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillL⊙ StepSynFun FillL⊙) = Root _ _ , refl
 
   ProgressProgram : ∀ {p} ->
@@ -191,7 +191,7 @@ module Core.Progress where
       (e L↦ e') -> 
       (e L̸↦) ->
       ⊥ 
-    UnProgressLow (WTUp _ _ _ syn) (StepLow FillL⊙ (StepNewSynConsist _) FillL⊙) (SettledLow ())
+    UnProgressLow (WTUp _ _ _ syn) (StepLow FillL⊙ (StepSynConsist _) FillL⊙) (SettledLow ())
     UnProgressLow (WTUp _ _ _ syn) (StepLow (FillLEnvLowRec fill1) step (FillLEnvLowRec fill2)) (SettledLow settled) = UnProgressUp syn (StepLow fill1 step fill2) settled
     UnProgressLow (WTUp _ _ _ syn) (StepUp (FillUEnvLowRec fill1) step (FillUEnvLowRec fill2)) (SettledLow settled) = UnProgressUp syn (StepUp fill1 step fill2) settled
     UnProgressLow (WTFun _ _ _ _ _ _ _ _ ana) (StepLow FillL⊙ StepSynFun FillL⊙) (SettledLow (SettledUp (SettledFun (SettledLow ()))))
