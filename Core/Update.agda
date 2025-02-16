@@ -13,10 +13,10 @@ module Core.Update where
   infix 10 _u↦_ 
 
   data _l↦_ : ExpLow -> ExpLow -> Set where 
-    StepNewSynConsist : ∀ {e-all t-syn t-ana m-all m-all' n} ->
+    StepNewSynConsist : ∀ {e-all t-syn t-ana m-all m-all' n-ana} ->
       t-syn ~D (■ t-ana) , m-all' ->
-      (e-all ⇒ (t-syn , New)) [ m-all ]⇐ (■ t-ana , n) l↦
-      (e-all ⇒ (t-syn , Old)) [ m-all' ]⇐ (■ t-ana , n)
+      (e-all ⇒ (t-syn , New)) [ m-all ]⇐ (■ t-ana , n-ana) l↦
+      (e-all ⇒ (t-syn , Old)) [ m-all' ]⇐ (■ t-ana , n-ana)
     StepNewAnaConsist : ∀ {e-all t-syn t-ana n-syn m-all m-all'} ->
       SubsumableMid e-all -> 
       t-syn ~D t-ana , m-all' ->
@@ -31,15 +31,15 @@ module Core.Update where
       VarsSynthesize? x t-asc ✔ (e-body ⇒ (syn-body , n-body)) (e-body' ⇒ (syn-body' , n-body')) ->
       (((EFun x (t-asc , New) m-ana m-asc ((e-body ⇒ (syn-body , n-body)) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (ana-all , n-ana)) l↦
       (((EFun x (t-asc , Old) m-ana m-asc ((e-body' ⇒ (syn-body' , n-body')) [ m-body ]⇐ ana-body)) ⇒ (DUnless (DArrow t-asc syn-body') ana-all , New)) [ m-all ]⇐ (ana-all , New))
-    StepSynFun : ∀ {x e-body t-asc t-body n-asc m-body syn-all ana-all m1 m2 m3 n-ana} ->
-      (((EFun x (t-asc , n-asc) m1 m2 ((e-body ⇒ (t-body , New)) [ m-body ]⇐ (□ , Old))) ⇒ syn-all) [ m3 ]⇐ (ana-all , n-ana)) l↦
-      (((EFun x (t-asc , n-asc) m1 m2 ((e-body ⇒ (t-body , Old)) [ ✔ ]⇐ (□ , Old) )) ⇒ (DUnless (DArrow t-asc t-body) ana-all , New)) [ m3 ]⇐ (ana-all , n-ana))
+    StepSynFun : ∀ {x e-body t-asc t-body n-asc m-body syn-all ana-all m1 m2 m3 n-ana n-body} ->
+      (((EFun x (t-asc , n-asc) m1 m2 ((e-body ⇒ (t-body , New)) [ m-body ]⇐ (□ , n-body))) ⇒ syn-all) [ m3 ]⇐ (ana-all , n-ana)) l↦
+      (((EFun x (t-asc , n-asc) m1 m2 ((e-body ⇒ (t-body , Old)) [ ✔ ]⇐ (□ , n-body) )) ⇒ (DUnless (DArrow t-asc t-body) ana-all , New)) [ m3 ]⇐ (ana-all , n-ana))
     
   data _u↦_ : ExpUp -> ExpUp -> Set where 
-    StepAp : ∀ {e-fun e-arg t-fun t-in-fun t-out-fun m-all m-arg m m-fun n-fun syn-all ana-arg} ->
+    StepAp : ∀ {e-fun e-arg t-fun t-in-fun t-out-fun m-all m-arg m m-fun n-fun syn-all ana-fun ana-arg} ->
       t-fun ▸DTArrow t-in-fun , t-out-fun , m-fun -> 
-      (EAp ((e-fun ⇒ (t-fun , New)) [ m ]⇐ (□ , n-fun)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all u↦
-      (EAp ((e-fun ⇒ (t-fun , Old)) [ ✔ ]⇐ (□ , n-fun)) m-fun (e-arg [ m-arg ]⇐ (t-in-fun , New))) ⇒ (t-out-fun , New)
+      (EAp ((e-fun ⇒ (t-fun , New)) [ m ]⇐ (ana-fun , n-fun)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all u↦
+      (EAp ((e-fun ⇒ (t-fun , Old)) [ ✔ ]⇐ (ana-fun , n-fun)) m-fun (e-arg [ m-arg ]⇐ (t-in-fun , New))) ⇒ (t-out-fun , New)
     StepAsc : ∀ {e-body t-asc m-body syn-all ana-body} ->
       (EAsc (t-asc , New) (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all  u↦
       (EAsc (t-asc , Old) (e-body [ m-body ]⇐ (■ t-asc , New))) ⇒ (■ t-asc , New)

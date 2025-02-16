@@ -193,7 +193,7 @@ module Core.Termination where
   StepDecreaseL (StepNewSynConsist x) = <ExpLow= refl (<Lower= =New-refl (<Upper= <NewC))
   StepDecreaseL (StepNewAnaConsist x x₁) = <ExpLow= refl (<Lower <NewC refl)
   StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC refl)
-  StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =New-refl (<Upper (<Fun (<Lower= =NewOld (<Upper= <NewC)))))
+  StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =New-refl (<Upper (<Fun (<Lower= =New-refl (<Upper= <NewC)))))
 
   mutual 
     
