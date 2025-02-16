@@ -190,7 +190,7 @@ module Core.Termination where
     where 
     helper : surface-news-mid e' < suc (surface-news-mid e)
     helper rewrite (vars-syn?-preserves-surface-news vars-syn) = ≤-refl
-  StepDecreaseL (StepNewSynConsist x) = <ExpLow= refl (<Lower= =NewOld (<Upper= <NewC))
+  StepDecreaseL (StepNewSynConsist x) = <ExpLow= refl (<Lower= =New-refl (<Upper= <NewC))
   StepDecreaseL (StepNewAnaConsist x x₁) = <ExpLow= refl (<Lower <NewC refl)
   StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC refl)
   StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =New-refl (<Upper (<Fun (<Lower= =NewOld (<Upper= <NewC)))))

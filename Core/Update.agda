@@ -13,10 +13,10 @@ module Core.Update where
   infix 10 _u↦_ 
 
   data _l↦_ : ExpLow -> ExpLow -> Set where 
-    StepNewSynConsist : ∀ {e-all t-syn t-ana m-all m-all'} ->
+    StepNewSynConsist : ∀ {e-all t-syn t-ana m-all m-all' n} ->
       t-syn ~D (■ t-ana) , m-all' ->
-      (e-all ⇒ (t-syn , New)) [ m-all ]⇐ (■ t-ana , Old) l↦
-      (e-all ⇒ (t-syn , Old)) [ m-all' ]⇐ (■ t-ana , Old)
+      (e-all ⇒ (t-syn , New)) [ m-all ]⇐ (■ t-ana , n) l↦
+      (e-all ⇒ (t-syn , Old)) [ m-all' ]⇐ (■ t-ana , n)
     StepNewAnaConsist : ∀ {e-all t-syn t-ana n-syn m-all m-all'} ->
       SubsumableMid e-all -> 
       t-syn ~D t-ana , m-all' ->

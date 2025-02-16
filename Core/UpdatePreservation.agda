@@ -96,10 +96,10 @@ module Core.UpdatePreservation where
     (e l↦ e') ->   
     (Γ L⊢ e')
   PreservationStepAna (WTUp subsumable (~N-pair consist-t) consist-m syn) (StepNewSynConsist consist) with consist-t 
-  ... | consist-t rewrite ~D-unicity consist consist-t = WTUp subsumable (~N-pair consist-t) ▶Old (oldify-syn syn)
+  ... | consist-t rewrite ~D-unicity consist consist-t = WTUp subsumable (~N-pair consist-t) ▶Same (oldify-syn syn)
   PreservationStepAna (WTUp subsumable (~N-pair consist-t) consist-m syn) (StepNewAnaConsist subsumable' consist) with ~D-unicity consist consist-t 
   ... | refl = WTUp subsumable' (~N-pair consist-t) ▶Same (oldify-syn syn)
-  PreservationStepAna (WTFun marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (StepNewSynConsist consist') rewrite ~D-unicity consist' consist-all = WTFun marrow consist consist-ana consist-asc consist-body (beyond-▷-contra ◁▷C consist-syn) (~N-pair consist-all) ▶Old ana
+  PreservationStepAna (WTFun marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (StepNewSynConsist consist') rewrite ~D-unicity consist' consist-all = WTFun marrow consist consist-ana consist-asc consist-body (beyond-▷-contra ◁▷C consist-syn) (~N-pair consist-all) ▶Same ana
   PreservationStepAna (WTFun {t-asc = t-asc , n-asc} (NTArrowC x) consist (▷Pair ▶New) ▶New consist-body consist-syn consist-all consist-m-all ana) (StepAnaFun marrow' (■~D-pair consist')) = WTFun (NTArrowC marrow') (■~N-pair (~N-pair consist')) (▷Pair ▶Old) ▶Old ▶Same (consist-unless-lemma {n1 = n-asc}) (~N-pair ~D-unless) ▶Same (newify-ana ana)
   PreservationStepAna (WTFun (NTArrowC {d} {n} marrow) (■~N-pair {t} (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (StepNewAnnFun {syn-body' = syn-body'} vars-syn) 
     = WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair ▶New)  ▶New ▶New random-helper (~N-pair (proj₂ (~D-dec _ _))) ▶New (preservation-vars-ana? ana vars-syn)
