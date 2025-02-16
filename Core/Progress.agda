@@ -130,7 +130,7 @@ module Core.Progress where
     ProgressLow (WTUp {ana-all = t , New} subsumable consist m-consist syn) | Inr settled = Inl (new-ana-steps-syn syn)
     ProgressLow (WTUp {ana-all = t , Old}  subsumable consist m-consist syn) | Inr settled = Inr (AlmostSettledLow settled)
     ProgressLow (WTFun {ana-all = t , New} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) = Inl (_ , StepLow FillL⊙ (StepAnaFun marrow (■~D-pair consist)) FillL⊙) 
-    ProgressLow (WTFun {ana-all = ana-all , Old} {t-asc = t-asc , New} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) = Inl (_ , StepLow FillL⊙ (StepNewAnnFun marrow (■~D-pair consist) (proj₂ (proj₂ (proj₂ vars-syn?-dec-elaborate)))) FillL⊙)
+    ProgressLow (WTFun {ana-all = ana-all , Old} {t-asc = t-asc , New} (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) = Inl (_ , StepLow FillL⊙ (StepNewAnnFun (proj₂ (proj₂ (proj₂ vars-syn?-dec-elaborate)))) FillL⊙)
     
     ProgressLow (WTFun {ana-all = ana-all , Old} {ana-body = ana-body , New} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) = Inl (_ , StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))) (proj₂ (new-ana-steps-inner ana)) (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))))
     ProgressLow (WTFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ProgressLow ana  
@@ -148,7 +148,7 @@ module Core.Progress where
   step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepNewAnaConsist x consist) FillL⊙) with ~DVoid-right consist 
   ... | refl = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepAnaFun _ _) FillL⊙) = Root _ _ , refl
-  step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepNewAnnFun _ _ _) FillL⊙) = Root _ _ , refl
+  step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepNewAnnFun _) FillL⊙) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillL⊙ StepSynFun FillL⊙) = Root _ _ , refl
 
   ProgressProgram : ∀ {p} ->

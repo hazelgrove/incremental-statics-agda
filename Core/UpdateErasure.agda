@@ -23,7 +23,7 @@ module Core.UpdateErasure where
   l↦-erase (StepNewAnaConsist _ _) = refl
   l↦-erase (StepAnaFun _ _) = refl
   l↦-erase StepSynFun = refl
-  l↦-erase (StepNewAnnFun _ _ vars-syn) 
+  l↦-erase (StepNewAnnFun vars-syn) 
     rewrite vars-syn?-erase vars-syn = refl
 
   mutual 
