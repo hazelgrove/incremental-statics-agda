@@ -95,7 +95,7 @@ module Core.ActionPreservation where
   PreservationStep ana (ALC ActDelete) = WrapSubsume (WTHole (▷Pair ▶Old))
   PreservationStep ana (ALC ActInsertConst) = WrapSubsume (WTConst (▷Pair ▶Old))
   PreservationStep ana (ALC (ActInsertVar in-ctx)) = WrapSubsume (WTVar in-ctx (▷Pair ▶Same))
-  PreservationStep ana (ALC ActWrapAsc) = WrapSubsume (WTAsc (▷Pair ▶New) (▷Pair ▶New) (newify-ana ana))
+  PreservationStep ana (ALC ActWrapAsc) = WrapSubsume (WTAsc (▷Pair ▶Same) (▷Pair ▶Same) (newify-ana ana))
   PreservationStep ana (ALC ActWrapApTwo) = WrapSubsume (WTAp (NTArrowC (DTArrowSome MArrowHole)) (▷Pair ▶Old) (▷Pair ▶Old) ▶Old (WTUp SubsumableHole (~N-pair ~DVoidR) ▶Old (WTHole (▷Pair ▶Old))) (newify-ana ana))
   PreservationStep ana (ALC {t = t} {n = n} (ActWrapFun {t = t'} {n = n'} vars-syn)) with ▸NTArrow-dec (t , New) | ~N-dec (t' , n') (t , New)
   ... | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist | m' , consist-syn with ~N-dec (■ THole , New) (t-in , New) | new-through-~N-left consist-syn

@@ -94,7 +94,7 @@ module Core.Actions where
       x , (t , n) ∈N Γ , m ->
       Γ ⊢ (InsertVar x) , (EHole ⇒ syn) αU↦ ((EVar x m) ⇒ (■ t , New))
     ActWrapAsc : ∀ {Γ e syn} ->
-      Γ ⊢ WrapAsc , (e ⇒ syn) αU↦ ((EAsc (THole , New) ((e ⇒ syn) [ ✔ ]⇐ (■ THole , New))) ⇒ (■ THole , New))
+      Γ ⊢ WrapAsc , (e ⇒ syn) αU↦ ((EAsc (THole , Old) ((e ⇒ syn) [ ✔ ]⇐ (■ THole , New))) ⇒ (■ THole , New))
     ActDelete : ∀ {Γ e} ->
       Γ ⊢ Delete , e αU↦ (EHole ⇒ (■ THole , New))
     ActUnwrapFun : ∀ {Γ x asc m-ana m-ann e e' t t' n n' tx nx m m-body ana syn} ->
