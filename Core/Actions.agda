@@ -101,10 +101,10 @@ module Core.Actions where
       x , (tx , nx) ∈N? Γ , m ->
       VarsSynthesize? x tx m (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
       Γ ⊢ (Unwrap One) , ((EFun x asc m-ana m-ann ((e ⇒ (t , n)) [ m-body ]⇐ ana)) ⇒ syn) αU↦ (e' ⇒ (t' , New))
-    ActUnwrapApOne : ∀ {Γ e t n m ana e-arg syn} ->
-      Γ ⊢ (Unwrap One) , ((EAp ((e ⇒ (t , n)) [ m ]⇐ ana) ✔ e-arg) ⇒ syn) αU↦ (e ⇒ (t , New))
-    ActUnwrapApTwo : ∀ {Γ e t n m ana e-fun syn} ->
-      Γ ⊢ (Unwrap Two) , ((EAp e-fun ✔ ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ (e ⇒ (t , New))
+    ActUnwrapApOne : ∀ {Γ e t n m ana e-arg syn m'} ->
+      Γ ⊢ (Unwrap One) , ((EAp ((e ⇒ (t , n)) [ m ]⇐ ana) m' e-arg) ⇒ syn) αU↦ (e ⇒ (t , New))
+    ActUnwrapApTwo : ∀ {Γ e t n m ana e-fun syn m'} ->
+      Γ ⊢ (Unwrap Two) , ((EAp e-fun m' ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ (e ⇒ (t , New))
     ActUnwrapAsc : ∀ {Γ asc e t n m ana syn} ->
       Γ ⊢ (Unwrap One) , ((EAsc asc ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ (e ⇒ (t , New))
     ActSetAsc : ∀ {Γ asc e t syn} ->
