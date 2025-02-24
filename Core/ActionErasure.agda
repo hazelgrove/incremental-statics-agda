@@ -27,6 +27,7 @@ module Core.ActionErasure where
     rewrite vars-syn?-erase vars-syn = ActUnwrapFun
   αU↦-erase ActSetAsc = ActSetAsc
   αU↦-erase ActSetAnn = ActSetAnn
+  αU↦-erase ActDeleteBinder = ActDeleteBinder
 
   αL↦-erase : ∀ {Γ α e e'} ->
     (Γ ⊢ α , e αL↦ e') ->

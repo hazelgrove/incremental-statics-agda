@@ -44,6 +44,7 @@ module Core.ActionPreservation where
   beyond-αU↦ ActUnwrapAsc = =▷New
   beyond-αU↦ ActSetAsc = =▷Refl
   beyond-αU↦ ActSetAnn = =▷Refl
+  beyond-αU↦ ActDeleteBinder = =▷Refl
 
   beyond-AU↦ : ∀ {Γ A e e' syn syn'} -> 
     Γ ⊢ A , (e ⇒ syn) AU↦ (e' ⇒ syn') -> 
@@ -111,7 +112,8 @@ module Core.ActionPreservation where
   PreservationStep (WTFun {x = x} marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (ALC {t = t} (ActSetAnn {t = t'})) with ▸NTArrow-dec (t , New)
   ... | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist with ~D-dec (■ t') t-in 
   ... | m' , consist' = WTFun (NTArrowC consist) (■~N-pair (~N-pair consist')) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair consist-all) ▶New-max-r (newify-ctx {x = x} ana)
-  
+  PreservationStep (WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (ALC ActDeleteBinder) = WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ {!   !} {!   !} {! ana  !}
+
   mutual 
 
     PreservationSyn :  
@@ -140,6 +142,6 @@ module Core.ActionPreservation where
   PreservationProgram :   
     ∀ {A p p'} ->  
     (P⊢ p) ->  
-    (A , p AP↦ p') ->      
-    (P⊢ p')             
+    (A , p AP↦ p') ->       
+    (P⊢ p')              
   PreservationProgram (WTProgram ana) (AStepProgram step) = WTProgram (PreservationAna ana step)    
