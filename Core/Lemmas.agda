@@ -244,6 +244,12 @@ module Core.Lemmas where
     Γ L⊢ ((e ⇒ (t , Old)) [ ✔ ]⇐ (□ , n'))
   oldify-syn-inner (WTUp subsumable (~N-pair consist) consist-m syn) = WTUp subsumable (~N-pair ~DVoidR) ▶Same (oldify-syn syn)
   oldify-syn-inner (WTFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ x₅ x₆ x₇ syn) = WTFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ (beyond-▷-contra ◁▷C x₅) (~N-pair ~DVoidR) ▶Same syn
+  
+  newify-syn-inner : ∀ {Γ e n m m' ana t} ->
+    Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ ana) -> 
+    Γ L⊢ ((e ⇒ (t , New)) [ m' ]⇐ ana)
+  newify-syn-inner (WTUp x (~N-pair x₁) x₂ x₃) = WTUp x (~N-pair x₁) ▶New (oldify-syn x₃)
+  newify-syn-inner (WTFun x x₁ x₂ x₃ x₄ (▷Pair x₅) (~N-pair x₆) x₇ wt) = WTFun x x₁ x₂ x₃ x₄ (▷Pair x₅) (~N-pair x₆) ▶New wt
 
   newify-ana : ∀ {Γ e n n' m m' ana t t'} ->
     Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ ana) -> 
@@ -259,6 +265,7 @@ module Core.Lemmas where
     Γ L⊢ (e [ m ]⇐ ana) -> 
     Γ L⊢ (e [ m' ]⇐ (t , New))
   small-newify-ana {e = e ⇒ (t , n)} ana = newify-ana ana
+
 
   data NewerCtx : Ctx -> Ctx -> Set where  
     NewerCtxRefl : ∀{Γ} ->
@@ -313,5 +320,5 @@ module Core.Lemmas where
  
   newify-ctx : ∀{Γ x t t' e} ->
     (x ∶ t ∷? Γ) L⊢ e -> 
-    (x ∶ (t' , New) ∷? Γ) L⊢ e     
+    (x ∶ (t' , New) ∷? Γ) L⊢ e      
   newify-ctx {x = x} = newer-ctx-l (NewerCtxInit? {x})

@@ -21,13 +21,15 @@ module Core.ActionErasure where
   αU↦-erase ActUnwrapApTwo = ActUnwrapApTwo
   αU↦-erase ActUnwrapAsc = ActUnwrapAsc
   αU↦-erase (ActInsertVar in-ctx) = ActInsertVar
-  αU↦-erase (ActWrapFun vars-syn) 
-    rewrite vars-syn?-erase vars-syn = ActWrapFun
+  αU↦-erase ActWrapFun = ActWrapFun
   αU↦-erase (ActUnwrapFun x vars-syn) 
     rewrite vars-syn?-erase vars-syn = ActUnwrapFun
   αU↦-erase ActSetAsc = ActSetAsc
   αU↦-erase ActSetAnn = ActSetAnn
-  αU↦-erase ActDeleteBinder = ActDeleteBinder
+  αU↦-erase (ActDeleteBinder in-ctx vars-syn) 
+    rewrite vars-syn?-erase vars-syn = ActDeleteBinder
+  αU↦-erase (ActSetBinder vars-syn)
+    rewrite vars-syn?-erase vars-syn = ActSetBinder
 
   αL↦-erase : ∀ {Γ α e e'} ->
     (Γ ⊢ α , e αL↦ e') ->
