@@ -23,7 +23,6 @@ module Core.Actions where
     Unwrap : Child -> Action
     SetAsc : Type -> Action
     SetAnn : Type -> Action
-    DeleteBinder : Action
     
   LocalizedAction : Set
   LocalizedAction = Action × (List Child)
@@ -55,8 +54,6 @@ module Core.Actions where
       (SetAsc t') , (BareEAsc t e) αB↦ (BareEAsc t' e)
     ActSetAnn : ∀ {x e t t'} ->
       (SetAnn t') , (BareEFun x t e) αB↦ (BareEFun x t' e)
-    ActDeleteBinder : ∀ {x e t} ->
-      DeleteBinder , (BareEFun x t e) αB↦ (BareEFun BHole t e)
 
   data _,_AB↦_ : LocalizedAction -> BareExp -> BareExp -> Set where
     ABareDone : ∀ {α e e'} ->
@@ -114,9 +111,6 @@ module Core.Actions where
       Γ ⊢ (SetAsc t) , ((EAsc asc e) ⇒ syn) αU↦ ((EAsc (t , New) e) ⇒ syn)
     ActSetAnn : ∀ {Γ x e t ann m1 m2 syn} ->
       Γ ⊢ (SetAnn t) , ((EFun x ann m1 m2 e) ⇒ syn) αU↦ ((EFun x (t , New) m1 m2 e) ⇒ syn)
-    ActDeleteBinder : ∀ {Γ x ann n-ann m1 m2 e e' t t' n n' syn} ->
-      VarsSynthesize? x ann ✔ (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
-      Γ ⊢ DeleteBinder , ((EFun x (ann , n-ann) m1 m2 (e ⇒ (t , n))) ⇒ syn) αU↦ ((EFun BHole (ann , New) m1 m2 (e' ⇒ (t' , n'))) ⇒ syn)
 
   data _⊢_,_αL↦_ : Ctx -> Action -> ExpLow -> ExpLow -> Set where 
     ALC : ∀ {Γ α e e' m t n} ->
