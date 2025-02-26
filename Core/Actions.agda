@@ -15,7 +15,7 @@ module Core.Actions where
 
   data Action : Set where 
     InsertConst : Action
-    WrapFun : Binding -> Action
+    WrapFun : Action
     WrapAp : Child -> Action
     InsertVar : Var -> Action
     WrapAsc : Action
@@ -23,6 +23,8 @@ module Core.Actions where
     Unwrap : Child -> Action
     SetAsc : Type -> Action
     SetAnn : Type -> Action
+    DeleteBinder : Action
+    SetBinder : Var -> Action
     
   LocalizedAction : Set
   LocalizedAction = Action × (List Child)
@@ -30,8 +32,8 @@ module Core.Actions where
   data _,_αB↦_ : Action -> BareExp -> BareExp -> Set where
     ActInsertConst : 
       InsertConst , BareEHole αB↦ BareEConst
-    ActWrapFun : ∀ {x e} ->
-      WrapFun x , e αB↦ (BareEFun x THole e)
+    ActWrapFun : ∀ {e} ->
+      WrapFun , e αB↦ (BareEFun BHole THole e)
     ActWrapApOne : ∀ {e} ->
       (WrapAp One) , e αB↦ (BareEAp e BareEHole)
     ActWrapApTwo : ∀ {e} ->
@@ -54,6 +56,10 @@ module Core.Actions where
       (SetAsc t') , (BareEAsc t e) αB↦ (BareEAsc t' e)
     ActSetAnn : ∀ {x e t t'} ->
       (SetAnn t') , (BareEFun x t e) αB↦ (BareEFun x t' e)
+    ActDeleteBinder : ∀ {x e t} ->
+      DeleteBinder , (BareEFun x t e) αB↦ (BareEFun BHole t e)
+    ActSetBinder : ∀ {x e t} ->
+      SetBinder x , (BareEFun BHole t e) αB↦ (BareEFun (BVar x) t e)
 
   data _,_AB↦_ : LocalizedAction -> BareExp -> BareExp -> Set where
     ABareDone : ∀ {α e e'} ->
@@ -83,9 +89,8 @@ module Core.Actions where
   data _⊢_,_αU↦_ : Ctx -> Action -> ExpUp -> ExpUp -> Set where 
     ActInsertConst : ∀ {Γ syn} ->
       Γ ⊢ InsertConst , (EHole ⇒ syn) αU↦ (EConst ⇒ (■ TBase , New))
-    ActWrapFun : ∀ {Γ x e e' t t' n n'} ->
-      VarsSynthesize? x THole ✔ (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
-      Γ ⊢ WrapFun x , (e ⇒ (t , n)) αU↦ ((EFun x (THole , Old) ✔ ✔ ((e' ⇒ (t' , New)) [ ✔ ]⇐ (□ , New))) ⇒ (t , n))
+    ActWrapFun : ∀ {Γ e t n} ->
+      Γ ⊢ WrapFun , (e ⇒ (t , n)) αU↦ ((EFun BHole (THole , Old) ✔ ✔ ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New))) ⇒ (t , n))
     ActWrapApOne : ∀ {Γ e t n} ->
       Γ ⊢ (WrapAp One) , (e ⇒ (t , n)) αU↦ ((EAp ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old))) ⇒ (t , n))
     ActWrapApTwo : ∀ {Γ e t n} ->
@@ -111,6 +116,13 @@ module Core.Actions where
       Γ ⊢ (SetAsc t) , ((EAsc asc e) ⇒ syn) αU↦ ((EAsc (t , New) e) ⇒ syn)
     ActSetAnn : ∀ {Γ x e t ann m1 m2 syn} ->
       Γ ⊢ (SetAnn t) , ((EFun x ann m1 m2 e) ⇒ syn) αU↦ ((EFun x (t , New) m1 m2 e) ⇒ syn)
+    ActDeleteBinder : ∀ {Γ x tx nx m ann m1 m2 e e' t t' n n' syn ana} ->
+      x , (tx , nx) ∈N? Γ , m ->
+      VarsSynthesize? x tx m (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
+      Γ ⊢ DeleteBinder , ((EFun x ann m1 m2 ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun BHole ann m1 m2 ((e' ⇒ (t' , New)) [ m ]⇐ ana)) ⇒ syn)
+    ActSetBinder : ∀ {Γ x ann n-ann m1 m2 e e' t t' n n' syn m ana} ->
+      VarsSynthesize x ann ✔ (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
+      Γ ⊢ SetBinder x , ((EFun BHole (ann , n-ann) m1 m2 ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun (BVar x) (ann , Old) m1 m2 ((e' ⇒ (t' , New)) [ m ]⇐ ana)) ⇒ syn)
 
   data _⊢_,_αL↦_ : Ctx -> Action -> ExpLow -> ExpLow -> Set where 
     ALC : ∀ {Γ α e e' m t n} ->

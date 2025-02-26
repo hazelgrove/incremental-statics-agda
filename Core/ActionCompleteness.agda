@@ -23,8 +23,10 @@ module Core.ActionCompleteness where
   action-construction BareEHole = [] , AB*StepDone
   action-construction BareEConst = ((InsertConst , []) ∷ []) , (AB*StepAct (ABareDone ActInsertConst) AB*StepDone)
   action-construction (BareEVar x) = ((InsertVar x , []) ∷ []) , (AB*StepAct (ABareDone ActInsertVar) AB*StepDone)
-  action-construction (BareEFun x t e) with action-construction e 
-  ... | As , steps = As ∷ʳ (WrapFun x , []) ∷ʳ (SetAnn t , []) , (AB*StepActAppend (AB*StepActAppend steps (AB*StepAct (ABareDone ActWrapFun) AB*StepDone)) (AB*StepAct (ABareDone ActSetAnn) AB*StepDone))
+  action-construction (BareEFun BHole t e) with action-construction e 
+  ... | As , steps = As ∷ʳ (WrapFun , []) ∷ʳ (SetAnn t , []) , (AB*StepActAppend (AB*StepActAppend steps (AB*StepAct (ABareDone ActWrapFun) AB*StepDone)) (AB*StepAct (ABareDone ActSetAnn) AB*StepDone))
+  action-construction (BareEFun (BVar x) t e) with action-construction e 
+  ... | As , steps = As ∷ʳ (WrapFun , []) ∷ʳ (SetBinder x , []) ∷ʳ (SetAnn t , []) , (AB*StepActAppend (AB*StepActAppend (AB*StepActAppend steps (AB*StepAct (ABareDone ActWrapFun) AB*StepDone)) (AB*StepAct (ABareDone ActSetBinder) AB*StepDone)) (AB*StepAct (ABareDone ActSetAnn) AB*StepDone))
   action-construction (BareEAsc t e) with action-construction e 
   ... | As , steps = As ∷ʳ (WrapAsc , []) ∷ʳ (SetAsc t , []) , (AB*StepActAppend (AB*StepActAppend steps (AB*StepAct (ABareDone ActWrapAsc) AB*StepDone)) (AB*StepAct (ABareDone ActSetAsc) AB*StepDone))
   action-construction (BareEAp e1 e2) with action-construction e1 | action-construction e2

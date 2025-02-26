@@ -32,7 +32,7 @@ module Core.ActionPreservation where
     Γ ⊢ α , (e ⇒ syn) αU↦ (e' ⇒ syn') -> 
     =▷ syn syn' 
   beyond-αU↦ ActInsertConst = =▷New
-  beyond-αU↦ (ActWrapFun _) = =▷Refl
+  beyond-αU↦ ActWrapFun = =▷Refl
   beyond-αU↦ ActWrapApOne = =▷Refl
   beyond-αU↦ ActWrapApTwo = =▷New
   beyond-αU↦ (ActInsertVar _) = =▷New
@@ -44,6 +44,8 @@ module Core.ActionPreservation where
   beyond-αU↦ ActUnwrapAsc = =▷New
   beyond-αU↦ ActSetAsc = =▷Refl
   beyond-αU↦ ActSetAnn = =▷Refl
+  beyond-αU↦ (ActDeleteBinder _ _) = =▷Refl
+  beyond-αU↦ (ActSetBinder _) = =▷Refl
 
   beyond-AU↦ : ∀ {Γ A e e' syn syn'} -> 
     Γ ⊢ A , (e ⇒ syn) AU↦ (e' ⇒ syn') -> 
@@ -97,9 +99,12 @@ module Core.ActionPreservation where
   PreservationStep ana (ALC (ActInsertVar in-ctx)) = WrapSubsume (WTVar in-ctx (▷Pair ▶Same))
   PreservationStep ana (ALC ActWrapAsc) = WrapSubsume (WTAsc (▷Pair ▶Same) (▷Pair ▶Same) (newify-ana ana))
   PreservationStep ana (ALC ActWrapApTwo) = WrapSubsume (WTAp (NTArrowC (DTArrowSome MArrowHole)) (▷Pair ▶Old) (▷Pair ▶Old) ▶Old (WTUp SubsumableHole (~N-pair ~DVoidR) ▶Old (WTHole (▷Pair ▶Old))) (newify-ana ana))
-  PreservationStep ana (ALC {t = t} {n = n} (ActWrapFun {t = t'} {n = n'} vars-syn)) with ▸NTArrow-dec (t , New) | ~N-dec (t' , n') (t , New)
-  ... | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist | m' , consist-syn with ~N-dec (■ THole , New) (t-in , New) | new-through-~N-left consist-syn
-  ... | _ , (~N-pair consist') | _ , refl = WTFun (NTArrowC consist) (■~N-pair (~N-pair consist')) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ consist-syn ▶New (newify-ana (preservation-vars-ana?-alt ana vars-syn))
+  -- PreservationStep ana (ALC {t = t} {n = n} (ActWrapFun {t = t'} {n = n'} vars-syn)) with ▸NTArrow-dec (t , New) | ~N-dec (t' , n') (t , New)
+  -- ... | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist | m' , consist-syn with ~N-dec (■ THole , New) (t-in , New) | new-through-~N-left consist-syn
+  -- ... | _ , (~N-pair consist') | _ , refl = WTFun (NTArrowC consist) (■~N-pair (~N-pair consist')) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ consist-syn ▶New (newify-ana (preservation-vars-ana?-alt ana vars-syn))
+  PreservationStep ana (ALC {t = t} (ActWrapFun {t = t'})) with ▸DTArrow-dec t 
+  ... | t-in , _ , _ , consist with ~D-dec (■ THole) t-in | ~D-dec t' t 
+  ... | _ , consist1 | _ , consist2 = WTFun (NTArrowC consist) (■~N-pair (~N-pair consist1)) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair consist2) ▶New-max-r (newify-ana ana)
   PreservationStep ana (ALC {t = t} (ActWrapApOne {t = t'} {n = n'})) with ~N-dec (t' , n') (t , New) | ▸NTArrow-dec (t' , New) 
   ... | _ , (~N-pair consist) | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist' = WTUp SubsumableAp (~N-pair consist) ▶New-max-r (WTAp (NTArrowC consist') (▷Pair ▶New) (▷Pair ▶New) ▶New (newify-ana ana) (WTUp SubsumableHole (~N-pair ~DVoidR) ▶Old (WTHole (▷Pair ▶Old))))
 
@@ -111,6 +116,10 @@ module Core.ActionPreservation where
   PreservationStep (WTFun {x = x} marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (ALC {t = t} (ActSetAnn {t = t'})) with ▸NTArrow-dec (t , New)
   ... | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist with ~D-dec (■ t') t-in 
   ... | m' , consist' = WTFun (NTArrowC consist) (■~N-pair (~N-pair consist')) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair consist-all) ▶New-max-r (newify-ctx {x = x} ana)
+  PreservationStep (WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (ALC (ActDeleteBinder in-ctx vars-syn)) 
+    = WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair ▶New) ▶New ▶New-max-r NUnless-new-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶New-max-r (newify-syn-inner (preservation-vars-unwrap in-ctx ana vars-syn))
+  PreservationStep (WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (ALC (ActSetBinder vars-syn)) 
+    = WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶New-max-r (newify-syn-inner (preservation-vars-ana?-alt ana vars-syn))
   
   mutual 
 
