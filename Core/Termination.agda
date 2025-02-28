@@ -186,7 +186,7 @@ module Core.Termination where
   StepDecreaseL : ∀ {e e'} ->
     e l↦ e' -> 
     <ExpLow e' e
-  StepDecreaseL (StepAnnFun {e-body = e} {e-body' = e'} vars-syn) = <ExpLow< helper
+  StepDecreaseL (StepAnnFun {e-body = e ⇒ _} {e-body' = e'} vars-syn) = <ExpLow< helper
     where 
     helper : surface-news-mid e' < suc (surface-news-mid e)
     helper rewrite (vars-syn?-preserves-surface-news vars-syn) = ≤-refl

@@ -102,10 +102,10 @@ module Core.Actions where
       Γ ⊢ WrapAsc , (e ⇒ syn) αU↦ ((EAsc (THole , Old) ((e ⇒ syn) [ ✔ ]⇐ (■ THole , New))) ⇒ (■ THole , New))
     ActDelete : ∀ {Γ e} ->
       Γ ⊢ Delete , e αU↦ (EHole ⇒ (■ THole , New))
-    ActUnwrapFun : ∀ {Γ x asc m-ana m-ann e e' t t' n n' tx nx m m-body ana syn} ->
+    ActUnwrapFun : ∀ {Γ x asc m-ana m-ann e e' t' n' tx nx m m-body ana syn} ->
       x , (tx , nx) ∈N? Γ , m ->
-      VarsSynthesize? x tx m (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
-      Γ ⊢ (Unwrap One) , ((EFun x asc m-ana m-ann ((e ⇒ (t , n)) [ m-body ]⇐ ana)) ⇒ syn) αU↦ (e' ⇒ (t' , New))
+      VarsSynthesize? x tx m e (e' ⇒ (t' , n')) ->
+      Γ ⊢ (Unwrap One) , ((EFun x asc m-ana m-ann (e [ m-body ]⇐ ana)) ⇒ syn) αU↦ (e' ⇒ (t' , New))
     ActUnwrapApOne : ∀ {Γ e t n m ana e-arg syn m'} ->
       Γ ⊢ (Unwrap One) , ((EAp ((e ⇒ (t , n)) [ m ]⇐ ana) m' e-arg) ⇒ syn) αU↦ (e ⇒ (t , New))
     ActUnwrapApTwo : ∀ {Γ e t n m ana e-fun syn m'} ->
@@ -116,13 +116,13 @@ module Core.Actions where
       Γ ⊢ (SetAsc t) , ((EAsc asc e) ⇒ syn) αU↦ ((EAsc (t , New) e) ⇒ syn)
     ActSetAnn : ∀ {Γ x e t ann m1 m2 syn} ->
       Γ ⊢ (SetAnn t) , ((EFun x ann m1 m2 e) ⇒ syn) αU↦ ((EFun x (t , New) m1 m2 e) ⇒ syn)
-    ActDeleteBinder : ∀ {Γ x tx nx m ann m1 m2 e e' t t' n n' syn ana} ->
+    ActDeleteBinder : ∀ {Γ x tx nx m ann m1 m2 e e' t' n' syn ana} ->
       x , (tx , nx) ∈N? Γ , m ->
-      VarsSynthesize? x tx m (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
-      Γ ⊢ DeleteBinder , ((EFun x ann m1 m2 ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun BHole ann m1 m2 ((e' ⇒ (t' , New)) [ m ]⇐ ana)) ⇒ syn)
-    ActInsertBinder : ∀ {Γ x ann n-ann m1 m2 e e' t t' n n' syn m ana} ->
-      VarsSynthesize x ann ✔ (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
-      Γ ⊢ InsertBinder x , ((EFun BHole (ann , n-ann) m1 m2 ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun (BVar x) (ann , Old) m1 m2 ((e' ⇒ (t' , New)) [ m ]⇐ ana)) ⇒ syn)
+      VarsSynthesize? x tx m e (e' ⇒ (t' , n')) ->
+      Γ ⊢ DeleteBinder , ((EFun x ann m1 m2 (e [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun BHole ann m1 m2 ((e' ⇒ (t' , New)) [ m ]⇐ ana)) ⇒ syn)
+    ActInsertBinder : ∀ {Γ x ann n-ann m1 m2 e e' t' n' syn m ana} ->
+      VarsSynthesize x ann ✔ e (e' ⇒ (t' , n')) ->
+      Γ ⊢ InsertBinder x , ((EFun BHole (ann , n-ann) m1 m2 (e [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun (BVar x) (ann , Old) m1 m2 ((e' ⇒ (t' , New)) [ m ]⇐ ana)) ⇒ syn)
 
   data _⊢_,_αL↦_ : Ctx -> Action -> ExpLow -> ExpLow -> Set where 
     ALC : ∀ {Γ α e e' m t n} ->
