@@ -24,7 +24,7 @@ module Core.Actions where
     SetAsc : Type -> Action
     SetAnn : Type -> Action
     DeleteBinder : Action
-    SetBinder : Var -> Action
+    InsertBinder : Var -> Action
     
   LocalizedAction : Set
   LocalizedAction = Action × (List Child)
@@ -58,8 +58,8 @@ module Core.Actions where
       (SetAnn t') , (BareEFun x t e) αB↦ (BareEFun x t' e)
     ActDeleteBinder : ∀ {x e t} ->
       DeleteBinder , (BareEFun x t e) αB↦ (BareEFun BHole t e)
-    ActSetBinder : ∀ {x e t} ->
-      SetBinder x , (BareEFun BHole t e) αB↦ (BareEFun (BVar x) t e)
+    ActInsertBinder : ∀ {x e t} ->
+      InsertBinder x , (BareEFun BHole t e) αB↦ (BareEFun (BVar x) t e)
 
   data _,_AB↦_ : LocalizedAction -> BareExp -> BareExp -> Set where
     ABareDone : ∀ {α e e'} ->
@@ -120,9 +120,9 @@ module Core.Actions where
       x , (tx , nx) ∈N? Γ , m ->
       VarsSynthesize? x tx m (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
       Γ ⊢ DeleteBinder , ((EFun x ann m1 m2 ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun BHole ann m1 m2 ((e' ⇒ (t' , New)) [ m ]⇐ ana)) ⇒ syn)
-    ActSetBinder : ∀ {Γ x ann n-ann m1 m2 e e' t t' n n' syn m ana} ->
+    ActInsertBinder : ∀ {Γ x ann n-ann m1 m2 e e' t t' n n' syn m ana} ->
       VarsSynthesize x ann ✔ (e ⇒ (t , n)) (e' ⇒ (t' , n')) ->
-      Γ ⊢ SetBinder x , ((EFun BHole (ann , n-ann) m1 m2 ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun (BVar x) (ann , Old) m1 m2 ((e' ⇒ (t' , New)) [ m ]⇐ ana)) ⇒ syn)
+      Γ ⊢ InsertBinder x , ((EFun BHole (ann , n-ann) m1 m2 ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun (BVar x) (ann , Old) m1 m2 ((e' ⇒ (t' , New)) [ m ]⇐ ana)) ⇒ syn)
 
   data _⊢_,_αL↦_ : Ctx -> Action -> ExpLow -> ExpLow -> Set where 
     ALC : ∀ {Γ α e e' m t n} ->

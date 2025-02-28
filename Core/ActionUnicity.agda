@@ -25,7 +25,7 @@ module Core.ActionUnicity where
   αB↦-unicity ActSetAsc ActSetAsc = refl
   αB↦-unicity ActSetAnn ActSetAnn = refl
   αB↦-unicity ActDeleteBinder ActDeleteBinder = refl
-  αB↦-unicity ActSetBinder ActSetBinder = refl
+  αB↦-unicity ActInsertBinder ActInsertBinder = refl
   
   AB↦-unicity : ∀ {A e e' e''} ->
     A , e AB↦ e' ->

@@ -28,8 +28,8 @@ module Core.ActionErasure where
   αU↦-erase ActSetAnn = ActSetAnn
   αU↦-erase (ActDeleteBinder in-ctx vars-syn) 
     rewrite vars-syn?-erase vars-syn = ActDeleteBinder
-  αU↦-erase (ActSetBinder vars-syn)
-    rewrite vars-syn?-erase vars-syn = ActSetBinder
+  αU↦-erase (ActInsertBinder vars-syn)
+    rewrite vars-syn?-erase vars-syn = ActInsertBinder
 
   αL↦-erase : ∀ {Γ α e e'} ->
     (Γ ⊢ α , e αL↦ e') ->

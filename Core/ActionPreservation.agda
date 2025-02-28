@@ -45,7 +45,7 @@ module Core.ActionPreservation where
   beyond-αU↦ ActSetAsc = =▷Refl
   beyond-αU↦ ActSetAnn = =▷Refl
   beyond-αU↦ (ActDeleteBinder _ _) = =▷Refl
-  beyond-αU↦ (ActSetBinder _) = =▷Refl
+  beyond-αU↦ (ActInsertBinder _) = =▷Refl
 
   beyond-AU↦ : ∀ {Γ A e e' syn syn'} -> 
     Γ ⊢ A , (e ⇒ syn) AU↦ (e' ⇒ syn') -> 
@@ -118,7 +118,7 @@ module Core.ActionPreservation where
   ... | m' , consist' = WTFun (NTArrowC consist) (■~N-pair (~N-pair consist')) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair consist-all) ▶New-max-r (newify-ctx {x = x} ana)
   PreservationStep (WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (ALC (ActDeleteBinder in-ctx vars-syn)) 
     = WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair ▶New) ▶New ▶New-max-r NUnless-new-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶New-max-r (newify-syn-inner (preservation-vars-unwrap in-ctx ana vars-syn))
-  PreservationStep (WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (ALC (ActSetBinder vars-syn)) 
+  PreservationStep (WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (ALC (ActInsertBinder vars-syn)) 
     = WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶New-max-r (newify-syn-inner (preservation-vars-ana?-alt ana vars-syn))
   
   mutual 
