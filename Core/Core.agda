@@ -91,8 +91,8 @@ module Core.Core where
 
   mutual 
 
-    data ExpUp : Set where  
-      _⇒_ : ExpMid -> NewData -> ExpUp
+    -- data ExpUp : Set where  
+    --   _⇒_ : ExpMid -> NewData -> ExpUp
 
     data ExpMid : Set where 
       EConst : ExpMid 
@@ -103,23 +103,20 @@ module Core.Core where
       EAsc : NewType -> ExpLow -> ExpMid 
 
     data ExpLow : Set where 
-      _[_]⇐_ : ExpUp -> Mark -> NewData -> ExpLow
+      _⇒_⇒_[_] : NewData -> ExpMid -> NewData -> Mark -> ExpLow
 
   data Program : Set where 
-    Root : ExpUp -> Newness -> Program
+    Root : Newness -> ExpMid -> NewData -> Program
     
   ExpLowOfProgram : Program -> ExpLow  
-  ExpLowOfProgram (Root e n) = (e [ ✔ ]⇐ (□ , n)) 
+  ExpLowOfProgram (Root n e syn) = ((□ , n) ⇒ e ⇒ syn [ ✔ ]) 
 
-  data SubsumableMid : ExpMid -> Set where 
-    SubsumableConst : SubsumableMid EConst
-    SubsumableHole : SubsumableMid EHole
-    SubsumableAp : ∀ {e1 m e2} -> SubsumableMid (EAp e1 m e2) 
-    SubsumableVar : ∀ {x m} -> SubsumableMid (EVar x m) 
-    SubsumableAsc : ∀ {t e} -> SubsumableMid (EAsc t e) 
-
-  Subsumable : ExpUp -> Set 
-  Subsumable (mid ⇒ _) = SubsumableMid mid
+  data Subsumable : ExpMid -> Set where 
+    SubsumableConst : Subsumable EConst
+    SubsumableHole : Subsumable EHole
+    SubsumableAp : ∀ {e1 m e2} -> Subsumable (EAp e1 m e2) 
+    SubsumableVar : ∀ {x m} -> Subsumable (EVar x m) 
+    SubsumableAsc : ∀ {t e} -> Subsumable (EAsc t e) 
 
   data Context (A : Set) : Set where 
     ∅ : Context A

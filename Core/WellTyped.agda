@@ -99,7 +99,7 @@ module Core.WellTyped where
 
   mutual 
 
-    data _U⊢_ : (Γ : Ctx) (e : ExpUp) -> Set where 
+    data _U⊢_⇒_ : (Γ : Ctx) (e : ExpUp) -> Set where 
       WTConst : ∀ {Γ syn-all} ->
         ▷ (■ TBase , Old) syn-all ->
         Γ U⊢ (EConst ⇒ syn-all)
@@ -126,10 +126,10 @@ module Core.WellTyped where
 
     data _L⊢_ : (Γ : Ctx) (e : ExpLow) -> Set where 
       WTUp : ∀ {Γ e-all syn-all ana-all m-all m-consist} ->
-        SubsumableMid e-all ->
+        Subsumable e-all ->
         syn-all ~N ana-all , m-consist ->
         ▶ m-consist m-all ->
-        Γ U⊢ (e-all ⇒ syn-all) -> 
+        Γ U⊢ e-all ⇒ syn-all -> 
         Γ L⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all)
       WTFun : ∀ {Γ x e-body syn-all syn-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana m-all-ana} ->
         ana-all ▸NTArrow t-in-ana , t-out-ana , m-ana-ana -> 
