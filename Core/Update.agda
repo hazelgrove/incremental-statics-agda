@@ -26,7 +26,7 @@ module Core.Update where
       t-ana ▸DTArrow t-in-ana , t-out-ana , m-ana' ->
       t-asc ■~D t-in-ana , m-asc' ->
       ((EFun x (t-asc , n-asc) m-ana m-asc ((e-body ⇒ (t-body , n-body)) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (t-ana , New) l↦
-      ((EFun x (t-asc , n-asc) m-ana' m-asc' ((e-body ⇒ (t-body , n-body)) [ m-body ]⇐ (t-out-ana , New))) ⇒ ((DUnless (DArrow t-asc t-body) t-ana) , New)) [ ✔ ]⇐ (t-ana , Old)
+      ((EFun x (t-asc , n-asc) m-ana' m-asc' ((e-body ⇒ (t-body , Old)) [ m-body ]⇐ (t-out-ana , New))) ⇒ ((DUnless (DArrow t-asc t-body) t-ana) , New)) [ ✔ ]⇐ (t-ana , Old)
     StepAnnFun : ∀ {x e-body e-body' t-asc n-body' n-ana m-ana m-asc m-body m-all syn-body' syn-all ana-body ana-all } ->
       VarsSynthesize? x t-asc ✔ (e-body) (e-body' ⇒ (syn-body' , n-body')) ->
       (((EFun x (t-asc , New) m-ana m-asc ((e-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (ana-all , n-ana)) l↦
