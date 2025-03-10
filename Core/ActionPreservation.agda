@@ -35,6 +35,9 @@ module Core.ActionPreservation where
   beyond-αU↦ ActWrapFun = =▷Refl
   beyond-αU↦ ActWrapApOne = =▷Refl
   beyond-αU↦ ActWrapApTwo = =▷New
+  beyond-αU↦ ActWrapPairOne = =▷Refl
+  beyond-αU↦ ActWrapPairTwo = =▷Refl
+  beyond-αU↦ ActWrapProj = =▷Refl
   beyond-αU↦ (ActInsertVar _) = =▷New
   beyond-αU↦ ActWrapAsc = =▷New
   beyond-αU↦ ActDelete = =▷New
@@ -42,6 +45,9 @@ module Core.ActionPreservation where
   beyond-αU↦ ActUnwrapApOne = =▷New
   beyond-αU↦ ActUnwrapApTwo = =▷New
   beyond-αU↦ ActUnwrapAsc = =▷New
+  beyond-αU↦ ActUnwrapPairOne = =▷New
+  beyond-αU↦ ActUnwrapPairTwo = =▷New
+  beyond-αU↦ ActUnwrapProj = =▷New
   beyond-αU↦ ActSetAsc = =▷Refl
   beyond-αU↦ ActSetAnn = =▷Refl
   beyond-αU↦ (ActDeleteBinder _ _) = =▷Refl
@@ -71,6 +77,7 @@ module Core.ActionPreservation where
   subsumable-AM↦ SubsumableAsc (AMidAsc x) = SubsumableAsc
   subsumable-AM↦ SubsumableAp (AMidApOne x) = SubsumableAp
   subsumable-AM↦ SubsumableAp (AMidApTwo x) = SubsumableAp
+  subsumable-AM↦ SubsumableProj (AMidProj x) = SubsumableProj
 
   SynSubsume :  
     ∀ {Γ e t} ->
@@ -81,6 +88,7 @@ module Core.ActionPreservation where
   SynSubsume (WTAp x x₁ x₂ x₃ x₄ x₅) = SubsumableAp
   SynSubsume (WTVar x x₁) = SubsumableVar
   SynSubsume (WTAsc x x₁ x₂) = SubsumableAsc
+  SynSubsume (WTProj x x₁ x₂ x₃) = SubsumableProj
     
   WrapSubsume :  
     ∀ {Γ e t m ana} ->
@@ -107,10 +115,14 @@ module Core.ActionPreservation where
   ... | _ , consist1 | _ , consist2 = WTFun (NTArrowC consist) (■~N-pair (~N-pair consist1)) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair consist2) ▶New-max-r (newify-ana ana)
   PreservationStep ana (ALC {t = t} (ActWrapApOne {t = t'} {n = n'})) with ~N-dec (t' , n') (t , New) | ▸NTArrow-dec (t' , New) 
   ... | _ , (~N-pair consist) | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist' = WTUp SubsumableAp (~N-pair consist) ▶New-max-r (WTAp (NTArrowC consist') (▷Pair ▶New) (▷Pair ▶New) ▶New (newify-ana ana) (WTUp SubsumableHole (~N-pair ~DVoidR) ▶Old (WTHole (▷Pair ▶Old))))
+  PreservationStep wt (ALC ActWrapPairOne) = WTPair (NTProdC (proj₂ (proj₂ (proj₂ (▸DTProd-dec _))))) (▷Pair ▶New) (▷Pair ▶New) ▶New NUnless-new-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶New-max-r (newify-ana {m = ✔} (newify-syn-inner wt)) (WTUp SubsumableHole (~N-pair ~DVoidR) ▶New (WTHole (▷Pair ▶Old)))
+  PreservationStep wt (ALC ActWrapPairTwo) = WTPair (NTProdC (proj₂ (proj₂ (proj₂ (▸DTProd-dec _))))) (▷Pair ▶New) (▷Pair ▶New) ▶New NUnless-new-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶New-max-r (WTUp SubsumableHole (~N-pair ~DVoidR) ▶New (WTHole (▷Pair ▶Old))) (newify-ana wt) 
+  PreservationStep wt (ALC ActWrapProj) = WTUp SubsumableProj (~N-pair (proj₂ (~D-dec _ _))) ▶New-max-r (WTProj (proj₂ (proj₂ (▸NTProj-dec _ _))) (▷Pair ▶New) ▶New (newify-ana wt))
 
   PreservationStep (WTUp subsumable consist-t consist-m (WTAsc consist-syn consist-ana ana)) (ALC ActUnwrapAsc) = newify-ana ana
   PreservationStep (WTUp subsumable consist-t consist-m (WTAp marrow consist-syn consist-ana consist-mark syn ana)) (ALC ActUnwrapApOne) = newify-ana syn
   PreservationStep (WTUp subsumable consist-t consist-m (WTAp marrow consist-syn consist-ana consist-mark syn ana)) (ALC ActUnwrapApTwo) = newify-ana ana
+  PreservationStep (WTUp subsumable consist-t consist-m (WTProj x x₁ x₂ wt)) (ALC ActUnwrapProj) = newify-ana wt
   PreservationStep (WTFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (ALC (ActUnwrapFun in-ctx vars-syn)) = newify-ana (preservation-vars-unwrap in-ctx ana vars-syn)
   PreservationStep (WTUp SubsumableAsc (~N-pair consist-t) consist-m (WTAsc {syn-all = syn-all} {n-syn = n-syn} consist-syn consist-ana ana)) (ALC {t = t} ActSetAsc) = WTUp SubsumableAsc (~N-pair consist-t) ▶New-max-r (WTAsc (▷Pair ▶New) (▷Pair ▶New) ana)
   PreservationStep (WTFun {x = x} marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (ALC {t = t} (ActSetAnn {t = t'})) with ▸NTArrow-dec (t , New)
@@ -120,7 +132,11 @@ module Core.ActionPreservation where
     = WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair ▶New) ▶New ▶New-max-r NUnless-new-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶New-max-r (newify-syn-inner (preservation-vars-unwrap in-ctx ana vars-syn))
   PreservationStep (WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (ALC (ActInsertBinder vars-syn)) 
     = WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶New-max-r (newify-syn-inner (preservation-vars-ana?-alt ana vars-syn))
-  
+  PreservationStep (WTPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (ALC ActUnwrapPairOne) = newify-ana wt
+  PreservationStep (WTPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (ALC ActUnwrapPairTwo) = newify-ana wt₁
+
+
+
   mutual 
 
     PreservationSyn :  
@@ -135,6 +151,9 @@ module Core.ActionPreservation where
     ... | t-in-beyond , t-out-beyond , m-beyond | refl | ◁▷C = WTAp marrow' (beyond-▷ t-out-beyond consist-syn) (beyond-▷ t-in-beyond consist-ana) (beyond-▶ m-beyond consist-mark) (PreservationAna syn step) ana
     PreservationSyn (WTAp marrow consist-syn consist-ana consist-mark syn ana) (AUpMid (AMidApTwo {e2' = (e-arg' ⇒ syn-arg') [ _ ]⇐ _} step)) 
       = WTAp marrow consist-syn (beyond-▷-contra (beyond-AL↦ step) consist-ana) consist-mark syn (PreservationAna ana step)
+    PreservationSyn (WTProj {s = s} x x₁ x₂ x₃) (AUpMid (AMidProj {e' = (e' ⇒ syn') [ _ ]⇐ _} step)) with ▸NTProj-dec s syn' 
+    ... | _ , _ , mprod' with beyond-▸NTProj (beyond-AL↦-inner step) x mprod' | same-mark-AL↦ step | beyond-AL↦ step
+    ... | t-beyond , m-beyond | refl | ◁▷C  = WTProj mprod' (beyond-▷ t-beyond x₁) (beyond-▶ m-beyond x₂) (PreservationAna x₃ step)
 
     PreservationAna :  
       ∀ {Γ A e e'} ->
@@ -145,10 +164,12 @@ module Core.ActionPreservation where
     PreservationAna (WTUp subsumable consist-t consist-m syn) (ALowUp {e' = e' ⇒ syn'} (AUpMid step)) = WTUp (subsumable-AM↦ subsumable step) consist-t consist-m (PreservationSyn syn (AUpMid step))
     PreservationAna (WTFun {t-asc = t-asc} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (ALowUp (AUpMid (AMidFun {e' = (e' ⇒ _) [ _ ]⇐ _} step))) 
       = WTFun marrow consist (beyond-▷-contra (beyond-AL↦ step) consist-ana) consist-asc consist-body  (preservation-lambda-lemma {t = t-asc} (beyond-AL↦-inner step) consist-syn) consist-all consist-m-all (PreservationAna ana step)
-
-  PreservationProgram :   
+    PreservationAna (WTPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (ALowUp (AUpMid (AMidPairOne {e1' = (e1' ⇒ _) [ _ ]⇐ _} step))) = WTPair x (beyond-▷-contra (beyond-AL↦ step) x₁) x₂ x₃ (preservation-pair-lemma (beyond-AL↦-inner step) =▷Refl x₄) x₅ x₆ (PreservationAna wt step) wt₁
+    PreservationAna (WTPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (ALowUp (AUpMid (AMidPairTwo {e2' = (e2' ⇒ _) [ _ ]⇐ _} step))) = WTPair x x₁ (beyond-▷-contra (beyond-AL↦ step) x₂) x₃ (preservation-pair-lemma =▷Refl (beyond-AL↦-inner step) x₄) x₅ x₆ wt (PreservationAna wt₁ step)
+    
+  PreservationProgram :    
     ∀ {A p p'} ->  
-    (P⊢ p) ->  
-    (A , p AP↦ p') ->      
-    (P⊢ p')             
+    (P⊢ p) ->   
+    (A , p AP↦ p') ->        
+    (P⊢ p')              
   PreservationProgram (WTProgram ana) (AStepProgram step) = WTProgram (PreservationAna ana step)    

@@ -303,6 +303,7 @@ module Core.Lemmas where
   l-env-subsumable (FillLEnvAp1 _) (FillLEnvAp1 _) SubsumableAp = SubsumableAp
   l-env-subsumable (FillLEnvAp2 _) (FillLEnvAp2 _) SubsumableAp = SubsumableAp
   l-env-subsumable (FillLEnvAsc _) (FillLEnvAsc _) SubsumableAsc = SubsumableAsc
+  l-env-subsumable (FillLEnvProj _) (FillLEnvProj _) SubsumableProj = SubsumableProj
 
   u-env-subsumable : ∀ {ε e e' e-in e-in'} -> 
     ε U⟦ e-in ⟧M≡ e ->
@@ -313,6 +314,7 @@ module Core.Lemmas where
   u-env-subsumable (FillUEnvAp1 _) (FillUEnvAp1 _) SubsumableAp = SubsumableAp
   u-env-subsumable (FillUEnvAp2 _) (FillUEnvAp2 _) SubsumableAp = SubsumableAp
   u-env-subsumable (FillUEnvAsc _) (FillUEnvAsc _) SubsumableAsc = SubsumableAsc
+  u-env-subsumable (FillUEnvProj _) (FillUEnvProj _) SubsumableProj = SubsumableProj
 
   oldify-syn : ∀ {Γ e t n n'} ->
     Γ U⊢ (e ⇒ (t , n)) ->

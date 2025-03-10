@@ -158,6 +158,7 @@ module Core.Core where
     SubsumableAp : ∀ {e1 m e2} -> SubsumableMid (EAp e1 m e2) 
     SubsumableVar : ∀ {x m} -> SubsumableMid (EVar x m) 
     SubsumableAsc : ∀ {t e} -> SubsumableMid (EAsc t e) 
+    SubsumableProj : ∀ {s e m} -> SubsumableMid (EProj s e m) 
 
   Subsumable : ExpUp -> Set 
   Subsumable (mid ⇒ _) = SubsumableMid mid

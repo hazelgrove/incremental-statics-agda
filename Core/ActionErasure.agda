@@ -13,15 +13,21 @@ module Core.ActionErasure where
     (Γ ⊢ α , e αU↦ e') ->
     (α , (U◇ e) αB↦ (U◇ e'))
   αU↦-erase ActInsertConst = ActInsertConst
+  αU↦-erase ActWrapFun = ActWrapFun
   αU↦-erase ActWrapApOne = ActWrapApOne
   αU↦-erase ActWrapApTwo = ActWrapApTwo
   αU↦-erase ActWrapAsc = ActWrapAsc
+  αU↦-erase ActWrapPairOne = ActWrapPairOne
+  αU↦-erase ActWrapPairTwo = ActWrapPairTwo
+  αU↦-erase ActWrapProj = ActWrapProj
   αU↦-erase ActDelete = ActDelete
   αU↦-erase ActUnwrapApOne = ActUnwrapApOne
   αU↦-erase ActUnwrapApTwo = ActUnwrapApTwo
   αU↦-erase ActUnwrapAsc = ActUnwrapAsc
+  αU↦-erase ActUnwrapPairOne = ActUnwrapPairOne
+  αU↦-erase ActUnwrapPairTwo = ActUnwrapPairTwo
+  αU↦-erase ActUnwrapProj = ActUnwrapProj
   αU↦-erase (ActInsertVar in-ctx) = ActInsertVar
-  αU↦-erase ActWrapFun = ActWrapFun
   αU↦-erase (ActUnwrapFun x vars-syn) 
     rewrite vars-syn?-erase vars-syn = ActUnwrapFun
   αU↦-erase ActSetAsc = ActSetAsc
@@ -49,6 +55,9 @@ module Core.ActionErasure where
     AM↦-erase (AMidFun step) = ABareFun (AL↦-erase step)
     AM↦-erase (AMidApOne step) = ABareApOne (AL↦-erase step)
     AM↦-erase (AMidApTwo step) = ABareApTwo (AL↦-erase step)
+    AM↦-erase (AMidPairOne step) = ABarePairOne (AL↦-erase step)
+    AM↦-erase (AMidPairTwo step) = ABarePairTwo (AL↦-erase step)
+    AM↦-erase (AMidProj step) = ABareProj (AL↦-erase step)
  
     AL↦-erase : ∀ {Γ A e e'} ->
       (Γ ⊢ A , e AL↦ e') ->

@@ -17,11 +17,17 @@ module Core.ActionUnicity where
   αB↦-unicity ActWrapApTwo ActWrapApTwo = refl
   αB↦-unicity ActInsertVar ActInsertVar = refl
   αB↦-unicity ActWrapAsc ActWrapAsc = refl
+  αB↦-unicity ActWrapPairOne ActWrapPairOne = refl
+  αB↦-unicity ActWrapPairTwo ActWrapPairTwo = refl
+  αB↦-unicity ActWrapProj ActWrapProj = refl
   αB↦-unicity ActDelete ActDelete = refl
   αB↦-unicity ActUnwrapFun ActUnwrapFun = refl
   αB↦-unicity ActUnwrapApOne ActUnwrapApOne = refl
   αB↦-unicity ActUnwrapApTwo ActUnwrapApTwo = refl
   αB↦-unicity ActUnwrapAsc ActUnwrapAsc = refl
+  αB↦-unicity ActUnwrapPairOne ActUnwrapPairOne = refl
+  αB↦-unicity ActUnwrapPairTwo ActUnwrapPairTwo = refl
+  αB↦-unicity ActUnwrapProj ActUnwrapProj = refl
   αB↦-unicity ActSetAsc ActSetAsc = refl
   αB↦-unicity ActSetAnn ActSetAnn = refl
   αB↦-unicity ActDeleteBinder ActDeleteBinder = refl
@@ -39,4 +45,10 @@ module Core.ActionUnicity where
   AB↦-unicity (ABareApOne step1) (ABareApOne step2) 
     rewrite AB↦-unicity step1 step2 = refl
   AB↦-unicity (ABareApTwo step1) (ABareApTwo step2) 
+    rewrite AB↦-unicity step1 step2 = refl
+  AB↦-unicity (ABarePairOne step1) (ABarePairOne step2) 
+    rewrite AB↦-unicity step1 step2 = refl
+  AB↦-unicity (ABarePairTwo step1) (ABarePairTwo step2) 
+    rewrite AB↦-unicity step1 step2 = refl
+  AB↦-unicity (ABareProj step1) (ABareProj step2) 
     rewrite AB↦-unicity step1 step2 = refl

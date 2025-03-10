@@ -19,6 +19,8 @@ module Core.Actions where
     WrapAp : Child -> Action
     InsertVar : Var -> Action
     WrapAsc : Action
+    WrapPair : Child -> Action
+    WrapProj : ProdSide -> Action
     Delete : Action 
     Unwrap : Child -> Action
     SetAsc : Type -> Action
@@ -42,6 +44,12 @@ module Core.Actions where
       (InsertVar x) , BareEHole αB↦ (BareEVar x)
     ActWrapAsc : ∀ {e} ->
       WrapAsc , e αB↦ (BareEAsc THole e)
+    ActWrapPairOne : ∀ {e} ->
+      (WrapPair One) , e αB↦ (BareEPair e BareEHole)
+    ActWrapPairTwo : ∀ {e} ->
+      (WrapPair Two) , e αB↦ (BareEPair BareEHole e)
+    ActWrapProj : ∀ {s e} -> 
+      (WrapProj s) , e αB↦ (BareEProj s e)
     ActDelete : ∀ {e} ->
       Delete , e αB↦ BareEHole
     ActUnwrapFun : ∀ {x asc e} ->
@@ -52,6 +60,12 @@ module Core.Actions where
       (Unwrap Two) , (BareEAp e-fun e) αB↦ e
     ActUnwrapAsc : ∀ {asc e} ->
       (Unwrap One) , (BareEAsc asc e) αB↦ e
+    ActUnwrapPairOne : ∀ {e e-arg} ->
+      (Unwrap One) , (BareEPair e e-arg) αB↦ e
+    ActUnwrapPairTwo : ∀ {e e-fun} ->
+      (Unwrap Two) , (BareEPair e-fun e) αB↦ e
+    ActUnwrapProj : ∀ {s e} ->
+      (Unwrap One) , (BareEProj s e) αB↦ e
     ActSetAsc : ∀ {e t t'} ->
       (SetAsc t') , (BareEAsc t e) αB↦ (BareEAsc t' e)
     ActSetAnn : ∀ {x e t t'} ->
@@ -77,6 +91,15 @@ module Core.Actions where
     ABareApTwo : ∀ {α l e1 e2 e2'} ->
       (α , l) , e2 AB↦ e2' ->
       (α , Two ∷ l) , (BareEAp e1 e2) AB↦ (BareEAp e1 e2')
+    ABarePairOne : ∀ {α l e1 e2 e1'} ->
+      (α , l) , e1 AB↦ e1' ->
+      (α , One ∷ l) , (BareEPair e1 e2) AB↦ (BareEPair e1' e2)
+    ABarePairTwo : ∀ {α l e1 e2 e2'} ->
+      (α , l) , e2 AB↦ e2' ->
+      (α , Two ∷ l) , (BareEPair e1 e2) AB↦ (BareEPair e1 e2')
+    ABareProj : ∀ {α l e e' s} ->
+      (α , l) , e AB↦ e' ->
+      (α , One ∷ l) , (BareEProj s e) AB↦ (BareEProj s e')
   
   data _,_AB↦*_ : (List LocalizedAction) -> BareExp -> BareExp -> Set where 
     AB*StepAct : ∀{A As e e' e''} ->
@@ -95,6 +118,12 @@ module Core.Actions where
       Γ ⊢ (WrapAp One) , (e ⇒ (t , n)) αU↦ ((EAp ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old))) ⇒ (t , n))
     ActWrapApTwo : ∀ {Γ e t n} ->
       Γ ⊢ (WrapAp Two) , (e ⇒ (t , n)) αU↦ ((EAp ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old)) ✔ ((e ⇒ (t , Old)) [ ✔ ]⇐ (■ THole , New))) ⇒ (■ THole , New))
+    ActWrapPairOne : ∀ {Γ e t n} -> 
+      Γ ⊢ (WrapPair One) , (e ⇒ (t , n)) αU↦ ((EPair ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ((EHole ⇒ (■ THole , New)) [ ✔ ]⇐ (□ , Old)) ✔ ) ⇒ (t , n))
+    ActWrapPairTwo : ∀ {Γ e t n} -> 
+      Γ ⊢ (WrapPair Two) , (e ⇒ (t , n)) αU↦ ((EPair ((EHole ⇒ (■ THole , New)) [ ✔ ]⇐ (□ , Old)) ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔ ) ⇒ (t , n))
+    ActWrapProj : ∀ {Γ s e t n} -> 
+      Γ ⊢ (WrapProj s) , (e ⇒ (t , n)) αU↦ ((EProj s ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔) ⇒ (t , n))
     ActInsertVar : ∀ {Γ syn x n t m} ->
       x , (t , n) ∈N Γ , m ->
       Γ ⊢ (InsertVar x) , (EHole ⇒ syn) αU↦ ((EVar x m) ⇒ (■ t , New))
@@ -112,6 +141,12 @@ module Core.Actions where
       Γ ⊢ (Unwrap Two) , ((EAp e-fun m' ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ (e ⇒ (t , New))
     ActUnwrapAsc : ∀ {Γ asc e t n m ana syn} ->
       Γ ⊢ (Unwrap One) , ((EAsc asc ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ (e ⇒ (t , New))
+    ActUnwrapPairOne : ∀ {Γ e t n m ana e-snd syn m'} ->
+      Γ ⊢ (Unwrap One) , ((EPair ((e ⇒ (t , n)) [ m ]⇐ ana) e-snd m') ⇒ syn) αU↦ (e ⇒ (t , New))
+    ActUnwrapPairTwo : ∀ {Γ e t n m ana e-fst syn m'} ->
+      Γ ⊢ (Unwrap Two) , ((EPair e-fst ((e ⇒ (t , n)) [ m ]⇐ ana) m') ⇒ syn) αU↦ (e ⇒ (t , New))
+    ActUnwrapProj : ∀ {Γ e t s n m ana syn m'} ->
+      Γ ⊢ (Unwrap One) , ((EProj s ((e ⇒ (t , n)) [ m ]⇐ ana) m') ⇒ syn) αU↦ (e ⇒ (t , New))
     ActSetAsc : ∀ {Γ asc e t syn} ->
       Γ ⊢ (SetAsc t) , ((EAsc asc e) ⇒ syn) αU↦ ((EAsc (t , New) e) ⇒ syn)
     ActSetAnn : ∀ {Γ x e t ann m1 m2 syn} ->
@@ -149,7 +184,16 @@ module Core.Actions where
       AMidApTwo : ∀ {Γ α l e1 e2 e2' m} ->
         Γ ⊢ (α , l) , e2 AL↦ e2' ->
         Γ ⊢ (α , Two ∷ l) , (EAp e1 m e2) AM↦ (EAp e1 m e2')
-    
+      AMidPairOne : ∀ {Γ α l e1 e2 e1' m} ->
+        Γ ⊢ (α , l) , e1 AL↦ e1' ->
+        Γ ⊢ (α , One ∷ l) , (EPair e1 e2 m) AM↦ (EPair e1' e2 m)
+      AMidPairTwo : ∀ {Γ α l e1 e2 e2' m} ->
+        Γ ⊢ (α , l) , e2 AL↦ e2' ->
+        Γ ⊢ (α , Two ∷ l) , (EPair e1 e2 m) AM↦ (EPair e1 e2' m)
+      AMidProj : ∀ {Γ α l s e e' m} -> 
+        Γ ⊢ (α , l) , e AL↦ e' ->
+        Γ ⊢ (α , One ∷ l) , (EProj s e m) AM↦ (EProj s e' m)
+
     data _⊢_,_AL↦_ : (Γ : Ctx) -> (α : LocalizedAction) -> (e : ExpLow) -> (e' : ExpLow) -> Set where
       ALowDone : ∀ {Γ α e e'} ->
         Γ ⊢ α , e αL↦ e' ->

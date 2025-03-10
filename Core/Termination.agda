@@ -29,6 +29,8 @@ module Core.Termination where
     surface-news-mid (EAsc (_ , n-asc) e-body) = (new-number n-asc) + surface-news-low e-body
     surface-news-mid (EFun _ (_ , n-ann) _ _ e-body) = (new-number n-ann) + surface-news-low e-body
     surface-news-mid (EAp e-fun _ e-arg) = surface-news-low e-fun + surface-news-low e-arg
+    surface-news-mid (EPair e-fst e-snd _) = surface-news-low e-fst + surface-news-low e-snd
+    surface-news-mid (EProj _ e _) = surface-news-low e
 
     surface-news-low : ExpLow -> ℕ
     surface-news-low (e [ _ ]⇐ _) = surface-news-up e
@@ -63,7 +65,9 @@ module Core.Termination where
     SkelMid (EVar _ _) = S0
     SkelMid (EAsc _ e) = S1 (SkelLow e)
     SkelMid (EFun _ _ _ _ e) = S1 (SkelLow e)
+    SkelMid (EProj _ e _) = S1 (SkelLow e)
     SkelMid (EAp e1 _ e2) = S2 (SkelLow e1) (SkelLow e2)
+    SkelMid (EPair e1 e2 _) = S2 (SkelLow e1) (SkelLow e2)
 
     SkelLow : ExpLow -> Skeleton  
     SkelLow (e [ _ ]⇐ _) = SkelUp e
@@ -88,6 +92,9 @@ module Core.Termination where
       <Fun : ∀ {s a1 a2 a3 a4 a5 a6 a7 a8 e1 e2} ->
         <Low s e1 e2 -> 
         <Mid (S1 s) (EFun a1 a2 a3 a4 e1) (EFun a5 a6 a7 a8 e2)
+      <Proj : ∀ {s a1 a2 a3 a4 e1 e2} ->
+        <Low s e1 e2 -> 
+        <Mid (S1 s) (EProj a1 e1 a2) (EProj a3 e2 a4)
       <Ap< : ∀ {s1 a1 a2 e1 e2 e3 e4} ->
         <Low s1 e1 e3 -> 
         (SkelLow e2) ≡ (SkelLow e4) ->
@@ -95,6 +102,13 @@ module Core.Termination where
       <Ap=< : ∀ {s2 a1 a2 e1 e2 e3} ->
         <Low s2 e2 e3 -> 
         <Mid (S2 (SkelLow e1) s2) (EAp e1 a1 e2) (EAp e1 a2 e3)
+      <Pair< : ∀ {s1 a1 a2 e1 e2 e3 e4} ->
+        <Low s1 e1 e3 -> 
+        (SkelLow e2) ≡ (SkelLow e4) ->
+        <Mid (S2 s1 (SkelLow e2)) (EPair e1 e2 a1) (EPair e3 e4 a2)
+      <Pair=< : ∀ {s2 a1 a2 e1 e2 e3} ->
+        <Low s2 e2 e3 -> 
+        <Mid (S2 (SkelLow e1) s2) (EPair e1 e2 a1) (EPair e1 e3 a2)
 
     data <Low : Skeleton -> ExpLow -> ExpLow -> Set where 
       <Lower : ∀ {e1 e2 a1 a2 ana1 ana2} ->
@@ -146,8 +160,11 @@ module Core.Termination where
       (s ≡ (SkelMid e2))
     <Mid-skel (<Asc x) rewrite (<Low-skel x) = refl
     <Mid-skel (<Fun x) rewrite (<Low-skel x) = refl
+    <Mid-skel (<Proj x) rewrite (<Low-skel x) = refl
     <Mid-skel (<Ap< x eq) rewrite (<Low-skel x) rewrite eq = refl
     <Mid-skel (<Ap=< x) rewrite (<Low-skel x) = refl
+    <Mid-skel (<Pair< x eq) rewrite (<Low-skel x) rewrite eq = refl
+    <Mid-skel (<Pair=< x) rewrite (<Low-skel x) = refl
     
     <Low-skel : ∀{s e1 e2} -> 
       <Low s e1 e2 -> 
@@ -167,7 +184,12 @@ module Core.Termination where
     rewrite vars-syn-preserves-surface-news vars-syn = refl
   vars-syn-preserves-surface-news (VSAsc vars-syn) 
     rewrite vars-syn-preserves-surface-news vars-syn = refl
+  vars-syn-preserves-surface-news (VSProj vars-syn) 
+    rewrite vars-syn-preserves-surface-news vars-syn = refl
   vars-syn-preserves-surface-news (VSAp vars-syn1 vars-syn2) 
+    rewrite vars-syn-preserves-surface-news vars-syn1
+    rewrite vars-syn-preserves-surface-news vars-syn2 = refl
+  vars-syn-preserves-surface-news (VSPair vars-syn1 vars-syn2) 
     rewrite vars-syn-preserves-surface-news vars-syn1
     rewrite vars-syn-preserves-surface-news vars-syn2 = refl
 
@@ -204,8 +226,11 @@ module Core.Termination where
     surface-news-um : UEnvMid -> ℕ
     surface-news-um (UEnvAsc (_ , n-asc) ε) = (new-number n-asc) + surface-news-ul ε
     surface-news-um (UEnvFun _ (_ , n-ann) _ _ ε) = (new-number n-ann) + surface-news-ul ε
+    surface-news-um (UEnvProj _ ε _) = surface-news-ul ε
     surface-news-um (UEnvAp1 ε _ e-arg) = surface-news-ul ε + surface-news-low e-arg
     surface-news-um (UEnvAp2 e-fun _ ε) = surface-news-low e-fun + surface-news-ul ε
+    surface-news-um (UEnvPair1 ε e-snd _) = surface-news-ul ε + surface-news-low e-snd
+    surface-news-um (UEnvPair2 e-fst ε _) = surface-news-low e-fst + surface-news-ul ε
 
     surface-news-ul : UEnvLow -> ℕ
     surface-news-ul (UEnvLowRec ε _ _) = surface-news-uu ε
@@ -218,8 +243,12 @@ module Core.Termination where
     surface-news-lm : LEnvMid -> ℕ
     surface-news-lm (LEnvAsc (_ , n-asc) ε) = (new-number n-asc) + surface-news-ll ε
     surface-news-lm (LEnvFun _ (_ , n-ann) _ _ ε) = (new-number n-ann) + surface-news-ll ε
+    surface-news-lm (LEnvProj _ ε _) = surface-news-ll ε
     surface-news-lm (LEnvAp1 ε _ e-arg) = surface-news-ll ε + surface-news-low e-arg
     surface-news-lm (LEnvAp2 e-fun _ ε) = surface-news-low e-fun + surface-news-ll ε
+    surface-news-lm (LEnvPair1 ε e-snd _) = surface-news-ll ε + surface-news-low e-snd
+    surface-news-lm (LEnvPair2 e-fst ε _) = surface-news-low e-fst + surface-news-ll ε
+
 
     surface-news-ll : LEnvLow -> ℕ
     surface-news-ll L⊙ = 0
@@ -242,6 +271,9 @@ module Core.Termination where
     FillUEnvMid-surface {e-in = e-in} (FillUEnvFun {ε = ε} {t = (_ , n)} fill) 
       rewrite FillUEnvLow-surface fill 
       = sym (+-assoc (new-number n) (surface-news-ul ε) (surface-news-up e-in))
+    FillUEnvMid-surface {e-in = e-in} (FillUEnvProj {ε = ε} fill) 
+      rewrite FillUEnvLow-surface fill 
+      = refl
     FillUEnvMid-surface {e-in = e-in} (FillUEnvAp1 {ε = ε} {e2 = e2} fill) 
       rewrite FillUEnvLow-surface fill 
       rewrite (+-assoc (surface-news-ul ε) (surface-news-up e-in) (surface-news-low e2))
@@ -249,6 +281,15 @@ module Core.Termination where
       rewrite sym (+-assoc (surface-news-ul ε) (surface-news-low e2) (surface-news-up e-in))
       = refl
     FillUEnvMid-surface {e-in = e-in} (FillUEnvAp2 {ε = ε} {e1 = e1} fill) 
+      rewrite FillUEnvLow-surface fill 
+      = sym (+-assoc (surface-news-low e1) (surface-news-ul ε) (surface-news-up e-in))
+    FillUEnvMid-surface {e-in = e-in} (FillUEnvPair1 {ε = ε} {e2 = e2} fill) 
+      rewrite FillUEnvLow-surface fill 
+      rewrite (+-assoc (surface-news-ul ε) (surface-news-up e-in) (surface-news-low e2))
+      rewrite +-comm (surface-news-up e-in) (surface-news-low e2) 
+      rewrite sym (+-assoc (surface-news-ul ε) (surface-news-low e2) (surface-news-up e-in))
+      = refl
+    FillUEnvMid-surface {e-in = e-in} (FillUEnvPair2 {ε = ε} {e1 = e1} fill) 
       rewrite FillUEnvLow-surface fill 
       = sym (+-assoc (surface-news-low e1) (surface-news-ul ε) (surface-news-up e-in))
 
@@ -273,6 +314,9 @@ module Core.Termination where
     FillLEnvMid-surface {e-in = e-in} (FillLEnvFun {ε = ε} {t = (_ , n)} fill) 
       rewrite FillLEnvLow-surface fill 
       = sym (+-assoc (new-number n) (surface-news-ll ε) (surface-news-low e-in))
+    FillLEnvMid-surface {e-in = e-in} (FillLEnvProj {ε = ε} fill) 
+      rewrite FillLEnvLow-surface fill 
+      = refl
     FillLEnvMid-surface {e-in = e-in} (FillLEnvAp1 {ε = ε} {e2 = e2} fill) 
       rewrite FillLEnvLow-surface fill 
       rewrite (+-assoc (surface-news-ll ε) (surface-news-low e-in) (surface-news-low e2))
@@ -280,6 +324,15 @@ module Core.Termination where
       rewrite sym (+-assoc (surface-news-ll ε) (surface-news-low e2) (surface-news-low e-in))
       = refl
     FillLEnvMid-surface {e-in = e-in} (FillLEnvAp2 {ε = ε} {e1 = e1} fill) 
+      rewrite FillLEnvLow-surface fill 
+      = sym (+-assoc (surface-news-low e1) (surface-news-ll ε) (surface-news-low e-in))
+    FillLEnvMid-surface {e-in = e-in} (FillLEnvPair1 {ε = ε} {e2 = e2} fill) 
+      rewrite FillLEnvLow-surface fill 
+      rewrite (+-assoc (surface-news-ll ε) (surface-news-low e-in) (surface-news-low e2))
+      rewrite +-comm (surface-news-low e-in) (surface-news-low e2) 
+      rewrite sym (+-assoc (surface-news-ll ε) (surface-news-low e2) (surface-news-low e-in))
+      = refl
+    FillLEnvMid-surface {e-in = e-in} (FillLEnvPair2 {ε = ε} {e1 = e1} fill) 
       rewrite FillLEnvLow-surface fill 
       = sym (+-assoc (surface-news-low e1) (surface-news-ll ε) (surface-news-low e-in))
 
@@ -309,8 +362,11 @@ module Core.Termination where
     skel-lm : LEnvMid -> SkelEnv 
     skel-lm (LEnvAsc _ e) = SE1 (skel-ll e)
     skel-lm (LEnvFun _ _ _ _ e) = SE1 (skel-ll e)
+    skel-lm (LEnvProj _ e _) = SE1 (skel-ll e)
     skel-lm (LEnvAp1 e1 _ e2) = SEL (skel-ll e1) (SkelLow e2)
     skel-lm (LEnvAp2 e1 _ e2) = SER (SkelLow e1) (skel-ll e2)
+    skel-lm (LEnvPair1 e1 e2 _) = SEL (skel-ll e1) (SkelLow e2)
+    skel-lm (LEnvPair2 e1 e2 _) = SER (SkelLow e1) (skel-ll e2)
 
     skel-ll : LEnvLow -> SkelEnv 
     skel-ll L⊙ = S⊙
@@ -325,8 +381,11 @@ module Core.Termination where
     skel-um : UEnvMid -> SkelEnv 
     skel-um (UEnvAsc _ e) = SE1 (skel-ul e)
     skel-um (UEnvFun _ _ _ _ e) = SE1 (skel-ul e)
+    skel-um (UEnvProj _ e _) = SE1 (skel-ul e)
     skel-um (UEnvAp1 e1 _ e2) = SEL (skel-ul e1) (SkelLow e2)
     skel-um (UEnvAp2 e1 _ e2) = SER (SkelLow e1) (skel-ul e2)
+    skel-um (UEnvPair1 e1 e2 _) = SEL (skel-ul e1) (SkelLow e2)
+    skel-um (UEnvPair2 e1 e2 _) = SER (SkelLow e1) (skel-ul e2)
 
     skel-ul : UEnvLow -> SkelEnv 
     skel-ul (UEnvLowRec e _ _) = skel-uu e
@@ -342,9 +401,12 @@ module Core.Termination where
       ε L⟦ e-in ⟧M≡ e ->
       SkelFill (SkelLow e-in) (skel-lm ε) ≡ SkelMid e
     skel-lm-comm (FillLEnvFun x) = cong S1 (skel-ll-comm x)
+    skel-lm-comm (FillLEnvProj x) = cong S1 (skel-ll-comm x)
     skel-lm-comm (FillLEnvAsc x) = cong S1 (skel-ll-comm x)
     skel-lm-comm (FillLEnvAp1 {e2 = e2} x) = cong (λ a -> S2 a (SkelLow e2)) (skel-ll-comm x)
     skel-lm-comm (FillLEnvAp2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ll-comm x)
+    skel-lm-comm (FillLEnvPair1 {e2 = e2} x) = cong (λ a -> S2 a (SkelLow e2)) (skel-ll-comm x)
+    skel-lm-comm (FillLEnvPair2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ll-comm x)
 
     skel-ll-comm : ∀ {ε e e-in} ->
       ε L⟦ e-in ⟧L≡ e ->
@@ -365,8 +427,11 @@ module Core.Termination where
       SkelFill (SkelUp e-in) (skel-um ε) ≡ SkelMid e
     skel-um-comm (FillUEnvFun x) = cong S1 (skel-ul-comm x)
     skel-um-comm (FillUEnvAsc x) = cong S1 (skel-ul-comm x)
+    skel-um-comm (FillUEnvProj x) = cong S1 (skel-ul-comm x)
     skel-um-comm (FillUEnvAp1 {e2 = e2} x) = cong (λ a -> S2 a (SkelLow e2)) (skel-ul-comm x)
     skel-um-comm (FillUEnvAp2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ul-comm x)
+    skel-um-comm (FillUEnvPair1 {e2 = e2} x) = cong (λ a -> S2 a (SkelLow e2)) (skel-ul-comm x)
+    skel-um-comm (FillUEnvPair2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ul-comm x)
 
     skel-ul-comm : ∀ {ε e e-in} ->
       ε U⟦ e-in ⟧L≡ e ->
@@ -389,8 +454,11 @@ module Core.Termination where
       <Mid (SkelFill s (skel-lm ε)) e' e
     FillLEnvMid-<Mid (FillLEnvAsc fill1) (FillLEnvAsc fill2) lt = <Asc (FillLEnvLow-<Low fill1 fill2 lt)
     FillLEnvMid-<Mid (FillLEnvFun fill1) (FillLEnvFun fill2) lt = <Fun (FillLEnvLow-<Low fill1 fill2 lt)
+    FillLEnvMid-<Mid (FillLEnvProj fill1) (FillLEnvProj fill2) lt = <Proj (FillLEnvLow-<Low fill1 fill2 lt)
     FillLEnvMid-<Mid (FillLEnvAp1 fill1) (FillLEnvAp1 fill2) lt = <Ap< (FillLEnvLow-<Low fill1 fill2 lt) refl
     FillLEnvMid-<Mid (FillLEnvAp2 fill1) (FillLEnvAp2 fill2) lt = <Ap=< (FillLEnvLow-<Low fill1 fill2 lt)
+    FillLEnvMid-<Mid (FillLEnvPair1 fill1) (FillLEnvPair1 fill2) lt = <Pair< (FillLEnvLow-<Low fill1 fill2 lt) refl
+    FillLEnvMid-<Mid (FillLEnvPair2 fill1) (FillLEnvPair2 fill2) lt = <Pair=< (FillLEnvLow-<Low fill1 fill2 lt)
 
     FillLEnvLow-<Low : ∀ {ε e e' e-in e-in' s} ->
       ε L⟦ e-in' ⟧L≡ e' ->
@@ -417,8 +485,11 @@ module Core.Termination where
       <Mid (SkelFill s (skel-um ε)) e' e
     FillUEnvMid-<Mid (FillUEnvAsc fill1) (FillUEnvAsc fill2) lt = <Asc (FillUEnvLow-<Low fill1 fill2 lt)
     FillUEnvMid-<Mid (FillUEnvFun fill1) (FillUEnvFun fill2) lt = <Fun (FillUEnvLow-<Low fill1 fill2 lt)
+    FillUEnvMid-<Mid (FillUEnvProj fill1) (FillUEnvProj fill2) lt = <Proj (FillUEnvLow-<Low fill1 fill2 lt)
     FillUEnvMid-<Mid (FillUEnvAp1 fill1) (FillUEnvAp1 fill2) lt = <Ap< (FillUEnvLow-<Low fill1 fill2 lt) refl
     FillUEnvMid-<Mid (FillUEnvAp2 fill1) (FillUEnvAp2 fill2) lt = <Ap=< (FillUEnvLow-<Low fill1 fill2 lt)
+    FillUEnvMid-<Mid (FillUEnvPair1 fill1) (FillUEnvPair1 fill2) lt = <Pair< (FillUEnvLow-<Low fill1 fill2 lt) refl
+    FillUEnvMid-<Mid (FillUEnvPair2 fill1) (FillUEnvPair2 fill2) lt = <Pair=< (FillUEnvLow-<Low fill1 fill2 lt)
 
     FillUEnvLow-<Low : ∀ {ε e e' e-in e-in' s} ->
       ε U⟦ e-in' ⟧L≡ e' ->
@@ -593,6 +664,22 @@ module Core.Termination where
 
   mutual 
 
+    translate-acc-proj' : ∀ {a1 a2 e} ->
+      (s : Skeleton) ->
+      Acc (<Low s) e ->
+      ∀ {e'} ->
+      (<Mid (S1 s) e' (EProj a1 e a2)) -> 
+      (Acc (<Mid (S1 s)) e') 
+    translate-acc-proj' s (acc ac) (<Proj x) = translate-acc-proj s (ac x)
+     
+    translate-acc-proj : ∀ {a1 a2 e} ->
+      (s : Skeleton) ->
+      Acc (<Low s) e ->
+      Acc (<Mid (S1 s)) (EProj a1 e a2)
+    translate-acc-proj s ac = acc (translate-acc-proj' s ac)
+
+  mutual 
+
     translate-acc-ap'' : ∀ {e1 e2 a} ->
       (s1 s2 : Skeleton) ->
       WellFounded (<Low s1) ->
@@ -620,6 +707,36 @@ module Core.Termination where
       WellFounded (<Low s2) ->
       Acc (<Mid (S2 s1 s2)) (EAp e1 a e2)
     translate-acc-ap s1 s2 wf1 wf2 = translate-acc-ap' s1 s2 wf1 wf2 (wf1 _) (wf2 _) 
+  
+  mutual 
+
+    translate-acc-pair'' : ∀ {e1 e2 a} ->
+      (s1 s2 : Skeleton) ->
+      WellFounded (<Low s1) ->
+      WellFounded (<Low s2) ->
+      Acc (<Low s1) e1 ->
+      Acc (<Low s2) e2 ->
+      ∀ {e'} ->
+      (<Mid (S2 s1 s2) e' (EPair e1 e2 a)) -> 
+      (Acc (<Mid (S2 s1 s2)) e') 
+    translate-acc-pair'' s1 s2 wf1 wf2 (acc ac1) ac2 (<Pair< lt eq) = translate-acc-pair' s1 s2 wf1 wf2 (ac1 lt) (wf2 _)
+    translate-acc-pair'' s1 s2 wf1 wf2 ac1 (acc ac2) (<Pair=< lt) = translate-acc-pair' s1 s2 wf1 wf2 ac1 (ac2 lt)
+
+    translate-acc-pair' : ∀ {e1 e2 a} ->
+      (s1 s2 : Skeleton) ->
+      WellFounded (<Low s1) ->
+      WellFounded (<Low s2) ->
+      Acc (<Low s1) e1 ->
+      Acc (<Low s2) e2 ->
+      Acc (<Mid (S2 s1 s2)) (EPair e1 e2 a)
+    translate-acc-pair' s1 s2 wf1 wf2 ac1 ac2 = acc (translate-acc-pair'' s1 s2 wf1 wf2 ac1 ac2)
+
+    translate-acc-pair : ∀ {e1 e2 a} ->
+      (s1 s2 : Skeleton) ->
+      WellFounded (<Low s1) ->
+      WellFounded (<Low s2) ->
+      Acc (<Mid (S2 s1 s2)) (EPair e1 e2 a)
+    translate-acc-pair s1 s2 wf1 wf2 = translate-acc-pair' s1 s2 wf1 wf2 (wf1 _) (wf2 _) 
 
   mutual 
     
@@ -662,9 +779,13 @@ module Core.Termination where
     <Mid-wf' s (EVar _ _) ()
     <Mid-wf' (S1 s) (EAsc _ e) (<Asc lt) = translate-acc-asc s (<Low-wf' s e lt)
     <Mid-wf' (S1 s) (EFun _ _ _ _ e) (<Fun lt) = translate-acc-fun s (<Low-wf' s e lt)
+    <Mid-wf' (S1 s) (EProj _ e _) (<Proj lt) = translate-acc-proj s (<Low-wf' s e lt)
     <Mid-wf' (S2 s1 s2) (EAp e1 _ e2) (<Ap< {e1 = e3} {e4} lt eq) with <Low-wf s2
     ... | weird = translate-acc-ap s1 s2 (<Low-wf s1) weird
     <Mid-wf' (S2 s1 s2) (EAp e1 _ e2) (<Ap=< lt) = translate-acc-ap s1 s2 (<Low-wf s1) (<Low-wf s2)
+    <Mid-wf' (S2 s1 s2) (EPair e1 e2 _) (<Pair< {e1 = e3} {e4} lt eq) with <Low-wf s2
+    ... | weird = translate-acc-pair s1 s2 (<Low-wf s1) weird
+    <Mid-wf' (S2 s1 s2) (EPair e1 e2 _) (<Pair=< lt) = translate-acc-pair s1 s2 (<Low-wf s1) (<Low-wf s2)
 
     <Mid-wf : (s : Skeleton) -> WellFounded (<Mid s)
     <Mid-wf s e = acc (<Mid-wf' s e)
