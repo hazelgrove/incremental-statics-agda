@@ -37,6 +37,30 @@ module Core.WellTyped where
       d ▸DTArrow t1 , t2 , m ->
       (d , n) ▸NTArrow (t1 , n) , (t2 , n) , (m , n)
 
+  data _▸DTProd_,_,_ : Data -> Data -> Data -> Mark -> Set where 
+    DTProdSome : ∀ {t t1 t2 m} ->
+      t ▸TProd t1 , t2 , m ->
+      (■ t) ▸DTProd (■ t1) , (■ t2) , (m)
+    DTProdNone : 
+      □ ▸DTProd □ , □ , ✔
+
+  data _▸NTProd_,_,_ : NewData -> NewData -> NewData -> NewMark -> Set where 
+    NTProdC : ∀ {d n t1 t2 m} ->
+      d ▸DTProd t1 , t2 , m ->
+      (d , n) ▸NTProd (t1 , n) , (t2 , n) , (m , n) 
+
+  data _,_▸DTProj_,_ : Data -> ProdSide -> Data -> Mark -> Set where
+    DTProjSome : ∀ {t s t' m} -> 
+      t , s ▸TProj t' , m ->
+      (■ t) , s ▸DTProj (■ t') , m
+    DTProjNone : ∀ {s} -> 
+      □ , s ▸DTProj □ , ✔
+  
+  data _,_▸NTProj_,_ : NewData -> ProdSide -> NewData -> NewMark -> Set where
+    NTProjC : ∀ {d s n t m} ->
+      d , s ▸DTProj t , m ->
+      (d , n) , s ▸NTProj (t , n) , (m , n)
+
   data _,_∈N_,_ : Var -> NewType -> Ctx -> Mark -> Set where 
     InCtxEmpty : ∀ {x} ->
       x ,  (THole , Old) ∈N ∅ , ✖ 
@@ -97,6 +121,14 @@ module Core.WellTyped where
   NArrow : NewType -> NewData -> NewData 
   NArrow (t , n1) (d , n2) = (DArrow t d , n1 ⊓ n2)
 
+  DProd : Data -> Data -> Data
+  DProd t1 □ = □
+  DProd □ t2 = □
+  DProd (■ t1) (■ t2) = ■ (TProd t1 t2)
+
+  NProd : NewData -> NewData -> NewData 
+  NProd (d1 , n1) (d2 , n2) = (DProd d1 d2 , n1 ⊓ n2)
+
   mutual 
 
     data _U⊢_ : (Γ : Ctx) (e : ExpUp) -> Set where 
@@ -123,6 +155,12 @@ module Core.WellTyped where
         ▷ t-asc (ana-body , n-ana) -> 
         Γ L⊢ (e-body [ m-body ]⇐ (■ ana-body , n-ana)) ->
         Γ U⊢ ((EAsc t-asc (e-body [ m-body ]⇐ (■ ana-body , n-ana))) ⇒ (■ syn-all , n-syn))
+      WTProj : ∀ {Γ s e-body syn-body syn-all t-side-body m-body m-all n} ->
+        syn-body , s ▸NTProj t-side-body , m-body -> 
+        ▷ t-side-body syn-all -> 
+        ▶ m-body m-all -> 
+        Γ L⊢ ((e-body ⇒ syn-body) [ ✔ ]⇐ (□ , n)) ->
+        Γ U⊢ ((EProj s ((e-body ⇒ syn-body) [ ✔ ]⇐ (□ , n)) m-all) ⇒ syn-all)
 
     data _L⊢_ : (Γ : Ctx) (e : ExpLow) -> Set where 
       WTUp : ∀ {Γ e-all syn-all ana-all m-all m-consist} ->
@@ -142,6 +180,17 @@ module Core.WellTyped where
         ▶ m-all-ana m-all -> 
         (x ∶ t-asc ∷? Γ) L⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ->
         Γ L⊢ (((EFun x t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all)  
+      WTPair : ∀ {Γ e-fst e-snd syn-all syn-fst syn-snd ana-all ana-fst ana-snd t-fst-ana t-snd-ana m-ana m-fst m-snd m-all m-ana-ana m-all-ana} ->
+        ana-all ▸NTProd t-fst-ana , t-snd-ana , m-ana-ana -> 
+        ▷ t-fst-ana ana-fst -> 
+        ▷ t-snd-ana ana-snd -> 
+        ▶ m-ana-ana m-ana -> 
+        ▷ (NUnless (NProd syn-fst syn-snd) ana-all) syn-all -> 
+        syn-all ~N ana-all , m-all-ana ->
+        ▶ m-all-ana m-all -> 
+        Γ L⊢ ((e-fst ⇒ syn-fst) [ m-fst ]⇐ ana-fst) ->
+        Γ L⊢ ((e-snd ⇒ syn-snd) [ m-snd ]⇐ ana-snd) ->
+        Γ L⊢ (((EPair ((e-fst ⇒ syn-fst) [ m-fst ]⇐ ana-fst) ((e-snd ⇒ syn-snd) [ m-snd ]⇐ ana-snd) m-ana) ⇒ syn-all) [ m-all ]⇐ ana-all)  
       
   data P⊢ : Program -> Set where 
     WTProgram : ∀ {p} ->

@@ -57,6 +57,7 @@ module Core.Validity where
     m ≡ ✔
   ana-edge-wt (WTUp _ (~N-pair ~DVoidR) ▶Old _) = refl
   ana-edge-wt (WTFun _ _ _ _ _ _ (~N-pair ~DVoidR) ▶Old _) = refl
+  ana-edge-wt (WTPair _ _ _ _ _ (~N-pair ~DVoidR) ▶Old _ _) = refl
 
   data ValidityUp : BareCtx -> BareExp -> ExpUp -> Set where 
     ValidityUpSyn : ∀ {Γ b e t} ->
@@ -87,6 +88,9 @@ module Core.Validity where
     ... | _ , refl | ▷Pair ▶Old = ValidityUpSyn (MarkVar (∈-of-∈N in-ctx))
     validity-up (WTAsc (▷Pair ▶Old) (▷Pair ▶Old) ana) (SettledUp (SettledAsc x₃)) ctx-old with validity-low ana x₃ ctx-old 
     ... | ValidityLowAna ana' = ValidityUpSyn (MarkAsc ana') 
+    validity-up (WTProj (NTProjC mprod) (▷Pair c1) c2 syn) (SettledUp (SettledProj (SettledLow settled))) ctx-old with validity-low syn (SettledLow settled) ctx-old 
+    ... | ValidityLowSyn syn' with mprod | c1 | c2 
+    ... | DTProjSome x | ▶Old | ▶Old = ValidityUpSyn (MarkProj syn' x)
 
     validity-low : ∀ {Γ e} ->
       Γ L⊢ e ->
@@ -107,6 +111,14 @@ module Core.Validity where
       with validity-low ana settled (ConsOld? ctx-old)
     ... | ValidityLowAna ana' rewrite erase-∷? {x} {t'} {Old} {Γ} with consist' | c5 
     ... | ~N-pair ~DVoidL | ▶Old = ValidityLowAna (MarkAnaFun marrow ana' consist)
+    validity-low {Γ} (WTPair {ana-all = □ , .Old} (NTProdC DTProdNone) (▷Pair ▶Old) (▷Pair ▶Old) ▶Old x₄ (~N-pair x) ▶Old syn1 syn2) (SettledLow (SettledUp (SettledPair settled1 settled2))) ctx-old 
+      with validity-low syn1 settled1 ctx-old | validity-low syn2 settled2 ctx-old
+    ... | ValidityLowSyn x₁ | ValidityLowSyn x₂ with x | x₄ 
+    ... | ~DVoidR | ▷Pair ▶Old = ValidityLowSyn (MarkSynPair x₁ x₂)
+    validity-low {Γ} (WTPair {ana-all = ■ x₉ , .Old} (NTProdC (DTProdSome mprod)) (▷Pair ▶Old) (▷Pair ▶Old) ▶Old x₄ (~N-pair x) ▶Old ana1 ana2) (SettledLow (SettledUp (SettledPair settled1 settled2))) ctx-old -- = {!   !}
+      with validity-low ana1 settled1 ctx-old | validity-low ana2 settled2 ctx-old
+    ... | ValidityLowAna x₁ | ValidityLowAna x₂ with x | x₄ 
+    ... | ~DVoidL | ▷Pair ▶Old = ValidityLowAna (MarkAnaPair mprod x₁ x₂) 
 
   validity : ∀ {p} ->
     P⊢ p ->

@@ -18,6 +18,8 @@ module Core.Marking where
     M◇ (EAsc (asc , n) e) = (BareEAsc asc (L◇ e))
     M◇ (EFun x (asc , n) m1 m2 e) = (BareEFun x asc (L◇ e))
     M◇ (EAp e1 m2 e2) = (BareEAp (L◇ e1) (L◇ e2))
+    M◇ (EPair e1 e2 m) = (BareEPair (L◇ e1) (L◇ e2))
+    M◇ (EProj s e m) = (BareEProj s (L◇ e))
     
     L◇ : ExpLow -> BareExp
     L◇ (e [ m ]⇐ ana) = U◇ e
@@ -50,6 +52,14 @@ module Core.Marking where
       MarkAsc : ∀ {Γ b-body e-body t-asc} ->
         Γ ⊢ b-body ~> e-body ⇐ t-asc ->
         Γ ⊢ (BareEAsc t-asc b-body) ~> ((EAsc (t-asc , Old) e-body) ⇒ ((■ t-asc , Old))) ⇒ t-asc
+      MarkSynPair : ∀ {Γ b1 b2 e1 e2 t1 t2} ->
+        Γ ⊢ b1 ~> e1 ⇒ t1 ->
+        Γ ⊢ b2 ~> e2 ⇒ t2 ->
+        Γ ⊢ (BareEPair b1 b2) ~> ((EPair (e1  [ ✔ ]⇐ (□ , Old)) (e2 [ ✔ ]⇐ (□ , Old)) ✔) ⇒ ((■ (TProd t1 t2) , Old))) ⇒ (TProd t1 t2)
+      MarkProj : ∀ {Γ b e t s t-side m} ->
+        Γ ⊢ b ~> e ⇒ t ->
+        t , s ▸TProj t-side , m ->
+        Γ ⊢ (BareEProj s b) ~> ((EProj s (e [ ✔ ]⇐ (□ , Old)) m) ⇒ ((■ t-side , Old))) ⇒ t-side
 
     data _⊢_~>_⇐_ : (Γ : BareCtx) (b : BareExp) (e : ExpLow) (t : Type) → Set where  
       MarkSubsume : ∀ {Γ b-all e-all t-syn t-ana m-all} ->
@@ -62,7 +72,12 @@ module Core.Marking where
         (x ∶ t-asc ∷? Γ) ⊢ b-body ~> e-body ⇐ t-out-ana ->
         t-asc ~ t-in-ana , m-asc ->
         Γ ⊢ (BareEFun x t-asc b-body) ~> (((EFun x (t-asc , Old) (m-ana) (m-asc) e-body) ⇒ (□ , Old)) [ ✔ ]⇐ ((■ t-ana , Old))) ⇐ t-ana
-    
+      MarkAnaPair : ∀ {Γ b1 b2 e1 e2 t-fst t-snd t-ana m-ana} ->
+        t-ana ▸TProd t-fst , t-snd , m-ana ->
+        Γ ⊢ b1 ~> e1 ⇐ t-fst ->
+        Γ ⊢ b2 ~> e2 ⇐ t-snd ->
+        Γ ⊢ (BareEPair b1 b2) ~> (((EPair e1 e2 m-ana) ⇒ (□ , Old)) [ ✔ ]⇐ ((■ t-ana , Old))) ⇐ t-ana
+
   data _~>_ : BareExp -> Program -> Set where 
     MarkProgram : ∀ {b e t} ->
       ∅ ⊢ b ~> e ⇒ t -> 

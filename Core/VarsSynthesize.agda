@@ -31,6 +31,13 @@ module Core.VarsSynthesize where
     VSAsc : ∀ {x m t syn asc e e' ana m'} ->
       VarsSynthesize x t m e e' ->
       VarsSynthesize x t m ((EAsc asc (e [ m' ]⇐ ana)) ⇒ syn) ((EAsc asc (e' [ m' ]⇐ ana)) ⇒ syn)
+    VSPair : ∀ {x m t syn e1 e1' e2 e2' ana1 ana2 m1 m2 m'} ->
+      VarsSynthesize x t m e1 e1' ->
+      VarsSynthesize x t m e2 e2' ->
+      VarsSynthesize x t m ((EPair (e1 [ m1 ]⇐ ana1) (e2 [ m2 ]⇐ ana2) m') ⇒ syn) ((EPair (e1' [ m1 ]⇐ ana1) (e2' [ m2 ]⇐ ana2) m') ⇒ syn) 
+    VSProj : ∀ {x s m t syn e e' ana m' m''} ->
+      VarsSynthesize x t m e e' ->
+      VarsSynthesize x t m ((EProj s (e [ m' ]⇐ ana) m'') ⇒ syn) ((EProj s (e' [ m' ]⇐ ana) m'') ⇒ syn) 
 
   VarsSynthesize? : Binding -> Type -> Mark -> ExpUp -> ExpUp -> Set
   VarsSynthesize? BHole t m e1 e2 = e1 ≡ e2

@@ -12,6 +12,7 @@ module Core.Core where
     TBase : Type 
     THole : Type
     TArrow : Type -> Type -> Type 
+    TProd : Type -> Type -> Type 
 
   postulate 
     Var : Set 
@@ -21,6 +22,10 @@ module Core.Core where
     BHole : Binding
     BVar : Var -> Binding
 
+  data ProdSide : Set where 
+    Fst : ProdSide 
+    Snd : ProdSide
+
   data BareExp : Set where 
     BareEConst : BareExp 
     BareEHole : BareExp
@@ -28,6 +33,8 @@ module Core.Core where
     BareEAp : BareExp -> BareExp -> BareExp 
     BareEVar : Var -> BareExp 
     BareEAsc : Type -> BareExp -> BareExp 
+    BareEPair : BareExp -> BareExp -> BareExp 
+    BareEProj : ProdSide -> BareExp -> BareExp
 
   data BareSubsumable : BareExp -> Set where 
     BareSubsumableConst : BareSubsumable BareEConst
@@ -59,19 +66,51 @@ module Core.Core where
       THole ▸TArrow THole , THole , ✔
     MArrowArrow : ∀ {t1 t2} -> 
       (TArrow t1 t2) ▸TArrow t1 , t2 , ✔
+    MArrowProd : ∀ {t1 t2} -> 
+      (TProd t1 t2) ▸TArrow THole , THole , ✖
+  
+  data _▸TProd_,_,_ : Type -> Type -> Type -> Mark -> Set where 
+    MProdBase :
+      TBase ▸TProd THole , THole , ✖
+    MProdHole :
+      THole ▸TProd THole , THole , ✔
+    MProdArrow : ∀ {t1 t2} -> 
+      (TArrow t1 t2) ▸TProd THole , THole , ✖
+    MProdProd : ∀ {t1 t2} -> 
+      (TProd t1 t2) ▸TProd t1 , t2 , ✔
+
+  data _,_▸TProj_,_ : Type -> ProdSide -> Type -> Mark -> Set where 
+    MProdFst : ∀ {t t-fst t-snd m} -> 
+      t ▸TProd t-fst , t-snd , m ->
+      t , Fst ▸TProj t-fst , m 
+    MProdSnd : ∀ {t t-fst t-snd m} ->
+      t ▸TProd t-fst , t-snd , m ->
+      t , Snd ▸TProj t-snd , m
 
   data _~_,_ : Type -> Type -> Mark -> Set where 
-    ConsistBase : TBase ~ TBase , ✔
     ConsistHoleL : ∀ {t} -> THole ~ t , ✔
     ConsistHoleR : ∀ {t} -> t ~ THole , ✔
+    ConsistBase : TBase ~ TBase , ✔
     ConsistArr : ∀ {t1 t2 t3 t4 m1 m2} -> 
       t1 ~ t3 , m1 -> 
       t2 ~ t4 , m2 -> 
       ((TArrow t1 t2) ~ (TArrow t3 t4) , (m1 ⊓M m2))
+    ConsistProd : ∀ {t1 t2 t3 t4 m1 m2} -> 
+      t1 ~ t3 , m1 -> 
+      t2 ~ t4 , m2 -> 
+      ((TProd t1 t2) ~ (TProd t3 t4) , (m1 ⊓M m2))
     InconsistBaseArr : ∀ {t1 t2} ->
       TBase ~ (TArrow t1 t2) , ✖
     InconsistArrBase : ∀ {t1 t2} ->
       (TArrow t1 t2) ~ TBase , ✖
+    InconsistBaseProd : ∀ {t1 t2} ->
+      TBase ~ (TProd t1 t2) , ✖
+    InconsistProdBase : ∀ {t1 t2} ->
+      (TProd t1 t2) ~ TBase , ✖
+    InconsistArrProd : ∀ {t1 t2 t3 t4} ->
+      (TArrow t1 t2) ~ (TProd t3 t4) , ✖
+    InconsistProdArr : ∀ {t1 t2 t3 t4} ->
+      (TProd t1 t2) ~ (TArrow t3 t4) , ✖
 
   data Data : Set where 
     □ : Data
@@ -101,6 +140,8 @@ module Core.Core where
       EAp : ExpLow -> Mark -> ExpLow -> ExpMid 
       EVar : Var -> Mark -> ExpMid 
       EAsc : NewType -> ExpLow -> ExpMid 
+      EPair : ExpLow -> ExpLow -> Mark -> ExpMid
+      EProj : ProdSide -> ExpLow -> Mark -> ExpMid
 
     data ExpLow : Set where 
       _[_]⇐_ : ExpUp -> Mark -> NewData -> ExpLow

@@ -36,6 +36,8 @@ module Core.VarsSynthesizePreservation where
   vars-syn-beyond VSVarEq = =▷New
   vars-syn-beyond (VSVarNeq x) = =▷Refl
   vars-syn-beyond (VSAsc syn) = =▷Refl
+  vars-syn-beyond (VSPair syn syn₁) = =▷Refl
+  vars-syn-beyond (VSProj syn) = =▷Refl
 
   vars-syn?-beyond : ∀ {x t m e syn e' syn'} ->
     VarsSynthesize? x t m (e ⇒ syn) (e' ⇒ syn') -> 
@@ -146,6 +148,7 @@ module Core.VarsSynthesizePreservation where
       Γ' L⊢ e
     ctx-inv-ana equiv (WTUp x x₁ x₂ x₃) = WTUp x x₁ x₂ (ctx-inv-syn equiv x₃)
     ctx-inv-ana equiv (WTFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ ana) = WTFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ (ctx-inv-ana (CtxEquivCons? equiv) ana)
+    ctx-inv-ana equiv (WTPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) = WTPair x x₁ x₂ x₃ x₄ x₅ x₆ (ctx-inv-ana equiv wt) (ctx-inv-ana equiv wt₁)
 
     ctx-inv-syn : ∀ {Γ Γ' e} ->
       CtxEquiv Γ Γ' ->
@@ -156,6 +159,7 @@ module Core.VarsSynthesizePreservation where
     ctx-inv-syn equiv (WTAp x x₁ x₂ x₃ x₄ x₅) = WTAp x x₁ x₂ x₃ (ctx-inv-ana equiv x₄) (ctx-inv-ana equiv x₅)
     ctx-inv-syn equiv (WTVar x x₁) = WTVar (ctx-equiv-access equiv x) x₁
     ctx-inv-syn equiv (WTAsc x x₁ x₂) = WTAsc x x₁ (ctx-inv-ana equiv x₂)
+    ctx-inv-syn equiv (WTProj x x₁ x₂ x₃) = WTProj x x₁ x₂ (ctx-inv-ana equiv x₃)
 
   mutual 
 
@@ -169,6 +173,7 @@ module Core.VarsSynthesizePreservation where
     ... | m-consist' , consist-t' = WTUp (vars-syn-subsumable vars-syn subsumable) consist-t' (beyond-▶ (beyond-through-~N (vars-syn-beyond vars-syn) consist-t consist-t') consist-m) (preservation-vars-syn syn vars-syn ctx-inv)
     preservation-vars-ana (WTFun {t-asc = t-asc} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunNeq {e-body' = e-body' ⇒ syn-body'} neq vars-syn) ctx-inv = WTFun marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma {t = t-asc} (vars-syn?-beyond vars-syn) consist-syn) consist-all consist-m-all (preservation-vars-ana ana vars-syn (CtxInvNeq? neq ctx-inv))    
     preservation-vars-ana (WTFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunEq) ctx-inv = WTFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all (ctx-inv-ana (CtxEquivInit ctx-inv) ana)
+    preservation-vars-ana (WTPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (VSPair {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} vs vs₁) ctx-inv = WTPair x x₁ x₂ x₃ (preservation-pair-lemma (vars-syn?-beyond vs) (vars-syn?-beyond vs₁) x₄) x₅ x₆ (preservation-vars-ana wt vs ctx-inv) (preservation-vars-ana wt₁ vs₁ ctx-inv)
 
     preservation-vars-syn :
       ∀ {Γ Γ' x t e e'} ->
@@ -184,6 +189,9 @@ module Core.VarsSynthesizePreservation where
     preservation-vars-syn {t = t} (WTVar in-ctx consist) VSVarEq ctx-inv = WTVar (ctx-inv-access-eq ctx-inv) (▷Pair ▶Old) 
     preservation-vars-syn (WTVar in-ctx consist) (VSVarNeq neq) ctx-inv = WTVar (ctx-inv-access-neq ctx-inv (λ eq → neq (sym eq)) in-ctx) consist
     preservation-vars-syn (WTAsc consist-syn consist-ana ana) (VSAsc vars-syn) ctx-inv = WTAsc consist-syn consist-ana (preservation-vars-ana ana vars-syn ctx-inv)
+    preservation-vars-syn (WTProj {s = s} mprod x₁ x₂ x₃) (VSProj {e' = e-body' ⇒ syn-body'} vs) ctx-inv with ▸NTProj-dec s syn-body' 
+    ... | t-side-body' , m-body' , mprod' with beyond-▸NTProj (vars-syn-beyond vs) mprod mprod' 
+    ... | t-beyond , m-beyond = WTProj mprod' (beyond-▷ t-beyond x₁) (beyond-▶ m-beyond x₂) (preservation-vars-ana x₃ vs ctx-inv)
 
   preservation-vars-ana? :
     ∀ {x Γ t e e' m' ana} ->
@@ -213,6 +221,7 @@ module Core.VarsSynthesizePreservation where
     ... | m-consist' , consist-t' = WTUp (vars-syn-subsumable vars-syn subsumable) consist-t' (beyond-▶ (beyond-through-~N (vars-syn-beyond vars-syn) consist-t consist-t') consist-m) (preservation-vars-unwrap-syn syn vars-syn ctx-inv)
     preservation-vars-unwrap-ana (WTFun {t-asc = t-asc} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunNeq {e-body' = e-body' ⇒ syn-body'} neq vars-syn) ctx-inv = WTFun marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma {t = t-asc} (vars-syn?-beyond vars-syn) consist-syn) consist-all consist-m-all (preservation-vars-unwrap-ana ana vars-syn (UnwrapInvCons? neq ctx-inv))    
     preservation-vars-unwrap-ana (WTFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunEq) ctx-inv = WTFun marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all (ctx-inv-ana (CtxEquivUnwrapInit ctx-inv) ana)
+    preservation-vars-unwrap-ana (WTPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (VSPair {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} vs vs₁) ctx-inv = WTPair ? ? ? ? (preservation-pair-lemma (vars-syn?-beyond vs) (vars-syn?-beyond vs₁) x₄) ? ? (preservation-vars-ana wt ? ctx-inv) (preservation-vars-ana wt₁ vs₁ ctx-inv)
 
     preservation-vars-unwrap-syn :
       ∀ {Γ Γ' x t m e e'} ->
@@ -235,5 +244,5 @@ module Core.VarsSynthesizePreservation where
     (x ∶ t-old ∷? Γ) L⊢ (e [ m' ]⇐ ana) ->
     VarsSynthesize? x t m e e' ->
     Γ L⊢ (e' [ m' ]⇐ ana)
-  preservation-vars-unwrap {BHole} in-ctx ana refl = ana
+  preservation-vars-unwrap {BHole} in-ctx ana refl = ana 
   preservation-vars-unwrap {BVar x} in-ctx ana vars-syn = preservation-vars-unwrap-ana ana vars-syn (UnwrapInvInit in-ctx)

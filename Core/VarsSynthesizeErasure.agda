@@ -23,6 +23,11 @@ module Core.VarsSynthesizeErasure where
   vars-syn-erase (VSAp vars-syn1 vars-syn2) 
     rewrite vars-syn-erase vars-syn1 
     rewrite vars-syn-erase vars-syn2 = refl
+  vars-syn-erase (VSPair vars-syn1 vars-syn2) 
+    rewrite vars-syn-erase vars-syn1 
+    rewrite vars-syn-erase vars-syn2 = refl
+  vars-syn-erase (VSProj vars-syn) 
+    rewrite vars-syn-erase vars-syn = refl
 
   vars-syn?-erase : ∀{x t m e e'} ->
     VarsSynthesize? x t m e e' ->

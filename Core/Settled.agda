@@ -30,6 +30,13 @@ mutual
     SettledAsc : ∀ {t e} ->
       e L̸↦ -> 
       (EAsc (t , Old) e) M̸↦
+    SettledPair : ∀ {m e1 e2} ->
+      e1 L̸↦ -> 
+      e2 L̸↦ -> 
+      ((EPair e1 e2 m)) M̸↦
+    SettledProj : ∀ {s e m} ->
+      e L̸↦ -> 
+      ((EProj s e m)) M̸↦
 
   data _L̸↦ : ExpLow -> Set where 
     SettledLow : ∀ {t e m} ->
