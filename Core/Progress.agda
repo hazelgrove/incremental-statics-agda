@@ -27,8 +27,10 @@ module Core.Progress where
     productive-syn-syn SubsumableHole SettledHole (WTHole (▷Pair ▶Old)) = _ , refl
     productive-syn-syn SubsumableVar SettledVar (WTVar x x₁) = _ , refl
     productive-syn-syn SubsumableAsc (SettledAsc x) (WTAsc x₁ x₂ x₃) = _ , refl
-    productive-syn-syn SubsumableAp (SettledAp (SettledLow (SettledUp settled)) _) (WTAp marrow consist x₄ x₅ syn ana)  with productive-syn-ana settled syn | marrow | consist
+    productive-syn-syn SubsumableAp (SettledAp (SettledLow (SettledUp settled)) _) (WTAp marrow consist x₄ x₅ syn ana) with productive-syn-ana settled syn | marrow | consist
     ... | _ , refl | NTArrowC (DTArrowSome x) | ▷Pair ▶Old = _ , refl
+    productive-syn-syn SubsumableProj (SettledProj (SettledLow (SettledUp settled))) (WTProj mproj consist _ wt) with productive-syn-ana settled wt | mproj | consist
+    ... | _ , refl | NTProjC (DTProjSome x) | ▷Pair ▶Old = _ , refl
 
     productive-syn-ana : ∀{Γ e t m n} ->
       e M̸↦ -> 
@@ -37,6 +39,8 @@ module Core.Progress where
     productive-syn-ana settled (WTUp x x₁ x₂ x₃) = productive-syn-syn x settled x₃
     productive-syn-ana (SettledFun (SettledLow (SettledUp settled))) (WTFun (NTArrowC DTArrowNone) a2 (▷Pair ▶Old) a4 a5 a6 a7 a8 ana) with productive-syn-ana settled ana | a6
     ... | t , refl | ▷Pair ▶Old = _ , refl
+    productive-syn-ana (SettledPair (SettledLow (SettledUp settled1)) (SettledLow (SettledUp settled2))) (WTPair (NTProdC DTProdNone) (▷Pair ▶Old) (▷Pair ▶Old) ▶Old con4 consist con5 wt1 wt2) with productive-syn-ana settled1 wt1 | productive-syn-ana settled2 wt2 | con4
+    ... | _ , refl | _ , refl | ▷Pair ▶Old = _ , refl 
 
   new-ana-steps-syn-inner : ∀ {Γ e m t} ->
     Γ U⊢ e ->
@@ -46,6 +50,7 @@ module Core.Progress where
   new-ana-steps-syn-inner (WTAp x x₁ x₂ x₃ x₄ x₅) = _ , StepAnaConsist SubsumableAp (proj₂ (~D-dec _ _)) 
   new-ana-steps-syn-inner (WTVar x x₁) = _ , StepAnaConsist SubsumableVar  (proj₂ (~D-dec _ _)) 
   new-ana-steps-syn-inner (WTAsc x x₁ x₂) = _ , StepAnaConsist SubsumableAsc (proj₂ (~D-dec _ _)) 
+  new-ana-steps-syn-inner (WTProj x x₁ x₂ x₄) = _ , StepAnaConsist SubsumableProj (proj₂ (~D-dec _ _))
 
   new-ana-steps-syn : ∀ {Γ e m t} ->
     Γ U⊢ e ->
@@ -58,7 +63,8 @@ module Core.Progress where
     ∃[ e' ] (e [ m ]⇐ (t , New)) l↦ e' 
   new-ana-steps-inner (WTUp x x₁ x₂ syn) = new-ana-steps-syn-inner syn
   new-ana-steps-inner (WTFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ ana) = _ , (StepAnaFun (proj₂ (proj₂ (proj₂ (▸DTArrow-dec _)))) (■~D-pair (proj₂ (~D-dec _ _))))
-
+  new-ana-steps-inner (WTPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) = _ , StepAnaPair (proj₂ (proj₂ (proj₂ (▸DTProd-dec _))))
+  
   new-ana-steps : ∀ {Γ e m t} ->
     Γ L⊢ (e [ m ]⇐ (t , New)) ->
     ∃[ e' ] (e [ m ]⇐ (t , New)) L↦ e' 
@@ -88,6 +94,8 @@ module Core.Progress where
   vars-syn-dec {EVar x x₂ ⇒ x₁} {y} with (y ≡? x) 
   ... | yes refl = _ , VSVarEq 
   ... | no neq = _ , VSVarNeq neq
+  vars-syn-dec {EPair (x [ x₂ ]⇐ x₄) (x₅ [ x₆ ]⇐ x₇) x₃ ⇒ x₁} = _ , (VSPair (proj₂ vars-syn-dec) (proj₂ vars-syn-dec))
+  vars-syn-dec {EProj x (x₂ [ x₄ ]⇐ x₅) x₃ ⇒ x₁} = _ , VSProj (proj₂ vars-syn-dec)
 
   vars-syn?-dec : ∀ {x e t m} ->
     ∃[ e' ] (VarsSynthesize? x t m e e')
@@ -120,6 +128,11 @@ module Core.Progress where
     ... | Inl (e' , step) = Inl (_ , StepLowUp (FillLEnvUpRec (FillLEnvAsc FillL⊙)) step (FillLEnvUpRec (FillLEnvAsc FillL⊙))) 
     ... | Inr (AlmostSettledLow (AlmostSettledUp {New} settled)) = Inl (_ , StepLow (FillLEnvUpRec (FillLEnvAsc FillL⊙)) (StepSynConsist (proj₂ (~D-dec _ _))) (FillLEnvUpRec (FillLEnvAsc FillL⊙))) 
     ... | Inr (AlmostSettledLow (AlmostSettledUp {Old} settled)) = Inr (AlmostSettledUp (SettledAsc (SettledLow (SettledUp settled)))) 
+    ProgressUp (WTProj mproj con1 con2 wt) with ProgressLow wt 
+    ... | Inl (e' , step ) = Inl (_ , StepLowUp (FillLEnvUpRec (FillLEnvProj FillL⊙)) step (FillLEnvUpRec (FillLEnvProj FillL⊙))) 
+    ... | Inr (AlmostSettledLow (AlmostSettledUp {New} settled)) = Inl (_ , StepUp FillU⊙ (StepProj (proj₂ (proj₂ (▸DTProj-dec _ _)))) FillU⊙)
+    ... | Inr (AlmostSettledLow (AlmostSettledUp {Old} settled)) = Inr (AlmostSettledUp (SettledProj (SettledLow (SettledUp settled))))
+
 
     ProgressLow :  
       ∀ {Γ e} ->
@@ -139,7 +152,20 @@ module Core.Progress where
     ProgressLow (WTFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled)) | □ = Inl (_ , StepLow FillL⊙ StepSynFun FillL⊙)
     ProgressLow (WTFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled)) | ■ _ = Inl (_ , StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙))) (StepSynConsist (proj₂ (~D-dec _ _))) (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun FillL⊙)))) 
     ProgressLow (WTFun {ana-all = ana-all , Old} {ana-body = ana-body , Old} {t-asc = t-asc , Old} marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) | Inr (AlmostSettledLow (AlmostSettledUp {Old} settled)) = Inr (AlmostSettledLow (AlmostSettledUp (SettledFun (SettledLow (SettledUp settled)))))
-
+    ProgressLow (WTPair {ana-all = t , New} mprod con1 con2 con3 con4 consist con5 wt1 wt2) = Inl (_ , StepLow FillL⊙ (StepAnaPair (proj₂ (proj₂ (proj₂ (▸DTProd-dec _))))) FillL⊙) 
+    ProgressLow (WTPair {ana-all = t , Old} {ana-fst = ana-fst , New} mprod con1 con2 con3 con4 consist con5 wt1 wt2) = Inl (_ , StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair1 FillL⊙))) (proj₂ (new-ana-steps-inner wt1)) (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair1 FillL⊙))))
+    ProgressLow (WTPair {ana-all = t , Old} {ana-fst = ana-fst , Old} {ana-snd = ana-snd , New} mprod con1 con2 con3 con4 consist con5 wt1 wt2) = Inl (_ , StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair2 FillL⊙))) (proj₂ (new-ana-steps-inner wt2)) (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair2 FillL⊙))))
+    ProgressLow (WTPair {ana-all = t , Old} {ana-fst = ana-fst , Old} {ana-snd = ana-snd , Old} mprod con1 con2 con3 con4 consist con5 wt1 wt2) with ProgressLow wt1 | ProgressLow wt2 
+    ProgressLow (WTPair {ana-all = t , Old} {ana-fst = ana-fst , Old} {ana-snd = ana-snd , Old} mprod con1 con2 con3 con4 consist con5 wt1 wt2) | Inl (e' , step) | p2 = Inl (_ , StepLowLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair1 FillL⊙))) step (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair1 FillL⊙))))
+    ProgressLow (WTPair {ana-all = t , Old} {ana-fst = ana-fst , Old} {ana-snd = ana-snd , Old} mprod con1 con2 con3 con4 consist con5 wt1 wt2) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled)) | p2 with ana-fst 
+    ProgressLow (WTPair {ana-all = t , Old} {ana-fst = ana-fst , Old} {ana-snd = ana-snd , Old} mprod con1 con2 con3 con4 consist con5 wt1 wt2) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled)) | p2 | □ = Inl (_ , StepLow FillL⊙ StepSynPairFst FillL⊙) 
+    ProgressLow (WTPair {ana-all = t , Old} {ana-fst = ana-fst , Old} {ana-snd = ana-snd , Old} mprod con1 con2 con3 con4 consist con5 wt1 wt2) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled)) | p2 | ■ _ = Inl (_ , StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair1 FillL⊙))) (StepSynConsist (proj₂ (~D-dec _ _))) (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair1 FillL⊙)))) 
+    ProgressLow (WTPair {ana-all = t , Old} {ana-fst = ana-fst , Old} {ana-snd = ana-snd , Old} mprod con1 con2 con3 con4 consist con5 wt1 wt2) | Inr (AlmostSettledLow (AlmostSettledUp {Old} settled)) | Inl (e' , step) = Inl (_ , StepLowLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair2 FillL⊙))) step (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair2 FillL⊙))))
+    ProgressLow (WTPair {ana-all = t , Old} {ana-fst = ana-fst , Old} {ana-snd = ana-snd , Old} mprod con1 con2 con3 con4 consist con5 wt1 wt2) | Inr (AlmostSettledLow (AlmostSettledUp {Old} settled1)) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled2)) with ana-snd
+    ProgressLow (WTPair {ana-all = t , Old} {ana-fst = ana-fst , Old} {ana-snd = ana-snd , Old} mprod con1 con2 con3 con4 consist con5 wt1 wt2) | Inr (AlmostSettledLow (AlmostSettledUp {Old} settled1)) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled2)) | □ = Inl (_ , StepLow FillL⊙ StepSynPairSnd FillL⊙) 
+    ProgressLow (WTPair {ana-all = t , Old} {ana-fst = ana-fst , Old} {ana-snd = ana-snd , Old} mprod con1 con2 con3 con4 consist con5 wt1 wt2) | Inr (AlmostSettledLow (AlmostSettledUp {Old} settled1)) | Inr (AlmostSettledLow (AlmostSettledUp {New} settled2)) | ■ _ = Inl (_ , StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair2 FillL⊙))) (StepSynConsist (proj₂ (~D-dec _ _))) (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair2 FillL⊙)))) 
+    ProgressLow (WTPair {ana-all = t , Old} {ana-fst = ana-fst , Old} {ana-snd = ana-snd , Old} mprod con1 con2 con3 con4 consist con5 wt1 wt2) | Inr (AlmostSettledLow (AlmostSettledUp {Old} settled1)) | Inr (AlmostSettledLow (AlmostSettledUp {Old} settled2)) = Inr (AlmostSettledLow (AlmostSettledUp (SettledPair (SettledLow (SettledUp settled1)) (SettledLow (SettledUp settled2))))) 
+    
   step-preserves-program : ∀ {p e} -> 
     ExpLowOfProgram p L↦ e -> 
     ∃[ p' ] (e ≡ ExpLowOfProgram p')
@@ -150,6 +176,9 @@ module Core.Progress where
   step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepAnaFun _ _) FillL⊙) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepAnnFun _) FillL⊙) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillL⊙ StepSynFun FillL⊙) = Root _ _ , refl
+  step-preserves-program {p = Root e n} (StepLow FillL⊙ (StepAnaPair _) FillL⊙) = Root _ _ , refl
+  step-preserves-program {p = Root e n} (StepLow FillL⊙ StepSynPairFst FillL⊙) = Root _ _ , refl
+  step-preserves-program {p = Root e n} (StepLow FillL⊙ StepSynPairSnd FillL⊙) = Root _ _ , refl
 
   ProgressProgram : ∀ {p} ->
     P⊢ p ->   
@@ -178,6 +207,8 @@ module Core.Progress where
     UnProgressUp (WTAp _ _ _ _ syn ana) (StepUp (FillUEnvUpRec (FillUEnvAp1 fill1)) step (FillUEnvUpRec (FillUEnvAp1 fill2))) (SettledUp (SettledAp settled _)) = UnProgressLow syn (StepUp fill1 step fill2) settled
     UnProgressUp (WTAp _ _ _ _ syn ana) (StepUp (FillUEnvUpRec (FillUEnvAp2 fill1)) step (FillUEnvUpRec (FillUEnvAp2 fill2))) (SettledUp (SettledAp _ settled)) = UnProgressLow ana (StepUp fill1 step fill2) settled
     UnProgressUp (WTAsc _ _ ana) (StepUp (FillUEnvUpRec (FillUEnvAsc fill1)) step (FillUEnvUpRec (FillUEnvAsc fill2))) (SettledUp (SettledAsc settled)) = UnProgressLow ana (StepUp fill1 step fill2) settled
+    UnProgressUp (WTProj _ _ _ _) (StepUp FillU⊙ (StepProj _) FillU⊙) (SettledUp (SettledProj (SettledLow ())))
+    UnProgressUp (WTProj _ _ _ wt) (StepUp (FillUEnvUpRec (FillUEnvProj fill1)) step (FillUEnvUpRec (FillUEnvProj fill2))) (SettledUp (SettledProj settled)) = UnProgressLow wt (StepUp fill1 step fill2) settled
     
     UnProgressUp (WTConst x) (StepLow (FillLEnvUpRec ()) step (FillLEnvUpRec fill2)) (SettledUp settled)
     UnProgressUp (WTHole x) (StepLow (FillLEnvUpRec ()) step (FillLEnvUpRec fill2)) (SettledUp settled)
@@ -185,6 +216,7 @@ module Core.Progress where
     UnProgressUp (WTAp _ _ _ _ syn ana) (StepLow (FillLEnvUpRec (FillLEnvAp1 fill1)) step (FillLEnvUpRec (FillLEnvAp1 fill2))) (SettledUp (SettledAp settled _)) = UnProgressLow syn (StepLow fill1 step fill2) settled
     UnProgressUp (WTAp _ _ _ _ syn ana) (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) (SettledUp (SettledAp _ settled)) = UnProgressLow ana (StepLow fill1 step fill2) settled
     UnProgressUp (WTAsc _ _ ana) (StepLow (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc fill2))) (SettledUp (SettledAsc settled)) = UnProgressLow ana (StepLow fill1 step fill2) settled
+    UnProgressUp (WTProj _ _ _ wt) (StepLow (FillLEnvUpRec (FillLEnvProj fill1)) step (FillLEnvUpRec (FillLEnvProj fill2))) (SettledUp (SettledProj settled)) = UnProgressLow wt (StepLow fill1 step fill2) settled 
 
     UnProgressLow : ∀ {Γ e e'} ->
       (Γ L⊢ e) ->  
@@ -197,6 +229,12 @@ module Core.Progress where
     UnProgressLow (WTFun _ _ _ _ _ _ _ _ ana) (StepLow FillL⊙ StepSynFun FillL⊙) (SettledLow (SettledUp (SettledFun (SettledLow ()))))
     UnProgressLow (WTFun _ _ _ _ _ _ _ _ ana) (StepUp (FillUEnvLowRec (FillUEnvUpRec (FillUEnvFun fill1))) step (FillUEnvLowRec (FillUEnvUpRec (FillUEnvFun fill2)))) (SettledLow (SettledUp (SettledFun settled))) = UnProgressLow ana (StepUp fill1 step fill2) settled
     UnProgressLow (WTFun _ _ _ _ _ _ _ _ ana) (StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun fill1))) step (FillLEnvLowRec (FillLEnvUpRec (FillLEnvFun fill2)))) (SettledLow (SettledUp (SettledFun settled))) = UnProgressLow ana (StepLow fill1 step fill2) settled
+    UnProgressLow (WTPair _ _ _ _ _ _ _ wt1 wt2) (StepUp (FillUEnvLowRec (FillUEnvUpRec (FillUEnvPair1 fill1))) step (FillUEnvLowRec (FillUEnvUpRec (FillUEnvPair1 fill2)))) (SettledLow (SettledUp (SettledPair settled1 settled2))) = UnProgressLow wt1 (StepUp fill1 step fill2) settled1
+    UnProgressLow (WTPair _ _ _ _ _ _ _ wt1 wt2) (StepUp (FillUEnvLowRec (FillUEnvUpRec (FillUEnvPair2 fill1))) step (FillUEnvLowRec (FillUEnvUpRec (FillUEnvPair2 fill2)))) (SettledLow (SettledUp (SettledPair settled1 settled2))) = UnProgressLow wt2 (StepUp fill1 step fill2) settled2
+    UnProgressLow (WTPair _ _ _ _ _ _ _ wt1 wt2) (StepLow FillL⊙ StepSynPairFst FillL⊙) (SettledLow (SettledUp (SettledPair (SettledLow ()) settled2))) 
+    UnProgressLow (WTPair _ _ _ _ _ _ _ wt1 wt2) (StepLow FillL⊙ StepSynPairSnd FillL⊙) (SettledLow (SettledUp (SettledPair settled1 (SettledLow ())))) 
+    UnProgressLow (WTPair _ _ _ _ _ _ _ wt1 wt2) (StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair1 fill1))) step (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair1 fill2)))) (SettledLow (SettledUp (SettledPair settled1 settled2))) = UnProgressLow wt1 (StepLow fill1 step fill2) settled1
+    UnProgressLow (WTPair _ _ _ _ _ _ _ wt1 wt2) (StepLow (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair2 fill1))) step (FillLEnvLowRec (FillLEnvUpRec (FillLEnvPair2 fill2)))) (SettledLow (SettledUp (SettledPair settled1 settled2))) = UnProgressLow wt2 (StepLow fill1 step fill2) settled2
 
   UnProgressProgram : ∀ {p p'} ->  
     P⊢ p ->   
@@ -204,4 +242,5 @@ module Core.Progress where
     (p P̸↦) ->
     ⊥       
   UnProgressProgram {p = Root e .Old} (WTProgram ana) (InsideStep step) (SettledProgram (SettledLow settled)) = UnProgressLow ana step (SettledLow settled)   
-
+  
+   

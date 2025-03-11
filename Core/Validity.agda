@@ -51,6 +51,7 @@ module Core.Validity where
   barren-subsumable SubsumableAp = BareSubsumableAp
   barren-subsumable SubsumableVar = BareSubsumableVar
   barren-subsumable SubsumableAsc = BareSubsumableAsc
+  barren-subsumable SubsumableProj = BareSubsumableProj
 
   ana-edge-wt : ∀ {Γ e m t} ->
     Γ L⊢ ((e ⇒ (■ t , Old)) [ m ]⇐ (□ , Old)) -> 

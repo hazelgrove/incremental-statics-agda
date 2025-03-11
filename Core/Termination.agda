@@ -204,6 +204,7 @@ module Core.Termination where
     <ExpUp e' e
   StepDecreaseU StepAsc = <ExpUp< (n<1+n _)
   StepDecreaseU (StepAp x) = <ExpUp= refl (<Upper (<Ap< (<Lower= =New-refl (<Upper= <NewC)) refl))
+  StepDecreaseU (StepProj x) = <ExpUp= refl (<Upper (<Proj (<Lower= =New-refl (<Upper= <NewC))))
 
   StepDecreaseL : ∀ {e e'} ->
     e l↦ e' -> 
@@ -216,6 +217,9 @@ module Core.Termination where
   StepDecreaseL (StepAnaConsist x x₁) = <ExpLow= refl (<Lower <NewC refl)
   StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC refl)
   StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =New-refl (<Upper (<Fun (<Lower= =New-refl (<Upper= <NewC)))))
+  StepDecreaseL (StepAnaPair x) = <ExpLow= refl (<Lower <NewC refl)
+  StepDecreaseL StepSynPairFst = <ExpLow= refl (<Lower= =New-refl (<Upper (<Pair< (<Lower= =New-refl (<Upper= <NewC)) refl)))
+  StepDecreaseL StepSynPairSnd = <ExpLow= refl (<Lower= =New-refl (<Upper (<Pair=< (<Lower= =New-refl (<Upper= <NewC)))))
 
   mutual 
     
@@ -839,6 +843,6 @@ module Core.Termination where
     p' ↤P p -> 
     (Acc _↤P_ p') 
   ↤P-wf' p step = acc-translate (<Program-wf _)
-
+ 
   ↤P-wf : WellFounded _↤P_
   ↤P-wf p = acc (↤P-wf' p)

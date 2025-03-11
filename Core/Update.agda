@@ -34,15 +34,29 @@ module Core.Update where
     StepSynFun : ∀ {x e-body t-asc t-body n-asc m-body syn-all ana-all m1 m2 m3 n-ana n-body} ->
       (((EFun x (t-asc , n-asc) m1 m2 ((e-body ⇒ (t-body , New)) [ m-body ]⇐ (□ , n-body))) ⇒ syn-all) [ m3 ]⇐ (ana-all , n-ana)) l↦
       (((EFun x (t-asc , n-asc) m1 m2 ((e-body ⇒ (t-body , Old)) [ ✔ ]⇐ (□ , n-body) )) ⇒ (DUnless (DArrow t-asc t-body) ana-all , New)) [ m3 ]⇐ (ana-all , n-ana))
-    
+    StepAnaPair : ∀ {e-fst e-snd t-fst t-snd n-fst n-snd t-fst-ana t-snd-ana ana-fst ana-snd m-fst m-snd m-ana m-ana' m-all syn-all ana-all} ->
+      ana-all ▸DTProd t-fst-ana , t-snd-ana , m-ana' ->
+      (((EPair ((e-fst ⇒ (t-fst , n-fst)) [ m-fst ]⇐ ana-fst) ((e-snd ⇒ (t-snd , n-snd)) [ m-snd ]⇐ ana-snd) m-ana) ⇒ syn-all) [ m-all ]⇐ (ana-all , New)) l↦
+      (((EPair ((e-fst ⇒ (t-fst , n-fst)) [ m-fst ]⇐ (t-fst-ana , New)) ((e-snd ⇒ (t-snd , n-snd)) [ m-snd ]⇐ (t-snd-ana , New)) m-ana') ⇒ (DUnless (DProd t-fst t-snd) ana-all , New)) [ m-all ]⇐ (ana-all , Old))
+    StepSynPairFst : ∀ {e-fst e-snd t-fst t-snd n-snd n-fst ana-snd m-fst m-snd m-ana m-all syn-all ana-all n-ana} ->
+      (((EPair ((e-fst ⇒ (t-fst , New)) [ m-fst ]⇐ (□ , n-fst)) ((e-snd ⇒ (t-snd , n-snd)) [ m-snd ]⇐ ana-snd) m-ana) ⇒ syn-all) [ m-all ]⇐ (ana-all , n-ana)) l↦
+      (((EPair ((e-fst ⇒ (t-fst , Old)) [ ✔ ]⇐ (□ , n-fst)) ((e-snd ⇒ (t-snd , n-snd)) [ m-snd ]⇐ ana-snd) m-ana) ⇒ (DUnless (DProd t-fst t-snd) ana-all , New)) [ m-all ]⇐ (ana-all , n-ana))
+    StepSynPairSnd : ∀ {e-fst e-snd t-fst t-snd n-fst ana-fst n-snd m-fst m-snd m-ana m-all syn-all ana-all n-ana} ->
+      (((EPair ((e-fst ⇒ (t-fst , n-fst)) [ m-fst ]⇐ ana-fst) ((e-snd ⇒ (t-snd , New)) [ m-snd ]⇐ (□ , n-snd)) m-ana) ⇒ syn-all) [ m-all ]⇐ (ana-all , n-ana)) l↦
+      (((EPair ((e-fst ⇒ (t-fst , n-fst)) [ m-fst ]⇐ ana-fst) ((e-snd ⇒ (t-snd , Old)) [ ✔ ]⇐ (□ , n-snd)) m-ana) ⇒ (DUnless (DProd t-fst t-snd) ana-all , New)) [ m-all ]⇐ (ana-all , n-ana))
+
   data _u↦_ : ExpUp -> ExpUp -> Set where 
     StepAp : ∀ {e-fun e-arg t-fun t-in-fun t-out-fun m-all m-arg m m-fun n-fun syn-all ana-fun ana-arg} ->
       t-fun ▸DTArrow t-in-fun , t-out-fun , m-fun -> 
       (EAp ((e-fun ⇒ (t-fun , New)) [ m ]⇐ (ana-fun , n-fun)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all u↦
-      (EAp ((e-fun ⇒ (t-fun , Old)) [ ✔ ]⇐ (ana-fun , n-fun)) m-fun (e-arg [ m-arg ]⇐ (t-in-fun , New))) ⇒ (t-out-fun , New)
+      (EAp ((e-fun ⇒ (t-fun , Old)) [ m ]⇐ (ana-fun , n-fun)) m-fun (e-arg [ m-arg ]⇐ (t-in-fun , New))) ⇒ (t-out-fun , New)
     StepAsc : ∀ {e-body t-asc m-body syn-all ana-body} ->
       (EAsc (t-asc , New) (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all  u↦
       (EAsc (t-asc , Old) (e-body [ m-body ]⇐ (■ t-asc , New))) ⇒ (■ t-asc , New)
+    StepProj : ∀ {s e-body t-body t-side-body m-all m-body m-all-body syn-all ana-body} ->
+      t-body , s ▸DTProj t-side-body , m-all-body -> 
+      (EProj s ((e-body ⇒ (t-body , New)) [ m-body ]⇐ ana-body) m-all) ⇒ syn-all u↦
+      (EProj s ((e-body ⇒ (t-body , Old)) [ m-body ]⇐ ana-body) m-all-body) ⇒ (t-side-body , New)
 
   data _U↦_ : (e e' : ExpUp) -> Set where
     StepUp : ∀{ε e e' e-in e-in'} ->

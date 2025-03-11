@@ -170,6 +170,14 @@ module Core.Lemmas where
   ▸NTArrow-unicity (NTArrowC match1) (NTArrowC match2) with ▸DTArrow-unicity match1 match2 
   ... | refl , refl , refl = refl , refl , refl
 
+  ▸DTProd-unicity : ∀ {d t-in t-in' t-out t-out' m m'} ->
+    d ▸DTProd t-in , t-out , m -> 
+    d ▸DTProd t-in' , t-out' , m' -> 
+    (t-in ≡ t-in' × t-out ≡ t-out' × m ≡ m')
+  ▸DTProd-unicity DTProdNone DTProdNone = refl , refl , refl
+  ▸DTProd-unicity (DTProdSome match1) (DTProdSome match2) with ▸TProd-unicity match1 match2
+  ... | refl , refl , refl = refl , refl , refl
+  
   ▸DTProj-unicity : ∀ {d s t t' m m'} ->
     d , s ▸DTProj t , m -> 
     d , s ▸DTProj t' , m' -> 
@@ -272,6 +280,12 @@ module Core.Lemmas where
       (DUnless (DArrow t1 t2) d , New)
   consist-unless-lemma {d = □} = ▷Pair ▶Same
   consist-unless-lemma {d = ■ d} = ▷Pair ▶Old
+
+  consist-unless-prod : ∀ {t1 t2 n1 n2 d} ->
+    ▷ (NUnless (NProd (t1 , n1) (t2 , n2)) (d , Old))
+      (DUnless (DProd t1 t2) d , New)
+  consist-unless-prod {d = □} = ▷Pair ▶Same
+  consist-unless-prod {d = ■ d} = ▷Pair ▶Old
 
   preservation-pair-lemma : ∀ {syn1 syn1' syn2 syn2' ana syn-all} ->
     =▷ syn1 syn1' ->

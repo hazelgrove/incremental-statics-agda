@@ -15,6 +15,7 @@ module Core.UpdateErasure where
     (U◇ e) ≡ (U◇ e')
   u↦-erase (StepAp _) = refl
   u↦-erase StepAsc = refl
+  u↦-erase (StepProj _) = refl
 
   l↦-erase : ∀ {e e'} ->
     (e l↦ e') ->
@@ -23,6 +24,9 @@ module Core.UpdateErasure where
   l↦-erase (StepAnaConsist _ _) = refl
   l↦-erase (StepAnaFun _ _) = refl
   l↦-erase StepSynFun = refl
+  l↦-erase (StepAnaPair _) = refl
+  l↦-erase StepSynPairFst = refl
+  l↦-erase StepSynPairSnd = refl
   l↦-erase (StepAnnFun vars-syn) 
     rewrite vars-syn?-erase vars-syn = refl
 
@@ -43,11 +47,17 @@ module Core.UpdateErasure where
       (M◇ e) ≡ (M◇ e')
     fill-um-erase (FillUEnvFun fill1) (FillUEnvFun fill2) eq 
       rewrite fill-ul-erase fill1 fill2 eq = refl
+    fill-um-erase (FillUEnvProj fill1) (FillUEnvProj fill2) eq 
+      rewrite fill-ul-erase fill1 fill2 eq = refl
     fill-um-erase (FillUEnvAp1 fill1) (FillUEnvAp1 fill2) eq 
       rewrite fill-ul-erase fill1 fill2 eq = refl
     fill-um-erase (FillUEnvAp2 fill1) (FillUEnvAp2 fill2) eq 
       rewrite fill-ul-erase fill1 fill2 eq = refl
     fill-um-erase (FillUEnvAsc fill1) (FillUEnvAsc fill2) eq 
+      rewrite fill-ul-erase fill1 fill2 eq = refl
+    fill-um-erase (FillUEnvPair1 fill1) (FillUEnvPair1 fill2) eq 
+      rewrite fill-ul-erase fill1 fill2 eq = refl
+    fill-um-erase (FillUEnvPair2 fill1) (FillUEnvPair2 fill2) eq 
       rewrite fill-ul-erase fill1 fill2 eq = refl
 
     fill-ul-erase : ∀{ε e e' e-in e-in'} ->
@@ -73,11 +83,17 @@ module Core.UpdateErasure where
       (M◇ e) ≡ (M◇ e')
     fill-lm-erase (FillLEnvFun fill1) (FillLEnvFun fill2) eq 
       rewrite fill-ll-erase fill1 fill2 eq = refl
+    fill-lm-erase (FillLEnvProj fill1) (FillLEnvProj fill2) eq 
+      rewrite fill-ll-erase fill1 fill2 eq = refl
     fill-lm-erase (FillLEnvAp1 fill1) (FillLEnvAp1 fill2) eq 
       rewrite fill-ll-erase fill1 fill2 eq = refl
     fill-lm-erase (FillLEnvAp2 fill1) (FillLEnvAp2 fill2) eq 
       rewrite fill-ll-erase fill1 fill2 eq = refl
     fill-lm-erase (FillLEnvAsc fill1) (FillLEnvAsc fill2) eq 
+      rewrite fill-ll-erase fill1 fill2 eq = refl
+    fill-lm-erase (FillLEnvPair1 fill1) (FillLEnvPair1 fill2) eq 
+      rewrite fill-ll-erase fill1 fill2 eq = refl
+    fill-lm-erase (FillLEnvPair2 fill1) (FillLEnvPair2 fill2) eq 
       rewrite fill-ll-erase fill1 fill2 eq = refl
 
     fill-ll-erase : ∀{ε e e' e-in e-in'} ->
@@ -94,19 +110,31 @@ module Core.UpdateErasure where
   U↦-erase (StepUp FillU⊙ step FillU⊙) = u↦-erase step
   U↦-erase (StepUp (FillUEnvUpRec (FillUEnvFun fill1)) step (FillUEnvUpRec (FillUEnvFun fill2))) 
     rewrite fill-ul-erase fill1 fill2 (u↦-erase step) = refl
+  U↦-erase (StepUp (FillUEnvUpRec (FillUEnvProj fill1)) step (FillUEnvUpRec (FillUEnvProj fill2))) 
+    rewrite fill-ul-erase fill1 fill2 (u↦-erase step) = refl
   U↦-erase (StepUp (FillUEnvUpRec (FillUEnvAp1 fill1)) step (FillUEnvUpRec (FillUEnvAp1 fill2)))
     rewrite fill-ul-erase fill1 fill2 (u↦-erase step) = refl
   U↦-erase (StepUp (FillUEnvUpRec (FillUEnvAp2 fill1)) step (FillUEnvUpRec (FillUEnvAp2 fill2))) 
     rewrite fill-ul-erase fill1 fill2 (u↦-erase step) = refl
   U↦-erase (StepUp (FillUEnvUpRec (FillUEnvAsc fill1)) step (FillUEnvUpRec (FillUEnvAsc fill2)))
     rewrite fill-ul-erase fill1 fill2 (u↦-erase step) = refl
+  U↦-erase (StepUp (FillUEnvUpRec (FillUEnvPair1 fill1)) step (FillUEnvUpRec (FillUEnvPair1 fill2)))
+    rewrite fill-ul-erase fill1 fill2 (u↦-erase step) = refl
+  U↦-erase (StepUp (FillUEnvUpRec (FillUEnvPair2 fill1)) step (FillUEnvUpRec (FillUEnvPair2 fill2))) 
+    rewrite fill-ul-erase fill1 fill2 (u↦-erase step) = refl
   U↦-erase (StepLow (FillLEnvUpRec (FillLEnvFun fill1)) step (FillLEnvUpRec (FillLEnvFun fill2))) 
+    rewrite fill-ll-erase fill1 fill2 (l↦-erase step) = refl
+  U↦-erase (StepLow (FillLEnvUpRec (FillLEnvProj fill1)) step (FillLEnvUpRec (FillLEnvProj fill2))) 
     rewrite fill-ll-erase fill1 fill2 (l↦-erase step) = refl
   U↦-erase (StepLow (FillLEnvUpRec (FillLEnvAp1 fill1)) step (FillLEnvUpRec (FillLEnvAp1 fill2))) 
     rewrite fill-ll-erase fill1 fill2 (l↦-erase step) = refl
   U↦-erase (StepLow (FillLEnvUpRec (FillLEnvAp2 fill1)) step (FillLEnvUpRec (FillLEnvAp2 fill2))) 
     rewrite fill-ll-erase fill1 fill2 (l↦-erase step) = refl
   U↦-erase (StepLow (FillLEnvUpRec (FillLEnvAsc fill1)) step (FillLEnvUpRec (FillLEnvAsc fill2))) 
+    rewrite fill-ll-erase fill1 fill2 (l↦-erase step) = refl
+  U↦-erase (StepLow (FillLEnvUpRec (FillLEnvPair1 fill1)) step (FillLEnvUpRec (FillLEnvPair1 fill2))) 
+    rewrite fill-ll-erase fill1 fill2 (l↦-erase step) = refl
+  U↦-erase (StepLow (FillLEnvUpRec (FillLEnvPair2 fill1)) step (FillLEnvUpRec (FillLEnvPair2 fill2))) 
     rewrite fill-ll-erase fill1 fill2 (l↦-erase step) = refl
 
   L↦-erase : ∀ {e e'} ->

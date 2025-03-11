@@ -42,6 +42,7 @@ module Core.Core where
     BareSubsumableAp : ∀ {e1 e2} -> BareSubsumable (BareEAp e1 e2) 
     BareSubsumableVar : ∀ {x} -> BareSubsumable (BareEVar x) 
     BareSubsumableAsc : ∀ {t e} -> BareSubsumable (BareEAsc t e) 
+    BareSubsumableProj : ∀ {s e} -> BareSubsumable (BareEProj s e) 
 
   data Newness : Set where 
     Old : Newness 
