@@ -157,7 +157,7 @@ module Core.Actions where
       Γ ⊢ DeleteBinder , ((EFun x ann m1 m2 (e [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun BHole ann m1 m2 ((e' ⇒ (t' , New)) [ m ]⇐ ana)) ⇒ syn)
     ActInsertBinder : ∀ {Γ x ann n-ann m1 m2 e e' t' n' syn m ana} ->
       VarsSynthesize x ann ✔ e (e' ⇒ (t' , n')) ->
-      Γ ⊢ InsertBinder x , ((EFun BHole (ann , n-ann) m1 m2 (e [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun (BVar x) (ann , Old) m1 m2 ((e' ⇒ (t' , New)) [ m ]⇐ ana)) ⇒ syn)
+      Γ ⊢ InsertBinder x , ((EFun BHole (ann , n-ann) m1 m2 (e [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun (BVar x) (ann , n-ann) m1 m2 ((e' ⇒ (t' , New)) [ m ]⇐ ana)) ⇒ syn)
 
   data _⊢_,_αL↦_ : Ctx -> Action -> ExpLow -> ExpLow -> Set where 
     ALC : ∀ {Γ α e e' m t n} ->

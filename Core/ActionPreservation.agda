@@ -131,7 +131,7 @@ module Core.ActionPreservation where
   PreservationStep (WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (ALC (ActDeleteBinder in-ctx vars-syn)) 
     = WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair ▶New) ▶New ▶New-max-r NUnless-new-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶New-max-r (newify-syn-inner (preservation-vars-unwrap in-ctx ana vars-syn))
   PreservationStep (WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (ALC (ActInsertBinder vars-syn)) 
-    = WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶New-max-r (newify-syn-inner (preservation-vars-ana?-alt ana vars-syn))
+    = WTFun (NTArrowC marrow) (■~N-pair (~N-pair consist)) (▷Pair ▶New) ▶New ▶New-max-r NUnless-new-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶New-max-r (newify-syn-inner (preservation-vars-ana? ana vars-syn))
   PreservationStep (WTPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (ALC ActUnwrapPairOne) = newify-ana wt
   PreservationStep (WTPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (ALC ActUnwrapPairTwo) = newify-ana wt₁
 

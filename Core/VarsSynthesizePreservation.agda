@@ -46,32 +46,32 @@ module Core.VarsSynthesizePreservation where
   vars-syn?-beyond {BHole} refl = =▷Refl
   vars-syn?-beyond {BVar x} vars-syn = vars-syn-beyond vars-syn
 
-  data CtxInv : Var -> Type -> Ctx -> Ctx -> Set where 
-    CtxInvInit : ∀ {Γ x t} ->
-      CtxInv x t Γ (x ∶ t , Old ∷ Γ)
-    CtxInvInit2 : ∀ {Γ x t} ->
-      CtxInv x t (x ∶ t , New ∷ Γ) (x ∶ t , Old ∷ Γ)
-    CtxInvNeq : ∀ {x x' t t' Γ Γ'} ->
+  data CtxInv : Var -> Type -> Newness -> Ctx -> Ctx -> Set where 
+    CtxInvInit : ∀ {Γ x t n} ->
+      CtxInv x t n Γ (x ∶ t , n ∷ Γ)
+    CtxInvInit2 : ∀ {Γ x t n} ->
+      CtxInv x t n (x ∶ t , New ∷ Γ) (x ∶ t , n ∷ Γ)
+    CtxInvNeq : ∀ {x x' n t t' Γ Γ'} ->
       ¬(x ≡ x') ->
-      CtxInv x t Γ Γ' ->
-      CtxInv x t (x' ∶ t' ∷ Γ) (x' ∶ t' ∷ Γ')
+      CtxInv x t n Γ Γ' ->
+      CtxInv x t n (x' ∶ t' ∷ Γ) (x' ∶ t' ∷ Γ')
 
-  CtxInvNeq? : ∀ {x' x t t' Γ Γ'} ->
+  CtxInvNeq? : ∀ {x' x t t' n Γ Γ'} ->
     ¬(BVar x ≡ x') ->
-    CtxInv x t Γ Γ' ->
-    CtxInv x t (x' ∶ t' ∷? Γ) (x' ∶ t' ∷? Γ')
+    CtxInv x t n Γ Γ' ->
+    CtxInv x t n (x' ∶ t' ∷? Γ) (x' ∶ t' ∷? Γ')
   CtxInvNeq? {BHole} neq inv = inv
   CtxInvNeq? {BVar x} neq inv = CtxInvNeq (λ eq → neq (cong BVar eq)) inv
 
-  ctx-inv-access-eq : ∀ {x t Γ Γ'} ->
-    CtxInv x t Γ Γ' ->
-    x , (t , Old) ∈N Γ' , ✔
+  ctx-inv-access-eq : ∀ {x t n Γ Γ'} ->
+    CtxInv x t n Γ Γ' ->
+    x , (t , n) ∈N Γ' , ✔
   ctx-inv-access-eq CtxInvInit = InCtxFound
   ctx-inv-access-eq CtxInvInit2 = InCtxFound
   ctx-inv-access-eq (CtxInvNeq neq inv) = InCtxSkip neq (ctx-inv-access-eq inv)
 
-  ctx-inv-access-neq : ∀ {x x' t t' m Γ Γ'} ->
-    CtxInv x t Γ Γ' ->
+  ctx-inv-access-neq : ∀ {x x' t t' n m Γ Γ'} ->
+    CtxInv x t n Γ Γ' ->
     ¬ x' ≡ x ->
     x' , t' ∈N Γ , m ->
     x' , t' ∈N Γ' , m
@@ -114,8 +114,8 @@ module Core.VarsSynthesizePreservation where
   unwrap-inv-access-neq (UnwrapInvCons x inv) neq (InCtxSkip neq' in-ctx) = InCtxSkip neq' (unwrap-inv-access-neq inv neq in-ctx)
 
   data CtxEquiv : Ctx -> Ctx -> Set where 
-    CtxEquivInit : ∀ {x t t' Γ Γ'} ->
-      CtxInv x t Γ Γ' ->
+    CtxEquivInit : ∀ {x t t' n Γ Γ'} ->
+      CtxInv x t n Γ Γ' ->
       CtxEquiv (x ∶ t' ∷ Γ) (x ∶ t' ∷ Γ') 
     CtxEquivUnwrapInit : ∀ {x t t' m Γ Γ'} ->
       UnwrapInv x t m Γ Γ' ->
@@ -165,10 +165,10 @@ module Core.VarsSynthesizePreservation where
   mutual 
 
     preservation-vars-ana :
-      ∀ {Γ Γ' x t m' e e' ana} ->
+      ∀ {Γ Γ' x t n m' e e' ana} ->
       Γ L⊢ (e [ m' ]⇐ ana) ->
       VarsSynthesize x t ✔ e e' ->
-      CtxInv x t Γ Γ' ->
+      CtxInv x t n Γ Γ' ->
       Γ' L⊢ (e' [ m' ]⇐ ana)
     preservation-vars-ana {e' = e-all' ⇒ syn-all'} {ana = ana} (WTUp subsumable consist-t consist-m syn) vars-syn ctx-inv with ~N-dec syn-all' ana 
     ... | m-consist' , consist-t' = WTUp (vars-syn-subsumable vars-syn subsumable) consist-t' (beyond-▶ (beyond-through-~N (vars-syn-beyond vars-syn) consist-t consist-t') consist-m) (preservation-vars-syn syn vars-syn ctx-inv)
@@ -177,17 +177,17 @@ module Core.VarsSynthesizePreservation where
     preservation-vars-ana (WTPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (VSPair {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} vs vs₁) ctx-inv = WTPair x x₁ x₂ x₃ (preservation-pair-lemma (vars-syn?-beyond vs) (vars-syn?-beyond vs₁) x₄) x₅ x₆ (preservation-vars-ana wt vs ctx-inv) (preservation-vars-ana wt₁ vs₁ ctx-inv)
 
     preservation-vars-syn :
-      ∀ {Γ Γ' x t e e'} ->
+      ∀ {Γ Γ' x t n e e'} ->
       Γ U⊢ e ->
       VarsSynthesize x t ✔ e e' ->
-      CtxInv x t Γ Γ' ->
+      CtxInv x t n Γ Γ' ->
       Γ' U⊢ e'
     preservation-vars-syn (WTConst consist) VSConst ctx-inv = WTConst consist
     preservation-vars-syn (WTHole consist) VSHole ctx-inv = WTHole consist
     preservation-vars-syn (WTAp marrow consist-syn consist-ana consist-mark syn ana) (VSAp {e1' = e-fun' ⇒ syn-fun'} vars-syn-fun vars-syn-arg) ctx-inv with ▸NTArrow-dec syn-fun' 
     ... | t-in-fun' , t-out-fun' , m-fun' , marrow' with beyond-▸NTArrow (vars-syn-beyond vars-syn-fun) marrow marrow' 
     ... | t-in-beyond , t-out-beyond , m-beyond = WTAp marrow' (beyond-▷ t-out-beyond consist-syn) (beyond-▷ t-in-beyond consist-ana) (beyond-▶ m-beyond consist-mark) (preservation-vars-ana syn vars-syn-fun ctx-inv) (preservation-vars-ana ana vars-syn-arg ctx-inv)
-    preservation-vars-syn {t = t} (WTVar in-ctx consist) VSVarEq ctx-inv = WTVar (ctx-inv-access-eq ctx-inv) (▷Pair ▶Old) 
+    preservation-vars-syn {t = t} (WTVar in-ctx consist) VSVarEq ctx-inv = WTVar (ctx-inv-access-eq ctx-inv) (▷Pair ▶Same)
     preservation-vars-syn (WTVar in-ctx consist) (VSVarNeq neq) ctx-inv = WTVar (ctx-inv-access-neq ctx-inv (λ eq → neq (sym eq)) in-ctx) consist
     preservation-vars-syn (WTAsc consist-syn consist-ana ana) (VSAsc vars-syn) ctx-inv = WTAsc consist-syn consist-ana (preservation-vars-ana ana vars-syn ctx-inv)
     preservation-vars-syn (WTProj {s = s} mprod x₁ x₂ x₃) (VSProj {e' = e-body' ⇒ syn-body'} vs) ctx-inv with ▸NTProj-dec s syn-body' 
@@ -195,20 +195,20 @@ module Core.VarsSynthesizePreservation where
     ... | t-beyond , m-beyond = WTProj mprod' (beyond-▷ t-beyond x₁) (beyond-▶ m-beyond x₂) (preservation-vars-ana x₃ vs ctx-inv)
 
   preservation-vars-ana? :
+    ∀ {x Γ t e e' n m' ana} ->
+    Γ L⊢ (e [ m' ]⇐ ana) ->
+    VarsSynthesize? x t ✔ e e' ->
+    (x ∶ t , n ∷? Γ) L⊢ (e' [ m' ]⇐ ana)
+  preservation-vars-ana? {BHole} ana refl = ana
+  preservation-vars-ana? {BVar x} ana vars-syn = preservation-vars-ana ana vars-syn CtxInvInit
+
+  preservation-vars-ana?-step :
     ∀ {x Γ t e e' m' ana} ->
     (x ∶ t , New ∷? Γ) L⊢ (e [ m' ]⇐ ana) ->
     VarsSynthesize? x t ✔ e e' ->
     (x ∶ t , Old ∷? Γ) L⊢ (e' [ m' ]⇐ ana)
-  preservation-vars-ana? {BHole} ana refl = ana
-  preservation-vars-ana? {BVar x} ana vars-syn = preservation-vars-ana ana vars-syn CtxInvInit2
-
-  preservation-vars-ana?-alt :
-    ∀ {x Γ t e e' m' ana} ->
-    Γ L⊢ (e [ m' ]⇐ ana) ->
-    VarsSynthesize? x t ✔ e e' ->
-    (x ∶ t , Old ∷? Γ) L⊢ (e' [ m' ]⇐ ana)
-  preservation-vars-ana?-alt {BHole} ana refl = ana
-  preservation-vars-ana?-alt {BVar x} ana vars-syn = preservation-vars-ana ana vars-syn CtxInvInit
+  preservation-vars-ana?-step {BHole} ana refl = ana
+  preservation-vars-ana?-step {BVar x} ana vars-syn = preservation-vars-ana ana vars-syn CtxInvInit2
 
   mutual 
 
