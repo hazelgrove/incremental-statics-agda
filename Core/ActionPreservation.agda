@@ -112,9 +112,9 @@ module Core.ActionPreservation where
   -- ... | _ , (~N-pair consist') | _ , refl = WTFun (NTArrowC consist) (■~N-pair (~N-pair consist')) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ consist-syn ▶New (newify-ana (preservation-vars-ana?-alt ana vars-syn))
   PreservationStep ana (ALC {t = t} (ActWrapFun {t = t'})) with ▸DTArrow-dec t 
   ... | t-in , _ , _ , consist with ~D-dec (■ THole) t-in | ~D-dec t' t 
-  ... | _ , consist1 | _ , consist2 = WTFun (NTArrowC consist) (■~N-pair (~N-pair consist1)) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair consist2) ▶New (newify-ana ana)
+  ... | _ , consist1 | _ , consist2 = WTFun (NTArrowC consist) (■~N-pair (~N-pair consist1)) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair ~DVoidL) ▶New (newify-ana ana)
   PreservationStep ana (ALC {t = t} (ActWrapApOne {t = t'} {n = n'})) with ~N-dec (t' , n') (t , New) | ▸NTArrow-dec (t' , New) 
-  ... | _ , (~N-pair consist) | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist' = WTUp SubsumableAp (~N-pair consist) ▶New (WTAp (NTArrowC consist') (▷Pair ▶New) (▷Pair ▶New) ▶New (newify-ana ana) (WTUp SubsumableHole (~N-pair ~DVoidR) ▶Old (WTHole (▷Pair ▶Old))))
+  ... | _ , (~N-pair consist) | (t-in , New) , (t-out , New) , (m , New) , NTArrowC consist' = WTUp SubsumableAp (~N-pair ~DVoidL) ▶New (WTAp (NTArrowC consist') (▷Pair ▶New) (▷Pair ▶New) ▶New (newify-ana ana) (WTUp SubsumableHole (~N-pair ~DVoidR) ▶Old (WTHole (▷Pair ▶Old))))
   PreservationStep wt (ALC ActWrapPairOne) = WTPair (NTProdC (proj₂ (proj₂ (proj₂ (▸DTProd-dec _))))) (▷Pair ▶New) (▷Pair ▶New) ▶New NUnless-new-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶New (newify-ana {m = ✔} (newify-syn-inner wt)) (WTUp SubsumableHole (~N-pair ~DVoidR) ▶New (WTHole (▷Pair ▶Old)))
   PreservationStep wt (ALC ActWrapPairTwo) = WTPair (NTProdC (proj₂ (proj₂ (proj₂ (▸DTProd-dec _))))) (▷Pair ▶New) (▷Pair ▶New) ▶New NUnless-new-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶New (WTUp SubsumableHole (~N-pair ~DVoidR) ▶New (WTHole (▷Pair ▶Old))) (newify-ana wt) 
   PreservationStep wt (ALC ActWrapProj) = WTUp SubsumableProj (~N-pair (proj₂ (~D-dec _ _))) ▶New (WTProj (proj₂ (proj₂ (▸NTProj-dec _ _))) (▷Pair ▶New) ▶New (newify-ana wt))
