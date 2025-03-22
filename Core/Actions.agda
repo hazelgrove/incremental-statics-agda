@@ -113,17 +113,17 @@ module Core.Actions where
     ActInsertConst : ∀ {Γ syn} ->
       Γ ⊢ InsertConst , (EHole ⇒ syn) αU↦ (EConst ⇒ (■ TBase , New))
     ActWrapFun : ∀ {Γ e t n} ->
-      Γ ⊢ WrapFun , (e ⇒ (t , n)) αU↦ ((EFun BHole (THole , Old) ✔ ✔ ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New))) ⇒ (t , n))
+      Γ ⊢ WrapFun , (e ⇒ (t , n)) αU↦ ((EFun BHole (THole , Old) ✔ ✔ ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New))) ⇒ (t , New))
     ActWrapApOne : ∀ {Γ e t n} ->
-      Γ ⊢ (WrapAp One) , (e ⇒ (t , n)) αU↦ ((EAp ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old))) ⇒ (t , n))
+      Γ ⊢ (WrapAp One) , (e ⇒ (t , n)) αU↦ ((EAp ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old))) ⇒ (t , New))
     ActWrapApTwo : ∀ {Γ e t n} ->
       Γ ⊢ (WrapAp Two) , (e ⇒ (t , n)) αU↦ ((EAp ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old)) ✔ ((e ⇒ (t , Old)) [ ✔ ]⇐ (■ THole , New))) ⇒ (■ THole , New))
     ActWrapPairOne : ∀ {Γ e t n} -> 
-      Γ ⊢ (WrapPair One) , (e ⇒ (t , n)) αU↦ ((EPair ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ((EHole ⇒ (■ THole , New)) [ ✔ ]⇐ (□ , Old)) ✔ ) ⇒ (t , n))
+      Γ ⊢ (WrapPair One) , (e ⇒ (t , n)) αU↦ ((EPair ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ((EHole ⇒ (■ THole , New)) [ ✔ ]⇐ (□ , Old)) ✔ ) ⇒ (t , New))
     ActWrapPairTwo : ∀ {Γ e t n} -> 
-      Γ ⊢ (WrapPair Two) , (e ⇒ (t , n)) αU↦ ((EPair ((EHole ⇒ (■ THole , New)) [ ✔ ]⇐ (□ , Old)) ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔ ) ⇒ (t , n))
+      Γ ⊢ (WrapPair Two) , (e ⇒ (t , n)) αU↦ ((EPair ((EHole ⇒ (■ THole , New)) [ ✔ ]⇐ (□ , Old)) ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔ ) ⇒ (t , New))
     ActWrapProj : ∀ {Γ s e t n} -> 
-      Γ ⊢ (WrapProj s) , (e ⇒ (t , n)) αU↦ ((EProj s ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔) ⇒ (t , n))
+      Γ ⊢ (WrapProj s) , (e ⇒ (t , n)) αU↦ ((EProj s ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔) ⇒ (t , New))
     ActInsertVar : ∀ {Γ syn x n t m} ->
       x , (t , n) ∈N Γ , m ->
       Γ ⊢ (InsertVar x) , (EHole ⇒ syn) αU↦ ((EVar x m) ⇒ (■ t , New))
