@@ -309,30 +309,30 @@ module Core.Lemmas where
   beyond-▷-contra ◁▷C (▷Pair consist) = ▷Pair consist
 
   l-env-subsumable : ∀ {ε e e' e-in e-in'} -> 
-    ε L⟦ e-in ⟧M≡ e ->
-    ε L⟦ e-in' ⟧M≡ e' ->
+    ε A⟦ e-in ⟧C≡ e ->
+    ε A⟦ e-in' ⟧C≡ e' ->
     SubsumableMid e -> 
     SubsumableMid e'
-  l-env-subsumable (FillLEnvFun _) (FillLEnvFun _) ()
-  l-env-subsumable (FillLEnvAp1 _) (FillLEnvAp1 _) SubsumableAp = SubsumableAp
-  l-env-subsumable (FillLEnvAp2 _) (FillLEnvAp2 _) SubsumableAp = SubsumableAp
-  l-env-subsumable (FillLEnvAsc _) (FillLEnvAsc _) SubsumableAsc = SubsumableAsc
-  l-env-subsumable (FillLEnvProj _) (FillLEnvProj _) SubsumableProj = SubsumableProj
+  l-env-subsumable (FillAnaEnvFun _) (FillAnaEnvFun _) ()
+  l-env-subsumable (FillAnaEnvAp1 _) (FillAnaEnvAp1 _) SubsumableAp = SubsumableAp
+  l-env-subsumable (FillAnaEnvAp2 _) (FillAnaEnvAp2 _) SubsumableAp = SubsumableAp
+  l-env-subsumable (FillAnaEnvAsc _) (FillAnaEnvAsc _) SubsumableAsc = SubsumableAsc
+  l-env-subsumable (FillAnaEnvProj _) (FillAnaEnvProj _) SubsumableProj = SubsumableProj
 
   u-env-subsumable : ∀ {ε e e' e-in e-in'} -> 
-    ε U⟦ e-in ⟧M≡ e ->
-    ε U⟦ e-in' ⟧M≡ e' ->
+    ε S⟦ e-in ⟧C≡ e ->
+    ε S⟦ e-in' ⟧C≡ e' ->
     SubsumableMid e -> 
     SubsumableMid e'
-  u-env-subsumable (FillUEnvFun _) (FillUEnvFun _) ()
-  u-env-subsumable (FillUEnvAp1 _) (FillUEnvAp1 _) SubsumableAp = SubsumableAp
-  u-env-subsumable (FillUEnvAp2 _) (FillUEnvAp2 _) SubsumableAp = SubsumableAp
-  u-env-subsumable (FillUEnvAsc _) (FillUEnvAsc _) SubsumableAsc = SubsumableAsc
-  u-env-subsumable (FillUEnvProj _) (FillUEnvProj _) SubsumableProj = SubsumableProj
+  u-env-subsumable (FillSynEnvFun _) (FillSynEnvFun _) ()
+  u-env-subsumable (FillSynEnvAp1 _) (FillSynEnvAp1 _) SubsumableAp = SubsumableAp
+  u-env-subsumable (FillSynEnvAp2 _) (FillSynEnvAp2 _) SubsumableAp = SubsumableAp
+  u-env-subsumable (FillSynEnvAsc _) (FillSynEnvAsc _) SubsumableAsc = SubsumableAsc
+  u-env-subsumable (FillSynEnvProj _) (FillSynEnvProj _) SubsumableProj = SubsumableProj
 
   oldify-syn : ∀ {Γ e t n n'} ->
-    Γ U⊢ (e ⇒ (t , n)) ->
-    Γ U⊢ (e ⇒ (t , n'))
+    Γ S⊢ (e ⇒ (t , n)) ->
+    Γ S⊢ (e ⇒ (t , n'))
   oldify-syn (WFConst (▷Pair consist)) = WFConst (▷Pair consist) 
   oldify-syn (WFHole (▷Pair consist)) = WFHole (▷Pair consist)
   oldify-syn (WFAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana) = WFAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana
@@ -408,8 +408,8 @@ module Core.Lemmas where
 
     dirtyer-ctx-u : ∀{Γ Γ' e} ->
       ★erCtx Γ Γ' -> 
-      Γ' U⊢ e ->
-      Γ U⊢ e
+      Γ' S⊢ e ->
+      Γ S⊢ e
     dirtyer-ctx-u dirtyer (WFConst x) = WFConst x
     dirtyer-ctx-u dirtyer (WFHole x) = WFHole x
     dirtyer-ctx-u dirtyer (WFAp x x₁ x₂ x₃ x₄ x₅) = WFAp x x₁ x₂ x₃ (dirtyer-ctx-l dirtyer x₄) (dirtyer-ctx-l dirtyer x₅)

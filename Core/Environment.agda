@@ -6,289 +6,289 @@ module Core.Environment where
 
   mutual 
 
-    data LEnvUp : Set where 
-      LEnvUpRec : LEnvMid -> ○Data -> LEnvUp
+    data AnaEnvSyn : Set where 
+      AnaEnvSynRec : AnaEnvCon -> ○Data -> AnaEnvSyn
 
-    data LEnvMid : Set where 
-      LEnvFun : Binding -> ○Type -> Mark -> Mark -> LEnvLow -> LEnvMid 
-      LEnvAp1 : LEnvLow -> Mark -> ExpLow -> LEnvMid 
-      LEnvAp2 : ExpLow -> Mark -> LEnvLow -> LEnvMid 
-      LEnvAsc : ○Type -> LEnvLow -> LEnvMid 
-      LEnvPair1 : LEnvLow -> ExpLow -> Mark -> LEnvMid
-      LEnvPair2 : ExpLow -> LEnvLow -> Mark -> LEnvMid
-      LEnvProj : ProdSide -> LEnvLow -> Mark -> LEnvMid
+    data AnaEnvCon : Set where 
+      AnaEnvFun : Binding -> ○Type -> Mark -> Mark -> AnaEnvAna -> AnaEnvCon 
+      AnaEnvAp1 : AnaEnvAna -> Mark -> AnaExp -> AnaEnvCon 
+      AnaEnvAp2 : AnaExp -> Mark -> AnaEnvAna -> AnaEnvCon 
+      AnaEnvAsc : ○Type -> AnaEnvAna -> AnaEnvCon 
+      AnaEnvPair1 : AnaEnvAna -> AnaExp -> Mark -> AnaEnvCon
+      AnaEnvPair2 : AnaExp -> AnaEnvAna -> Mark -> AnaEnvCon
+      AnaEnvProj : ProdSide -> AnaEnvAna -> Mark -> AnaEnvCon
 
-    data LEnvLow : Set where 
-      L⊙ : LEnvLow
-      LEnvLowRec : LEnvUp -> Mark -> ○Data -> LEnvLow
-
-  mutual 
-
-    data UEnvUp : Set where 
-      U⊙ : UEnvUp
-      UEnvUpRec : UEnvMid -> ○Data -> UEnvUp
-
-    data UEnvMid : Set where 
-      UEnvFun : Binding -> ○Type -> Mark -> Mark -> UEnvLow -> UEnvMid 
-      UEnvAp1 : UEnvLow -> Mark -> ExpLow -> UEnvMid 
-      UEnvAp2 : ExpLow -> Mark -> UEnvLow -> UEnvMid 
-      UEnvAsc : ○Type -> UEnvLow -> UEnvMid 
-      UEnvPair1 : UEnvLow -> ExpLow -> Mark -> UEnvMid
-      UEnvPair2 : ExpLow -> UEnvLow -> Mark -> UEnvMid
-      UEnvProj : ProdSide -> UEnvLow -> Mark -> UEnvMid
-
-    data UEnvLow : Set where 
-      UEnvLowRec : UEnvUp -> Mark -> ○Data -> UEnvLow 
-
-  mutual 
-    data _L⟦_⟧U≡_ : (ε : LEnvUp) (e : ExpLow) (e' : ExpUp)  -> Set where
-      FillLEnvUpRec : ∀ {e ε e' syn} ->
-        ε L⟦ e ⟧M≡ e' ->
-        (LEnvUpRec ε syn) L⟦ e ⟧U≡ (e' ⇒ syn)
-
-    data _L⟦_⟧M≡_ : (ε : LEnvMid) (e : ExpLow) (e' : ExpMid)  -> Set where
-      FillLEnvFun : ∀ {e ε e' x t m1 m2} ->
-        ε L⟦ e ⟧L≡ e' ->
-        (LEnvFun x t m1 m2 ε) L⟦ e ⟧M≡ (EFun x t m1 m2 e')
-      FillLEnvAp1 : ∀ {e ε e' e2 m} ->
-        ε L⟦ e ⟧L≡ e' ->
-        (LEnvAp1 ε m e2) L⟦ e ⟧M≡ (EAp e' m e2)
-      FillLEnvAp2 : ∀ {e ε e' e1 m} ->
-        ε L⟦ e ⟧L≡ e' ->
-        (LEnvAp2 e1 m ε) L⟦ e ⟧M≡ (EAp e1 m e')
-      FillLEnvAsc : ∀ {e ε e' t} ->
-        ε L⟦ e ⟧L≡ e' ->
-        (LEnvAsc t ε) L⟦ e ⟧M≡ (EAsc t e')
-      FillLEnvPair1 : ∀ {e ε e' e2 m} ->
-        ε L⟦ e ⟧L≡ e' ->
-        (LEnvPair1 ε e2 m) L⟦ e ⟧M≡ (EPair e' e2 m)
-      FillLEnvPair2 : ∀ {e ε e' e1 m} ->  
-        ε L⟦ e ⟧L≡ e' ->
-        (LEnvPair2 e1 ε m) L⟦ e ⟧M≡ (EPair e1 e' m)
-      FillLEnvProj : ∀ {e ε e' s m} ->
-        ε L⟦ e ⟧L≡ e' ->
-        (LEnvProj s ε m) L⟦ e ⟧M≡ (EProj s e' m)
-
-    data _L⟦_⟧L≡_ : (ε : LEnvLow) (e : ExpLow) (e' : ExpLow)  -> Set where
-      FillL⊙ : ∀ {e} ->
-        L⊙ L⟦ e ⟧L≡ e
-      FillLEnvLowRec : ∀ {e e' ana m ε} ->
-        ε L⟦ e ⟧U≡ e' ->
-        LEnvLowRec ε m ana L⟦ e ⟧L≡ (e' [ m ]⇐ ana)
-
-  mutual 
-    data _U⟦_⟧U≡_ : (ε : UEnvUp) (e : ExpUp) (e' : ExpUp)  -> Set where
-      FillU⊙ : ∀ {e} ->
-        U⊙ U⟦ e ⟧U≡ e
-      FillUEnvUpRec : ∀ {e ε e' syn} ->
-        ε U⟦ e ⟧M≡ e' ->
-        (UEnvUpRec ε syn) U⟦ e ⟧U≡ (e' ⇒ syn)
-
-    data _U⟦_⟧M≡_ : (ε : UEnvMid) (e : ExpUp) (e' : ExpMid)  -> Set where
-      FillUEnvFun : ∀ {e ε e' x t m1 m2} ->
-        ε U⟦ e ⟧L≡ e' ->
-        (UEnvFun x t m1 m2 ε) U⟦ e ⟧M≡ (EFun x t m1 m2 e')
-      FillUEnvAp1 : ∀ {e ε e' e2 m} ->
-        ε U⟦ e ⟧L≡ e' ->
-        (UEnvAp1 ε m e2) U⟦ e ⟧M≡ (EAp e' m e2)
-      FillUEnvAp2 : ∀ {e ε e' e1 m} ->
-        ε U⟦ e ⟧L≡ e' ->
-        (UEnvAp2 e1 m ε) U⟦ e ⟧M≡ (EAp e1 m e')
-      FillUEnvAsc : ∀ {e ε e' t} ->
-        ε U⟦ e ⟧L≡ e' ->
-        (UEnvAsc t ε) U⟦ e ⟧M≡ (EAsc t e')
-      FillUEnvPair1 : ∀ {e ε e' e2 m} ->
-        ε U⟦ e ⟧L≡ e' ->
-        (UEnvPair1 ε e2 m) U⟦ e ⟧M≡ (EPair e' e2 m)
-      FillUEnvPair2 : ∀ {e ε e' e1 m} ->
-        ε U⟦ e ⟧L≡ e' ->
-        (UEnvPair2 e1 ε m) U⟦ e ⟧M≡ (EPair e1 e' m)
-      FillUEnvProj : ∀ {e ε e' s m} ->
-        ε U⟦ e ⟧L≡ e' ->
-        (UEnvProj s ε m) U⟦ e ⟧M≡ (EProj s e' m)
-
-    data _U⟦_⟧L≡_ : (ε : UEnvLow) (e : ExpUp) (e' : ExpLow)  -> Set where
-      FillUEnvLowRec : ∀ {e e' ana m ε} ->
-        ε U⟦ e ⟧U≡ e' ->
-        UEnvLowRec ε m ana U⟦ e ⟧L≡ (e' [ m ]⇐ ana)
+    data AnaEnvAna : Set where 
+      A⊙ : AnaEnvAna
+      AnaEnvAnaRec : AnaEnvSyn -> Mark -> ○Data -> AnaEnvAna
 
   mutual 
 
-    ComposeULU : UEnvLow -> LEnvUp -> UEnvUp
-    ComposeULU ε1 (LEnvUpRec ε2 t) = UEnvUpRec (ComposeULM ε1 ε2) t
+    data SynEnvSyn : Set where 
+      S⊙ : SynEnvSyn
+      SynEnvSynRec : SynEnvCon -> ○Data -> SynEnvSyn
+
+    data SynEnvCon : Set where 
+      SynEnvFun : Binding -> ○Type -> Mark -> Mark -> SynEnvAna -> SynEnvCon 
+      SynEnvAp1 : SynEnvAna -> Mark -> AnaExp -> SynEnvCon 
+      SynEnvAp2 : AnaExp -> Mark -> SynEnvAna -> SynEnvCon 
+      SynEnvAsc : ○Type -> SynEnvAna -> SynEnvCon 
+      SynEnvPair1 : SynEnvAna -> AnaExp -> Mark -> SynEnvCon
+      SynEnvPair2 : AnaExp -> SynEnvAna -> Mark -> SynEnvCon
+      SynEnvProj : ProdSide -> SynEnvAna -> Mark -> SynEnvCon
+
+    data SynEnvAna : Set where 
+      SynEnvAnaRec : SynEnvSyn -> Mark -> ○Data -> SynEnvAna 
+
+  mutual 
+    data _A⟦_⟧S≡_ : (ε : AnaEnvSyn) (e : AnaExp) (e' : SynExp)  -> Set where
+      FillAnaEnvSynRec : ∀ {e ε e' syn} ->
+        ε A⟦ e ⟧C≡ e' ->
+        (AnaEnvSynRec ε syn) A⟦ e ⟧S≡ (e' ⇒ syn)
+
+    data _A⟦_⟧C≡_ : (ε : AnaEnvCon) (e : AnaExp) (e' : ConExp)  -> Set where
+      FillAnaEnvFun : ∀ {e ε e' x t m1 m2} ->
+        ε A⟦ e ⟧A≡ e' ->
+        (AnaEnvFun x t m1 m2 ε) A⟦ e ⟧C≡ (EFun x t m1 m2 e')
+      FillAnaEnvAp1 : ∀ {e ε e' e2 m} ->
+        ε A⟦ e ⟧A≡ e' ->
+        (AnaEnvAp1 ε m e2) A⟦ e ⟧C≡ (EAp e' m e2)
+      FillAnaEnvAp2 : ∀ {e ε e' e1 m} ->
+        ε A⟦ e ⟧A≡ e' ->
+        (AnaEnvAp2 e1 m ε) A⟦ e ⟧C≡ (EAp e1 m e')
+      FillAnaEnvAsc : ∀ {e ε e' t} ->
+        ε A⟦ e ⟧A≡ e' ->
+        (AnaEnvAsc t ε) A⟦ e ⟧C≡ (EAsc t e')
+      FillAnaEnvPair1 : ∀ {e ε e' e2 m} ->
+        ε A⟦ e ⟧A≡ e' ->
+        (AnaEnvPair1 ε e2 m) A⟦ e ⟧C≡ (EPair e' e2 m)
+      FillAnaEnvPair2 : ∀ {e ε e' e1 m} ->  
+        ε A⟦ e ⟧A≡ e' ->
+        (AnaEnvPair2 e1 ε m) A⟦ e ⟧C≡ (EPair e1 e' m)
+      FillAnaEnvProj : ∀ {e ε e' s m} ->
+        ε A⟦ e ⟧A≡ e' ->
+        (AnaEnvProj s ε m) A⟦ e ⟧C≡ (EProj s e' m)
+
+    data _A⟦_⟧A≡_ : (ε : AnaEnvAna) (e : AnaExp) (e' : AnaExp)  -> Set where
+      FillA⊙ : ∀ {e} ->
+        A⊙ A⟦ e ⟧A≡ e
+      FillAnaEnvAnaRec : ∀ {e e' ana m ε} ->
+        ε A⟦ e ⟧S≡ e' ->
+        AnaEnvAnaRec ε m ana A⟦ e ⟧A≡ (e' [ m ]⇐ ana)
+
+  mutual 
+    data _S⟦_⟧S≡_ : (ε : SynEnvSyn) (e : SynExp) (e' : SynExp)  -> Set where
+      FillS⊙ : ∀ {e} ->
+        S⊙ S⟦ e ⟧S≡ e
+      FillSynEnvSynRec : ∀ {e ε e' syn} ->
+        ε S⟦ e ⟧C≡ e' ->
+        (SynEnvSynRec ε syn) S⟦ e ⟧S≡ (e' ⇒ syn)
+
+    data _S⟦_⟧C≡_ : (ε : SynEnvCon) (e : SynExp) (e' : ConExp)  -> Set where
+      FillSynEnvFun : ∀ {e ε e' x t m1 m2} ->
+        ε S⟦ e ⟧A≡ e' ->
+        (SynEnvFun x t m1 m2 ε) S⟦ e ⟧C≡ (EFun x t m1 m2 e')
+      FillSynEnvAp1 : ∀ {e ε e' e2 m} ->
+        ε S⟦ e ⟧A≡ e' ->
+        (SynEnvAp1 ε m e2) S⟦ e ⟧C≡ (EAp e' m e2)
+      FillSynEnvAp2 : ∀ {e ε e' e1 m} ->
+        ε S⟦ e ⟧A≡ e' ->
+        (SynEnvAp2 e1 m ε) S⟦ e ⟧C≡ (EAp e1 m e')
+      FillSynEnvAsc : ∀ {e ε e' t} ->
+        ε S⟦ e ⟧A≡ e' ->
+        (SynEnvAsc t ε) S⟦ e ⟧C≡ (EAsc t e')
+      FillSynEnvPair1 : ∀ {e ε e' e2 m} ->
+        ε S⟦ e ⟧A≡ e' ->
+        (SynEnvPair1 ε e2 m) S⟦ e ⟧C≡ (EPair e' e2 m)
+      FillSynEnvPair2 : ∀ {e ε e' e1 m} ->
+        ε S⟦ e ⟧A≡ e' ->
+        (SynEnvPair2 e1 ε m) S⟦ e ⟧C≡ (EPair e1 e' m)
+      FillSynEnvProj : ∀ {e ε e' s m} ->
+        ε S⟦ e ⟧A≡ e' ->
+        (SynEnvProj s ε m) S⟦ e ⟧C≡ (EProj s e' m)
+
+    data _S⟦_⟧A≡_ : (ε : SynEnvAna) (e : SynExp) (e' : AnaExp)  -> Set where
+      FillSynEnvAnaRec : ∀ {e e' ana m ε} ->
+        ε S⟦ e ⟧S≡ e' ->
+        SynEnvAnaRec ε m ana S⟦ e ⟧A≡ (e' [ m ]⇐ ana)
+
+  mutual 
+
+    ComposeULU : SynEnvAna -> AnaEnvSyn -> SynEnvSyn
+    ComposeULU ε1 (AnaEnvSynRec ε2 t) = SynEnvSynRec (ComposeULM ε1 ε2) t
     
-    ComposeULM : UEnvLow -> LEnvMid -> UEnvMid
-    ComposeULM ε1 (LEnvFun x t m1 m2 ε2) = UEnvFun x t m1 m2 (ComposeULL ε1 ε2)
-    ComposeULM ε1 (LEnvAp1 ε2 m e2) = UEnvAp1 (ComposeULL ε1 ε2) m e2
-    ComposeULM ε1 (LEnvAp2 e1 m ε2) = UEnvAp2 e1 m (ComposeULL ε1 ε2)
-    ComposeULM ε1 (LEnvAsc t ε2) = UEnvAsc t (ComposeULL ε1 ε2)
-    ComposeULM ε1 (LEnvPair1 ε2 e2 m) = UEnvPair1 (ComposeULL ε1 ε2) e2 m
-    ComposeULM ε1 (LEnvPair2 e1 ε2 m) = UEnvPair2 e1 (ComposeULL ε1 ε2) m
-    ComposeULM ε1 (LEnvProj s ε2 m) = UEnvProj s (ComposeULL ε1 ε2) m
+    ComposeULM : SynEnvAna -> AnaEnvCon -> SynEnvCon
+    ComposeULM ε1 (AnaEnvFun x t m1 m2 ε2) = SynEnvFun x t m1 m2 (ComposeULL ε1 ε2)
+    ComposeULM ε1 (AnaEnvAp1 ε2 m e2) = SynEnvAp1 (ComposeULL ε1 ε2) m e2
+    ComposeULM ε1 (AnaEnvAp2 e1 m ε2) = SynEnvAp2 e1 m (ComposeULL ε1 ε2)
+    ComposeULM ε1 (AnaEnvAsc t ε2) = SynEnvAsc t (ComposeULL ε1 ε2)
+    ComposeULM ε1 (AnaEnvPair1 ε2 e2 m) = SynEnvPair1 (ComposeULL ε1 ε2) e2 m
+    ComposeULM ε1 (AnaEnvPair2 e1 ε2 m) = SynEnvPair2 e1 (ComposeULL ε1 ε2) m
+    ComposeULM ε1 (AnaEnvProj s ε2 m) = SynEnvProj s (ComposeULL ε1 ε2) m
 
 
-    ComposeULL : UEnvLow -> LEnvLow -> UEnvLow 
-    ComposeULL ε1 L⊙ = ε1
-    ComposeULL ε1 (LEnvLowRec ε2 m ana) = UEnvLowRec (ComposeULU ε1 ε2) m ana
+    ComposeULL : SynEnvAna -> AnaEnvAna -> SynEnvAna 
+    ComposeULL ε1 A⊙ = ε1
+    ComposeULL ε1 (AnaEnvAnaRec ε2 m ana) = SynEnvAnaRec (ComposeULU ε1 ε2) m ana
   
   mutual 
 
-    ComposeLLU : LEnvLow -> LEnvUp -> LEnvUp
-    ComposeLLU ε1 (LEnvUpRec ε2 t) = LEnvUpRec (ComposeLLM ε1 ε2) t
+    ComposeLLU : AnaEnvAna -> AnaEnvSyn -> AnaEnvSyn
+    ComposeLLU ε1 (AnaEnvSynRec ε2 t) = AnaEnvSynRec (ComposeLLM ε1 ε2) t
     
-    ComposeLLM : LEnvLow -> LEnvMid -> LEnvMid
-    ComposeLLM ε1 (LEnvFun x t m1 m2 ε2) = LEnvFun x t m1 m2 (ComposeLLL ε1 ε2)
-    ComposeLLM ε1 (LEnvAp1 ε2 m e2) = LEnvAp1 (ComposeLLL ε1 ε2) m e2
-    ComposeLLM ε1 (LEnvAp2 e1 m ε2) = LEnvAp2 e1 m (ComposeLLL ε1 ε2)
-    ComposeLLM ε1 (LEnvAsc t ε2) = LEnvAsc t (ComposeLLL ε1 ε2)
-    ComposeLLM ε1 (LEnvPair1 ε2 e2 m) = LEnvPair1 (ComposeLLL ε1 ε2) e2 m
-    ComposeLLM ε1 (LEnvPair2 e1 ε2 m) = LEnvPair2 e1 (ComposeLLL ε1 ε2) m
-    ComposeLLM ε1 (LEnvProj s ε2 m) = LEnvProj s (ComposeLLL ε1 ε2) m
+    ComposeLLM : AnaEnvAna -> AnaEnvCon -> AnaEnvCon
+    ComposeLLM ε1 (AnaEnvFun x t m1 m2 ε2) = AnaEnvFun x t m1 m2 (ComposeLLL ε1 ε2)
+    ComposeLLM ε1 (AnaEnvAp1 ε2 m e2) = AnaEnvAp1 (ComposeLLL ε1 ε2) m e2
+    ComposeLLM ε1 (AnaEnvAp2 e1 m ε2) = AnaEnvAp2 e1 m (ComposeLLL ε1 ε2)
+    ComposeLLM ε1 (AnaEnvAsc t ε2) = AnaEnvAsc t (ComposeLLL ε1 ε2)
+    ComposeLLM ε1 (AnaEnvPair1 ε2 e2 m) = AnaEnvPair1 (ComposeLLL ε1 ε2) e2 m
+    ComposeLLM ε1 (AnaEnvPair2 e1 ε2 m) = AnaEnvPair2 e1 (ComposeLLL ε1 ε2) m
+    ComposeLLM ε1 (AnaEnvProj s ε2 m) = AnaEnvProj s (ComposeLLL ε1 ε2) m
 
-    ComposeLLL : LEnvLow -> LEnvLow -> LEnvLow 
-    ComposeLLL ε1 L⊙ = ε1
-    ComposeLLL ε1 (LEnvLowRec ε2 m ana) = LEnvLowRec (ComposeLLU ε1 ε2) m ana
+    ComposeLLL : AnaEnvAna -> AnaEnvAna -> AnaEnvAna 
+    ComposeLLL ε1 A⊙ = ε1
+    ComposeLLL ε1 (AnaEnvAnaRec ε2 m ana) = AnaEnvAnaRec (ComposeLLU ε1 ε2) m ana
   
   mutual 
 
-    ComposeUUU : UEnvUp -> UEnvUp -> UEnvUp
-    ComposeUUU ε1 U⊙ = ε1
-    ComposeUUU ε1 (UEnvUpRec ε2 t) = UEnvUpRec (ComposeUUM ε1 ε2) t
+    ComposeUUU : SynEnvSyn -> SynEnvSyn -> SynEnvSyn
+    ComposeUUU ε1 S⊙ = ε1
+    ComposeUUU ε1 (SynEnvSynRec ε2 t) = SynEnvSynRec (ComposeUUM ε1 ε2) t
     
-    ComposeUUM : UEnvUp -> UEnvMid -> UEnvMid
-    ComposeUUM ε1 (UEnvFun x t m1 m2 ε2) = UEnvFun x t m1 m2 (ComposeUUL ε1 ε2)
-    ComposeUUM ε1 (UEnvAp1 ε2 m e2) = UEnvAp1 (ComposeUUL ε1 ε2) m e2
-    ComposeUUM ε1 (UEnvAp2 e1 m ε2) = UEnvAp2 e1 m (ComposeUUL ε1 ε2)
-    ComposeUUM ε1 (UEnvAsc t ε2) = UEnvAsc t (ComposeUUL ε1 ε2)
-    ComposeUUM ε1 (UEnvPair1 ε2 e2 m) = UEnvPair1 (ComposeUUL ε1 ε2) e2 m
-    ComposeUUM ε1 (UEnvPair2 e1 ε2 m) = UEnvPair2 e1 (ComposeUUL ε1 ε2) m
-    ComposeUUM ε1 (UEnvProj s ε2 m) = UEnvProj s (ComposeUUL ε1 ε2) m
+    ComposeUUM : SynEnvSyn -> SynEnvCon -> SynEnvCon
+    ComposeUUM ε1 (SynEnvFun x t m1 m2 ε2) = SynEnvFun x t m1 m2 (ComposeUUL ε1 ε2)
+    ComposeUUM ε1 (SynEnvAp1 ε2 m e2) = SynEnvAp1 (ComposeUUL ε1 ε2) m e2
+    ComposeUUM ε1 (SynEnvAp2 e1 m ε2) = SynEnvAp2 e1 m (ComposeUUL ε1 ε2)
+    ComposeUUM ε1 (SynEnvAsc t ε2) = SynEnvAsc t (ComposeUUL ε1 ε2)
+    ComposeUUM ε1 (SynEnvPair1 ε2 e2 m) = SynEnvPair1 (ComposeUUL ε1 ε2) e2 m
+    ComposeUUM ε1 (SynEnvPair2 e1 ε2 m) = SynEnvPair2 e1 (ComposeUUL ε1 ε2) m
+    ComposeUUM ε1 (SynEnvProj s ε2 m) = SynEnvProj s (ComposeUUL ε1 ε2) m
 
-    ComposeUUL : UEnvUp -> UEnvLow -> UEnvLow 
-    ComposeUUL ε1 (UEnvLowRec ε2 m ana) = UEnvLowRec (ComposeUUU ε1 ε2) m ana
+    ComposeUUL : SynEnvSyn -> SynEnvAna -> SynEnvAna 
+    ComposeUUL ε1 (SynEnvAnaRec ε2 m ana) = SynEnvAnaRec (ComposeUUU ε1 ε2) m ana
   
   mutual 
 
-    ComposeLUU : LEnvUp -> UEnvUp -> LEnvUp
-    ComposeLUU ε1 U⊙ = ε1
-    ComposeLUU ε1 (UEnvUpRec ε2 t) = LEnvUpRec (ComposeLUM ε1 ε2) t
+    ComposeLUU : AnaEnvSyn -> SynEnvSyn -> AnaEnvSyn
+    ComposeLUU ε1 S⊙ = ε1
+    ComposeLUU ε1 (SynEnvSynRec ε2 t) = AnaEnvSynRec (ComposeLUM ε1 ε2) t
     
-    ComposeLUM : LEnvUp -> UEnvMid -> LEnvMid
-    ComposeLUM ε1 (UEnvFun x t m1 m2 ε2) = LEnvFun x t m1 m2 (ComposeLUL ε1 ε2)
-    ComposeLUM ε1 (UEnvAp1 ε2 m e2) = LEnvAp1 (ComposeLUL ε1 ε2) m e2
-    ComposeLUM ε1 (UEnvAp2 e1 m ε2) = LEnvAp2 e1 m (ComposeLUL ε1 ε2)
-    ComposeLUM ε1 (UEnvAsc t ε2) = LEnvAsc t (ComposeLUL ε1 ε2)
-    ComposeLUM ε1 (UEnvPair1 ε2 e2 m) = LEnvPair1 (ComposeLUL ε1 ε2) e2 m
-    ComposeLUM ε1 (UEnvPair2 e1 ε2 m) = LEnvPair2 e1 (ComposeLUL ε1 ε2) m
-    ComposeLUM ε1 (UEnvProj s ε2 m) = LEnvProj s (ComposeLUL ε1 ε2) m
+    ComposeLUM : AnaEnvSyn -> SynEnvCon -> AnaEnvCon
+    ComposeLUM ε1 (SynEnvFun x t m1 m2 ε2) = AnaEnvFun x t m1 m2 (ComposeLUL ε1 ε2)
+    ComposeLUM ε1 (SynEnvAp1 ε2 m e2) = AnaEnvAp1 (ComposeLUL ε1 ε2) m e2
+    ComposeLUM ε1 (SynEnvAp2 e1 m ε2) = AnaEnvAp2 e1 m (ComposeLUL ε1 ε2)
+    ComposeLUM ε1 (SynEnvAsc t ε2) = AnaEnvAsc t (ComposeLUL ε1 ε2)
+    ComposeLUM ε1 (SynEnvPair1 ε2 e2 m) = AnaEnvPair1 (ComposeLUL ε1 ε2) e2 m
+    ComposeLUM ε1 (SynEnvPair2 e1 ε2 m) = AnaEnvPair2 e1 (ComposeLUL ε1 ε2) m
+    ComposeLUM ε1 (SynEnvProj s ε2 m) = AnaEnvProj s (ComposeLUL ε1 ε2) m
 
-    ComposeLUL : LEnvUp -> UEnvLow -> LEnvLow 
-    ComposeLUL ε1 (UEnvLowRec ε2 m ana) = LEnvLowRec (ComposeLUU ε1 ε2) m ana
+    ComposeLUL : AnaEnvSyn -> SynEnvAna -> AnaEnvAna 
+    ComposeLUL ε1 (SynEnvAnaRec ε2 m ana) = AnaEnvAnaRec (ComposeLUU ε1 ε2) m ana
 
   mutual 
 
     FillULU : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 U⟦ e1 ⟧L≡ e2 -> 
-      ε2 L⟦ e2 ⟧U≡ e3 ->
-      (ComposeULU ε1 ε2) U⟦ e1 ⟧U≡ e3
-    FillULU fill1 (FillLEnvUpRec fill2) = FillUEnvUpRec (FillULM fill1 fill2)
+      ε1 S⟦ e1 ⟧A≡ e2 -> 
+      ε2 A⟦ e2 ⟧S≡ e3 ->
+      (ComposeULU ε1 ε2) S⟦ e1 ⟧S≡ e3
+    FillULU fill1 (FillAnaEnvSynRec fill2) = FillSynEnvSynRec (FillULM fill1 fill2)
 
     FillULM : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 U⟦ e1 ⟧L≡ e2 -> 
-      ε2 L⟦ e2 ⟧M≡ e3 ->
-      (ComposeULM ε1 ε2) U⟦ e1 ⟧M≡ e3
-    FillULM fill1 (FillLEnvFun fill2) = FillUEnvFun (FillULL fill1 fill2)
-    FillULM fill1 (FillLEnvAp1 fill2) = FillUEnvAp1 (FillULL fill1 fill2)
-    FillULM fill1 (FillLEnvAp2 fill2) = FillUEnvAp2 (FillULL fill1 fill2)
-    FillULM fill1 (FillLEnvAsc fill2) = FillUEnvAsc (FillULL fill1 fill2)
-    FillULM fill1 (FillLEnvPair1 fill2) = FillUEnvPair1 (FillULL fill1 fill2)
-    FillULM fill1 (FillLEnvPair2 fill2) = FillUEnvPair2 (FillULL fill1 fill2)
-    FillULM fill1 (FillLEnvProj fill2) = FillUEnvProj (FillULL fill1 fill2)
+      ε1 S⟦ e1 ⟧A≡ e2 -> 
+      ε2 A⟦ e2 ⟧C≡ e3 ->
+      (ComposeULM ε1 ε2) S⟦ e1 ⟧C≡ e3
+    FillULM fill1 (FillAnaEnvFun fill2) = FillSynEnvFun (FillULL fill1 fill2)
+    FillULM fill1 (FillAnaEnvAp1 fill2) = FillSynEnvAp1 (FillULL fill1 fill2)
+    FillULM fill1 (FillAnaEnvAp2 fill2) = FillSynEnvAp2 (FillULL fill1 fill2)
+    FillULM fill1 (FillAnaEnvAsc fill2) = FillSynEnvAsc (FillULL fill1 fill2)
+    FillULM fill1 (FillAnaEnvPair1 fill2) = FillSynEnvPair1 (FillULL fill1 fill2)
+    FillULM fill1 (FillAnaEnvPair2 fill2) = FillSynEnvPair2 (FillULL fill1 fill2)
+    FillULM fill1 (FillAnaEnvProj fill2) = FillSynEnvProj (FillULL fill1 fill2)
 
     FillULL : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 U⟦ e1 ⟧L≡ e2 -> 
-      ε2 L⟦ e2 ⟧L≡ e3 -> 
-      (ComposeULL ε1 ε2) U⟦ e1 ⟧L≡ e3
-    FillULL fill1 FillL⊙ = fill1 
-    FillULL fill1 (FillLEnvLowRec fill2) = FillUEnvLowRec (FillULU fill1 fill2)
+      ε1 S⟦ e1 ⟧A≡ e2 -> 
+      ε2 A⟦ e2 ⟧A≡ e3 -> 
+      (ComposeULL ε1 ε2) S⟦ e1 ⟧A≡ e3
+    FillULL fill1 FillA⊙ = fill1 
+    FillULL fill1 (FillAnaEnvAnaRec fill2) = FillSynEnvAnaRec (FillULU fill1 fill2)
   
   mutual 
 
     FillLLU : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 L⟦ e1 ⟧L≡ e2 -> 
-      ε2 L⟦ e2 ⟧U≡ e3 ->
-      (ComposeLLU ε1 ε2) L⟦ e1 ⟧U≡ e3
-    FillLLU fill1 (FillLEnvUpRec fill2) = FillLEnvUpRec (FillLLM fill1 fill2)
+      ε1 A⟦ e1 ⟧A≡ e2 -> 
+      ε2 A⟦ e2 ⟧S≡ e3 ->
+      (ComposeLLU ε1 ε2) A⟦ e1 ⟧S≡ e3
+    FillLLU fill1 (FillAnaEnvSynRec fill2) = FillAnaEnvSynRec (FillLLM fill1 fill2)
 
     FillLLM : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 L⟦ e1 ⟧L≡ e2 -> 
-      ε2 L⟦ e2 ⟧M≡ e3 ->
-      (ComposeLLM ε1 ε2) L⟦ e1 ⟧M≡ e3
-    FillLLM fill1 (FillLEnvFun fill2) = FillLEnvFun (FillLLL fill1 fill2)
-    FillLLM fill1 (FillLEnvAp1 fill2) = FillLEnvAp1 (FillLLL fill1 fill2)
-    FillLLM fill1 (FillLEnvAp2 fill2) = FillLEnvAp2 (FillLLL fill1 fill2)
-    FillLLM fill1 (FillLEnvAsc fill2) = FillLEnvAsc (FillLLL fill1 fill2)
-    FillLLM fill1 (FillLEnvPair1 fill2) = FillLEnvPair1 (FillLLL fill1 fill2)
-    FillLLM fill1 (FillLEnvPair2 fill2) = FillLEnvPair2 (FillLLL fill1 fill2)
-    FillLLM fill1 (FillLEnvProj fill2) = FillLEnvProj (FillLLL fill1 fill2)
+      ε1 A⟦ e1 ⟧A≡ e2 -> 
+      ε2 A⟦ e2 ⟧C≡ e3 ->
+      (ComposeLLM ε1 ε2) A⟦ e1 ⟧C≡ e3
+    FillLLM fill1 (FillAnaEnvFun fill2) = FillAnaEnvFun (FillLLL fill1 fill2)
+    FillLLM fill1 (FillAnaEnvAp1 fill2) = FillAnaEnvAp1 (FillLLL fill1 fill2)
+    FillLLM fill1 (FillAnaEnvAp2 fill2) = FillAnaEnvAp2 (FillLLL fill1 fill2)
+    FillLLM fill1 (FillAnaEnvAsc fill2) = FillAnaEnvAsc (FillLLL fill1 fill2)
+    FillLLM fill1 (FillAnaEnvPair1 fill2) = FillAnaEnvPair1 (FillLLL fill1 fill2)
+    FillLLM fill1 (FillAnaEnvPair2 fill2) = FillAnaEnvPair2 (FillLLL fill1 fill2)
+    FillLLM fill1 (FillAnaEnvProj fill2) = FillAnaEnvProj (FillLLL fill1 fill2)
 
     FillLLL : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 L⟦ e1 ⟧L≡ e2 -> 
-      ε2 L⟦ e2 ⟧L≡ e3 -> 
-      (ComposeLLL ε1 ε2) L⟦ e1 ⟧L≡ e3
-    FillLLL fill1 FillL⊙ = fill1 
-    FillLLL fill1 (FillLEnvLowRec fill2) = FillLEnvLowRec (FillLLU fill1 fill2)
+      ε1 A⟦ e1 ⟧A≡ e2 -> 
+      ε2 A⟦ e2 ⟧A≡ e3 -> 
+      (ComposeLLL ε1 ε2) A⟦ e1 ⟧A≡ e3
+    FillLLL fill1 FillA⊙ = fill1 
+    FillLLL fill1 (FillAnaEnvAnaRec fill2) = FillAnaEnvAnaRec (FillLLU fill1 fill2)
 
   mutual 
 
     FillUUU : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 U⟦ e1 ⟧U≡ e2 -> 
-      ε2 U⟦ e2 ⟧U≡ e3 ->
-      (ComposeUUU ε1 ε2) U⟦ e1 ⟧U≡ e3
-    FillUUU fill1 FillU⊙ = fill1 
-    FillUUU fill1 (FillUEnvUpRec fill2) = FillUEnvUpRec (FillUUM fill1 fill2)
+      ε1 S⟦ e1 ⟧S≡ e2 -> 
+      ε2 S⟦ e2 ⟧S≡ e3 ->
+      (ComposeUUU ε1 ε2) S⟦ e1 ⟧S≡ e3
+    FillUUU fill1 FillS⊙ = fill1 
+    FillUUU fill1 (FillSynEnvSynRec fill2) = FillSynEnvSynRec (FillUUM fill1 fill2)
 
     FillUUM : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 U⟦ e1 ⟧U≡ e2 -> 
-      ε2 U⟦ e2 ⟧M≡ e3 ->
-      (ComposeUUM ε1 ε2) U⟦ e1 ⟧M≡ e3
-    FillUUM fill1 (FillUEnvFun fill2) = FillUEnvFun (FillUUL fill1 fill2)
-    FillUUM fill1 (FillUEnvAp1 fill2) = FillUEnvAp1 (FillUUL fill1 fill2)
-    FillUUM fill1 (FillUEnvAp2 fill2) = FillUEnvAp2 (FillUUL fill1 fill2)
-    FillUUM fill1 (FillUEnvAsc fill2) = FillUEnvAsc (FillUUL fill1 fill2)
-    FillUUM fill1 (FillUEnvPair1 fill2) = FillUEnvPair1 (FillUUL fill1 fill2)
-    FillUUM fill1 (FillUEnvPair2 fill2) = FillUEnvPair2 (FillUUL fill1 fill2)
-    FillUUM fill1 (FillUEnvProj fill2) = FillUEnvProj (FillUUL fill1 fill2)
+      ε1 S⟦ e1 ⟧S≡ e2 -> 
+      ε2 S⟦ e2 ⟧C≡ e3 ->
+      (ComposeUUM ε1 ε2) S⟦ e1 ⟧C≡ e3
+    FillUUM fill1 (FillSynEnvFun fill2) = FillSynEnvFun (FillUUL fill1 fill2)
+    FillUUM fill1 (FillSynEnvAp1 fill2) = FillSynEnvAp1 (FillUUL fill1 fill2)
+    FillUUM fill1 (FillSynEnvAp2 fill2) = FillSynEnvAp2 (FillUUL fill1 fill2)
+    FillUUM fill1 (FillSynEnvAsc fill2) = FillSynEnvAsc (FillUUL fill1 fill2)
+    FillUUM fill1 (FillSynEnvPair1 fill2) = FillSynEnvPair1 (FillUUL fill1 fill2)
+    FillUUM fill1 (FillSynEnvPair2 fill2) = FillSynEnvPair2 (FillUUL fill1 fill2)
+    FillUUM fill1 (FillSynEnvProj fill2) = FillSynEnvProj (FillUUL fill1 fill2)
 
     FillUUL : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 U⟦ e1 ⟧U≡ e2 -> 
-      ε2 U⟦ e2 ⟧L≡ e3 -> 
-      (ComposeUUL ε1 ε2) U⟦ e1 ⟧L≡ e3
-    FillUUL fill1 (FillUEnvLowRec fill2) = FillUEnvLowRec (FillUUU fill1 fill2)
+      ε1 S⟦ e1 ⟧S≡ e2 -> 
+      ε2 S⟦ e2 ⟧A≡ e3 -> 
+      (ComposeUUL ε1 ε2) S⟦ e1 ⟧A≡ e3
+    FillUUL fill1 (FillSynEnvAnaRec fill2) = FillSynEnvAnaRec (FillUUU fill1 fill2)
 
   mutual 
 
     FillLUU : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 L⟦ e1 ⟧U≡ e2 -> 
-      ε2 U⟦ e2 ⟧U≡ e3 ->
-      (ComposeLUU ε1 ε2) L⟦ e1 ⟧U≡ e3
-    FillLUU fill1 FillU⊙ = fill1 
-    FillLUU fill1 (FillUEnvUpRec fill2) = FillLEnvUpRec (FillLUM fill1 fill2)
+      ε1 A⟦ e1 ⟧S≡ e2 -> 
+      ε2 S⟦ e2 ⟧S≡ e3 ->
+      (ComposeLUU ε1 ε2) A⟦ e1 ⟧S≡ e3
+    FillLUU fill1 FillS⊙ = fill1 
+    FillLUU fill1 (FillSynEnvSynRec fill2) = FillAnaEnvSynRec (FillLUM fill1 fill2)
 
     FillLUM : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 L⟦ e1 ⟧U≡ e2 -> 
-      ε2 U⟦ e2 ⟧M≡ e3 ->
-      (ComposeLUM ε1 ε2) L⟦ e1 ⟧M≡ e3
-    FillLUM fill1 (FillUEnvFun fill2) = FillLEnvFun (FillLUL fill1 fill2)
-    FillLUM fill1 (FillUEnvAp1 fill2) = FillLEnvAp1 (FillLUL fill1 fill2)
-    FillLUM fill1 (FillUEnvAp2 fill2) = FillLEnvAp2 (FillLUL fill1 fill2)
-    FillLUM fill1 (FillUEnvAsc fill2) = FillLEnvAsc (FillLUL fill1 fill2)
-    FillLUM fill1 (FillUEnvPair1 fill2) = FillLEnvPair1 (FillLUL fill1 fill2)
-    FillLUM fill1 (FillUEnvPair2 fill2) = FillLEnvPair2 (FillLUL fill1 fill2)
-    FillLUM fill1 (FillUEnvProj fill2) = FillLEnvProj (FillLUL fill1 fill2)
+      ε1 A⟦ e1 ⟧S≡ e2 -> 
+      ε2 S⟦ e2 ⟧C≡ e3 ->
+      (ComposeLUM ε1 ε2) A⟦ e1 ⟧C≡ e3
+    FillLUM fill1 (FillSynEnvFun fill2) = FillAnaEnvFun (FillLUL fill1 fill2)
+    FillLUM fill1 (FillSynEnvAp1 fill2) = FillAnaEnvAp1 (FillLUL fill1 fill2)
+    FillLUM fill1 (FillSynEnvAp2 fill2) = FillAnaEnvAp2 (FillLUL fill1 fill2)
+    FillLUM fill1 (FillSynEnvAsc fill2) = FillAnaEnvAsc (FillLUL fill1 fill2)
+    FillLUM fill1 (FillSynEnvPair1 fill2) = FillAnaEnvPair1 (FillLUL fill1 fill2)
+    FillLUM fill1 (FillSynEnvPair2 fill2) = FillAnaEnvPair2 (FillLUL fill1 fill2)
+    FillLUM fill1 (FillSynEnvProj fill2) = FillAnaEnvProj (FillLUL fill1 fill2)
 
     FillLUL : ∀ {ε1 ε2 e1 e2 e3} ->
-      ε1 L⟦ e1 ⟧U≡ e2 -> 
-      ε2 U⟦ e2 ⟧L≡ e3 -> 
-      (ComposeLUL ε1 ε2) L⟦ e1 ⟧L≡ e3
-    FillLUL fill1 (FillUEnvLowRec fill2) = FillLEnvLowRec (FillLUU fill1 fill2)
+      ε1 A⟦ e1 ⟧S≡ e2 -> 
+      ε2 S⟦ e2 ⟧A≡ e3 -> 
+      (ComposeLUL ε1 ε2) A⟦ e1 ⟧A≡ e3
+    FillLUL fill1 (FillSynEnvAnaRec fill2) = FillAnaEnvAnaRec (FillLUU fill1 fill2)

@@ -153,8 +153,8 @@ module Core.VariableUpdatePreservation where
 
     ctx-inv-syn : ∀ {Γ Γ' e} ->
       CtxEquiv Γ Γ' ->
-      Γ U⊢ e ->
-      Γ' U⊢ e
+      Γ S⊢ e ->
+      Γ' S⊢ e
     ctx-inv-syn equiv (WFConst x) = WFConst x
     ctx-inv-syn equiv (WFHole x) = WFHole x
     ctx-inv-syn equiv (WFAp x x₁ x₂ x₃ x₄ x₅) = WFAp x x₁ x₂ x₃ (ctx-inv-ana equiv x₄) (ctx-inv-ana equiv x₅)
@@ -178,10 +178,10 @@ module Core.VariableUpdatePreservation where
 
     preservation-var-update :
       ∀ {Γ Γ' x t n e e'} ->
-      Γ U⊢ e ->
+      Γ S⊢ e ->
       VariableUpdate x t ✔ e e' ->
       CtxInv x t n Γ Γ' ->
-      Γ' U⊢ e'
+      Γ' S⊢ e'
     preservation-var-update (WFConst consist) VSConst ctx-inv = WFConst consist
     preservation-var-update (WFHole consist) VSHole ctx-inv = WFHole consist
     preservation-var-update (WFAp marrow consist-syn consist-ana consist-mark syn ana) (VSAp {e1' = e-fun' ⇒ syn-fun'} var-update-fun var-update-arg) ctx-inv with ▸NTArrow-dec syn-fun' 
@@ -226,10 +226,10 @@ module Core.VariableUpdatePreservation where
 
     preservation-vars-unwrap-syn :
       ∀ {Γ Γ' x t m e e'} ->
-      Γ U⊢ e ->
+      Γ S⊢ e ->
       VariableUpdate x t m e e' ->
       UnwrapInv x t m Γ Γ' ->
-      Γ' U⊢ e'
+      Γ' S⊢ e'
     preservation-vars-unwrap-syn (WFConst consist) VSConst ctx-inv = WFConst consist
     preservation-vars-unwrap-syn (WFHole consist) VSHole ctx-inv = WFHole consist
     preservation-vars-unwrap-syn (WFAp marrow consist-syn consist-ana consist-mark syn ana) (VSAp {e1' = e-fun' ⇒ syn-fun'} var-update-fun var-update-arg) ctx-inv with ▸NTArrow-dec syn-fun' 

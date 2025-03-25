@@ -8,7 +8,7 @@ open import Core.Core
 
 module Core.VariableUpdate where
 
-  data VariableUpdate : Var -> Type -> Mark -> ExpUp -> ExpUp -> Set where 
+  data VariableUpdate : Var -> Type -> Mark -> SynExp -> SynExp -> Set where 
     VSConst : ∀ {x m t syn} ->
       VariableUpdate x t m (EConst ⇒ syn) (EConst ⇒ syn)
     VSHole : ∀ {x m t syn} ->
@@ -39,6 +39,6 @@ module Core.VariableUpdate where
       VariableUpdate x t m e e' ->
       VariableUpdate x t m ((EProj s (e [ m' ]⇐ ana) m'') ⇒ syn) ((EProj s (e' [ m' ]⇐ ana) m'') ⇒ syn) 
 
-  VariableUpdate? : Binding -> Type -> Mark -> ExpUp -> ExpUp -> Set
+  VariableUpdate? : Binding -> Type -> Mark -> SynExp -> SynExp -> Set
   VariableUpdate? BHole t m e1 e2 = e1 ≡ e2
   VariableUpdate? (BVar x) t m e1 e2 = VariableUpdate x t m e1 e2

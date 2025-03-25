@@ -7,8 +7,8 @@ module Core where
   import Core.Marking
   import Core.WellFormed
   
-  import Core.Settled
-  import Core.Validity
+  import Core.Quiescent
+  import Core.QuiescentValidity
   
   import Core.Lemmas
   

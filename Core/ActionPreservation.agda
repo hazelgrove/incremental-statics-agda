@@ -81,7 +81,7 @@ module Core.ActionPreservation where
 
   SynSubsume :  
     ∀ {Γ e t} ->
-    Γ U⊢ (e ⇒ (t , ★)) ->
+    Γ S⊢ (e ⇒ (t , ★)) ->
     Subsumable (e ⇒ (t , ★))
   SynSubsume (WFConst x) = SubsumableConst
   SynSubsume (WFHole x) = SubsumableHole
@@ -92,7 +92,7 @@ module Core.ActionPreservation where
     
   WrapSubsume :  
     ∀ {Γ e t m ana} ->
-    Γ U⊢ (e ⇒ (t , ★)) ->
+    Γ S⊢ (e ⇒ (t , ★)) ->
     Γ L⊢ ((e ⇒ (t , ★)) [ m ]⇐ ana)
   WrapSubsume {t = t} {ana = ana} syn with ~N-dec (t , ★) ana
   ... | _ , ~N-pair x = WFSubsume (SynSubsume syn) (~N-pair x) ▶★ syn
@@ -141,9 +141,9 @@ module Core.ActionPreservation where
 
     PreservationSyn :  
       ∀ {Γ A e e'} ->
-      (Γ U⊢ e) ->
+      (Γ S⊢ e) ->
       (Γ ⊢ A , e AU↦ e') ->   
-      (Γ U⊢ e')
+      (Γ S⊢ e')
     PreservationSyn (WFAsc a1 (▷Pair a2) ana) (AUpMid (AMidAsc {e' = e' [ _ ]⇐ _} step)) with beyond-AL↦ step 
     ... | ◁▷C = WFAsc a1 (▷Pair a2) (PreservationAna ana step) 
     PreservationSyn (WFAp marrow consist-syn consist-ana consist-mark syn ana) (AUpMid (AMidApOne {e1' = (e-fun' ⇒ syn-fun') [ _ ]⇐ _} step)) with ▸NTArrow-dec syn-fun' 

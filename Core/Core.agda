@@ -131,29 +131,29 @@ module Core.Core where
 
   mutual 
 
-    data ExpUp : Set where  
-      _⇒_ : ExpMid -> ○Data -> ExpUp
+    data SynExp : Set where  
+      _⇒_ : ConExp -> ○Data -> SynExp
 
-    data ExpMid : Set where 
-      EConst : ExpMid 
-      EHole : ExpMid
-      EFun : Binding -> ○Type -> Mark -> Mark -> ExpLow -> ExpMid 
-      EAp : ExpLow -> Mark -> ExpLow -> ExpMid 
-      EVar : Var -> Mark -> ExpMid 
-      EAsc : ○Type -> ExpLow -> ExpMid 
-      EPair : ExpLow -> ExpLow -> Mark -> ExpMid
-      EProj : ProdSide -> ExpLow -> Mark -> ExpMid
+    data ConExp : Set where 
+      EConst : ConExp 
+      EHole : ConExp
+      EFun : Binding -> ○Type -> Mark -> Mark -> AnaExp -> ConExp 
+      EAp : AnaExp -> Mark -> AnaExp -> ConExp 
+      EVar : Var -> Mark -> ConExp 
+      EAsc : ○Type -> AnaExp -> ConExp 
+      EPair : AnaExp -> AnaExp -> Mark -> ConExp
+      EProj : ProdSide -> AnaExp -> Mark -> ConExp
 
-    data ExpLow : Set where 
-      _[_]⇐_ : ExpUp -> Mark -> ○Data -> ExpLow
+    data AnaExp : Set where 
+      _[_]⇐_ : SynExp -> Mark -> ○Data -> AnaExp
 
   data Program : Set where 
-    Root : ExpUp -> Dirtiness -> Program
+    Root : SynExp -> Dirtiness -> Program
     
-  ExpLowOfProgram : Program -> ExpLow  
-  ExpLowOfProgram (Root e n) = (e [ ✔ ]⇐ (□ , n)) 
+  AnaExpOfProgram : Program -> AnaExp  
+  AnaExpOfProgram (Root e n) = (e [ ✔ ]⇐ (□ , n)) 
 
-  data SubsumableMid : ExpMid -> Set where 
+  data SubsumableMid : ConExp -> Set where 
     SubsumableConst : SubsumableMid EConst
     SubsumableHole : SubsumableMid EHole
     SubsumableAp : ∀ {e1 m e2} -> SubsumableMid (EAp e1 m e2) 
@@ -161,7 +161,7 @@ module Core.Core where
     SubsumableAsc : ∀ {t e} -> SubsumableMid (EAsc t e) 
     SubsumableProj : ∀ {s e m} -> SubsumableMid (EProj s e m) 
 
-  Subsumable : ExpUp -> Set 
+  Subsumable : SynExp -> Set 
   Subsumable (mid ⇒ _) = SubsumableMid mid
 
   data Context (A : Set) : Set where 

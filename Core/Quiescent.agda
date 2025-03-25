@@ -4,56 +4,56 @@ open import Data.Product
 open import Prelude
 open import Core.Core
 
-module Core.Settled where
+module Core.Quiescent where
 
 mutual 
 
-  data _U̸↦ : ExpUp -> Set where 
-    SettledUp : ∀ {e t} ->
+  data _U̸↦ : SynExp -> Set where 
+    QuiescentUp : ∀ {e t} ->
       e M̸↦ -> 
       (e ⇒ (t , •)) U̸↦
 
-  data _M̸↦ : ExpMid -> Set where 
-    SettledConst :
+  data _M̸↦ : ConExp -> Set where 
+    QuiescentConst :
       EConst M̸↦
-    SettledHole : 
+    QuiescentHole : 
       EHole M̸↦
-    SettledFun : ∀ {x t e m1 m2} ->
+    QuiescentFun : ∀ {x t e m1 m2} ->
       e L̸↦ ->
       ((EFun x (t , •) m1 m2 e)) M̸↦
-    SettledAp : ∀ {m e1 e2} ->
+    QuiescentAp : ∀ {m e1 e2} ->
       e1 L̸↦ -> 
       e2 L̸↦ -> 
       ((EAp e1 m e2)) M̸↦
-    SettledVar : ∀ {x m} ->
+    QuiescentVar : ∀ {x m} ->
       (EVar x m) M̸↦
-    SettledAsc : ∀ {t e} ->
+    QuiescentAsc : ∀ {t e} ->
       e L̸↦ -> 
       (EAsc (t , •) e) M̸↦
-    SettledPair : ∀ {m e1 e2} ->
+    QuiescentPair : ∀ {m e1 e2} ->
       e1 L̸↦ -> 
       e2 L̸↦ -> 
       ((EPair e1 e2 m)) M̸↦
-    SettledProj : ∀ {s e m} ->
+    QuiescentProj : ∀ {s e m} ->
       e L̸↦ -> 
       ((EProj s e m)) M̸↦
 
-  data _L̸↦ : ExpLow -> Set where 
-    SettledLow : ∀ {t e m} ->
+  data _L̸↦ : AnaExp -> Set where 
+    QuiescentLow : ∀ {t e m} ->
       e U̸↦ ->
       (e [ m ]⇐ (t , •)) L̸↦
 
-data _almost-U̸↦ : ExpUp -> Set where 
-  AlmostSettledUp : ∀ {n e t} ->
+data _almost-U̸↦ : SynExp -> Set where 
+  AlmostQuiescentUp : ∀ {n e t} ->
     e M̸↦ -> 
     (e ⇒ (t , n)) almost-U̸↦
 
-data _almost-L̸↦ : ExpLow -> Set where 
-  AlmostSettledLow : ∀ {t e m} ->
+data _almost-L̸↦ : AnaExp -> Set where 
+  AlmostQuiescentLow : ∀ {t e m} ->
     e almost-U̸↦ ->
     (e [ m ]⇐ (t , •)) almost-L̸↦
 
 data _P̸↦ : Program -> Set where 
-  SettledProgram : ∀ {p} ->
-    (ExpLowOfProgram p) L̸↦  -> 
+  QuiescentProgram : ∀ {p} ->
+    (AnaExpOfProgram p) L̸↦  -> 
     p P̸↦

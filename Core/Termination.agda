@@ -19,10 +19,10 @@ module Core.Termination where
 
   mutual 
     
-    surface-dirties-up : ExpUp -> ℕ
+    surface-dirties-up : SynExp -> ℕ
     surface-dirties-up (e ⇒ _) = surface-dirties-mid e
 
-    surface-dirties-mid : ExpMid -> ℕ
+    surface-dirties-mid : ConExp -> ℕ
     surface-dirties-mid (EConst) = 0
     surface-dirties-mid (EHole) = 0
     surface-dirties-mid (EVar _ _) = 0
@@ -32,7 +32,7 @@ module Core.Termination where
     surface-dirties-mid (EPair e-fst e-snd _) = surface-dirties-low e-fst + surface-dirties-low e-snd
     surface-dirties-mid (EProj _ e _) = surface-dirties-low e
 
-    surface-dirties-low : ExpLow -> ℕ
+    surface-dirties-low : AnaExp -> ℕ
     surface-dirties-low (e [ _ ]⇐ _) = surface-dirties-up e
 
   data =★ : ○Data -> ○Data -> Set where 
@@ -56,10 +56,10 @@ module Core.Termination where
 
   mutual 
 
-    SkelUp : ExpUp -> Skeleton 
+    SkelUp : SynExp -> Skeleton 
     SkelUp (e ⇒ _) = SkelMid e
 
-    SkelMid : ExpMid -> Skeleton 
+    SkelMid : ConExp -> Skeleton 
     SkelMid EConst = S0
     SkelMid EHole = S0
     SkelMid (EVar _ _) = S0
@@ -69,15 +69,15 @@ module Core.Termination where
     SkelMid (EAp e1 _ e2) = S2 (SkelLow e1) (SkelLow e2)
     SkelMid (EPair e1 e2 _) = S2 (SkelLow e1) (SkelLow e2)
 
-    SkelLow : ExpLow -> Skeleton  
+    SkelLow : AnaExp -> Skeleton  
     SkelLow (e [ _ ]⇐ _) = SkelUp e
 
   SkelProgram : Program -> Skeleton 
-  SkelProgram p = SkelLow (ExpLowOfProgram p)
+  SkelProgram p = SkelLow (AnaExpOfProgram p)
 
   mutual 
 
-    data <Up : Skeleton -> ExpUp -> ExpUp -> Set where 
+    data <Up : Skeleton -> SynExp -> SynExp -> Set where 
       <Upper : ∀ {s e1 e2 syn1 syn2} ->
         <Mid s e1 e2 ->  
         <Up s (e1 ⇒ syn1) (e2 ⇒ syn2)
@@ -85,7 +85,7 @@ module Core.Termination where
         <★ syn1 syn2 ->  
         <Up (SkelMid e) (e ⇒ syn1) (e ⇒ syn2)
       
-    data <Mid : Skeleton -> ExpMid -> ExpMid -> Set where 
+    data <Mid : Skeleton -> ConExp -> ConExp -> Set where 
       <Asc : ∀ {s a1 a2 e1 e2} ->
         <Low s e1 e2 -> 
         <Mid (S1 s) (EAsc a1 e1) (EAsc a2 e2)
@@ -110,7 +110,7 @@ module Core.Termination where
         <Low s2 e2 e3 -> 
         <Mid (S2 (SkelLow e1) s2) (EPair e1 e2 a1) (EPair e1 e3 a2)
 
-    data <Low : Skeleton -> ExpLow -> ExpLow -> Set where 
+    data <Low : Skeleton -> AnaExp -> AnaExp -> Set where 
       <Lower : ∀ {e1 e2 a1 a2 ana1 ana2} ->
         <★ ana1 ana2 ->  
         (SkelUp e1) ≡ (SkelUp e2) ->
@@ -122,30 +122,30 @@ module Core.Termination where
 
   data <Program : Program -> Program -> Set where 
     <Program< : ∀ {p p'} ->
-      surface-dirties-low (ExpLowOfProgram p) < surface-dirties-low (ExpLowOfProgram p') -> 
+      surface-dirties-low (AnaExpOfProgram p) < surface-dirties-low (AnaExpOfProgram p') -> 
       <Program p p'
     <Program= : ∀ {p p'} ->
-      surface-dirties-low (ExpLowOfProgram p) ≡ surface-dirties-low (ExpLowOfProgram p') -> 
-      <Low (SkelProgram p) (ExpLowOfProgram p) (ExpLowOfProgram p') ->
+      surface-dirties-low (AnaExpOfProgram p) ≡ surface-dirties-low (AnaExpOfProgram p') -> 
+      <Low (SkelProgram p) (AnaExpOfProgram p) (AnaExpOfProgram p') ->
       <Program p p'
 
-  data <ExpUp : ExpUp -> ExpUp -> Set where 
-    <ExpUp< : ∀ {e e'} ->
+  data <SynExp : SynExp -> SynExp -> Set where 
+    <SynExp< : ∀ {e e'} ->
       surface-dirties-up e < surface-dirties-up e' -> 
-      <ExpUp e e'
-    <ExpUp= : ∀ {e e'} ->
+      <SynExp e e'
+    <SynExp= : ∀ {e e'} ->
       surface-dirties-up e ≡ surface-dirties-up e' -> 
       <Up (SkelUp e) e e' ->
-      <ExpUp e e'
+      <SynExp e e'
 
-  data <ExpLow : ExpLow -> ExpLow -> Set where 
-    <ExpLow< : ∀ {e e'} ->
+  data <AnaExp : AnaExp -> AnaExp -> Set where 
+    <AnaExp< : ∀ {e e'} ->
       surface-dirties-low e < surface-dirties-low e' -> 
-      <ExpLow e e'
-    <ExpLow= : ∀ {e e'} ->
+      <AnaExp e e'
+    <AnaExp= : ∀ {e e'} ->
       surface-dirties-low e ≡ surface-dirties-low e' -> 
       <Low (SkelLow e) e e' ->
-      <ExpLow e e'
+      <AnaExp e e'
 
   mutual 
 
@@ -201,150 +201,150 @@ module Core.Termination where
 
   StepDecreaseU : ∀ {e e'} ->
     e u↦ e' -> 
-    <ExpUp e' e
-  StepDecreaseU StepAsc = <ExpUp< (n<1+n _)
-  StepDecreaseU (StepAp x) = <ExpUp= refl (<Upper (<Ap< (<Lower= =★-refl (<Upper= <★C)) refl))
-  StepDecreaseU (StepProj x) = <ExpUp= refl (<Upper (<Proj (<Lower= =★-refl (<Upper= <★C))))
+    <SynExp e' e
+  StepDecreaseU StepAsc = <SynExp< (n<1+n _)
+  StepDecreaseU (StepAp x) = <SynExp= refl (<Upper (<Ap< (<Lower= =★-refl (<Upper= <★C)) refl))
+  StepDecreaseU (StepProj x) = <SynExp= refl (<Upper (<Proj (<Lower= =★-refl (<Upper= <★C))))
 
   StepDecreaseL : ∀ {e e'} ->
     e l↦ e' -> 
-    <ExpLow e' e
-  StepDecreaseL (StepAnnFun {e-body = e ⇒ _} {e-body' = e' ⇒ _} var-update) = <ExpLow< helper
+    <AnaExp e' e
+  StepDecreaseL (StepAnnFun {e-body = e ⇒ _} {e-body' = e' ⇒ _} var-update) = <AnaExp< helper
     where 
     helper : surface-dirties-mid e' < suc (surface-dirties-mid e)
     helper rewrite (var-update?-preserves-surface-dirties var-update) = ≤-refl
-  StepDecreaseL (StepSyn x) = <ExpLow= refl (<Lower= =★-refl (<Upper= <★C))
-  StepDecreaseL (StepAna x x₁) = <ExpLow= refl (<Lower <★C refl)
-  StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <★C refl)
-  StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =★-refl (<Upper (<Fun (<Lower= =★-refl (<Upper= <★C)))))
-  StepDecreaseL (StepAnaPair x) = <ExpLow= refl (<Lower <★C refl)
-  StepDecreaseL StepSynPairFst = <ExpLow= refl (<Lower= =★-refl (<Upper (<Pair< (<Lower= =★-refl (<Upper= <★C)) refl)))
-  StepDecreaseL StepSynPairSnd = <ExpLow= refl (<Lower= =★-refl (<Upper (<Pair=< (<Lower= =★-refl (<Upper= <★C)))))
+  StepDecreaseL (StepSyn x) = <AnaExp= refl (<Lower= =★-refl (<Upper= <★C))
+  StepDecreaseL (StepAna x x₁) = <AnaExp= refl (<Lower <★C refl)
+  StepDecreaseL (StepAnaFun x x₁) = <AnaExp= refl (<Lower <★C refl)
+  StepDecreaseL StepSynFun = <AnaExp= refl (<Lower= =★-refl (<Upper (<Fun (<Lower= =★-refl (<Upper= <★C)))))
+  StepDecreaseL (StepAnaPair x) = <AnaExp= refl (<Lower <★C refl)
+  StepDecreaseL StepSynPairFst = <AnaExp= refl (<Lower= =★-refl (<Upper (<Pair< (<Lower= =★-refl (<Upper= <★C)) refl)))
+  StepDecreaseL StepSynPairSnd = <AnaExp= refl (<Lower= =★-refl (<Upper (<Pair=< (<Lower= =★-refl (<Upper= <★C)))))
 
   mutual 
     
-    surface-dirties-uu : UEnvUp -> ℕ
-    surface-dirties-uu U⊙ = 0
-    surface-dirties-uu (UEnvUpRec ε _) = surface-dirties-um ε
+    surface-dirties-uu : SynEnvSyn -> ℕ
+    surface-dirties-uu S⊙ = 0
+    surface-dirties-uu (SynEnvSynRec ε _) = surface-dirties-um ε
 
-    surface-dirties-um : UEnvMid -> ℕ
-    surface-dirties-um (UEnvAsc (_ , n-asc) ε) = (new-number n-asc) + surface-dirties-ul ε
-    surface-dirties-um (UEnvFun _ (_ , n-ann) _ _ ε) = (new-number n-ann) + surface-dirties-ul ε
-    surface-dirties-um (UEnvProj _ ε _) = surface-dirties-ul ε
-    surface-dirties-um (UEnvAp1 ε _ e-arg) = surface-dirties-ul ε + surface-dirties-low e-arg
-    surface-dirties-um (UEnvAp2 e-fun _ ε) = surface-dirties-low e-fun + surface-dirties-ul ε
-    surface-dirties-um (UEnvPair1 ε e-snd _) = surface-dirties-ul ε + surface-dirties-low e-snd
-    surface-dirties-um (UEnvPair2 e-fst ε _) = surface-dirties-low e-fst + surface-dirties-ul ε
+    surface-dirties-um : SynEnvCon -> ℕ
+    surface-dirties-um (SynEnvAsc (_ , n-asc) ε) = (new-number n-asc) + surface-dirties-ul ε
+    surface-dirties-um (SynEnvFun _ (_ , n-ann) _ _ ε) = (new-number n-ann) + surface-dirties-ul ε
+    surface-dirties-um (SynEnvProj _ ε _) = surface-dirties-ul ε
+    surface-dirties-um (SynEnvAp1 ε _ e-arg) = surface-dirties-ul ε + surface-dirties-low e-arg
+    surface-dirties-um (SynEnvAp2 e-fun _ ε) = surface-dirties-low e-fun + surface-dirties-ul ε
+    surface-dirties-um (SynEnvPair1 ε e-snd _) = surface-dirties-ul ε + surface-dirties-low e-snd
+    surface-dirties-um (SynEnvPair2 e-fst ε _) = surface-dirties-low e-fst + surface-dirties-ul ε
 
-    surface-dirties-ul : UEnvLow -> ℕ
-    surface-dirties-ul (UEnvLowRec ε _ _) = surface-dirties-uu ε
+    surface-dirties-ul : SynEnvAna -> ℕ
+    surface-dirties-ul (SynEnvAnaRec ε _ _) = surface-dirties-uu ε
 
   mutual
 
-    surface-dirties-lu : LEnvUp -> ℕ
-    surface-dirties-lu (LEnvUpRec ε _) = surface-dirties-lm ε
+    surface-dirties-lu : AnaEnvSyn -> ℕ
+    surface-dirties-lu (AnaEnvSynRec ε _) = surface-dirties-lm ε
 
-    surface-dirties-lm : LEnvMid -> ℕ
-    surface-dirties-lm (LEnvAsc (_ , n-asc) ε) = (new-number n-asc) + surface-dirties-ll ε
-    surface-dirties-lm (LEnvFun _ (_ , n-ann) _ _ ε) = (new-number n-ann) + surface-dirties-ll ε
-    surface-dirties-lm (LEnvProj _ ε _) = surface-dirties-ll ε
-    surface-dirties-lm (LEnvAp1 ε _ e-arg) = surface-dirties-ll ε + surface-dirties-low e-arg
-    surface-dirties-lm (LEnvAp2 e-fun _ ε) = surface-dirties-low e-fun + surface-dirties-ll ε
-    surface-dirties-lm (LEnvPair1 ε e-snd _) = surface-dirties-ll ε + surface-dirties-low e-snd
-    surface-dirties-lm (LEnvPair2 e-fst ε _) = surface-dirties-low e-fst + surface-dirties-ll ε
+    surface-dirties-lm : AnaEnvCon -> ℕ
+    surface-dirties-lm (AnaEnvAsc (_ , n-asc) ε) = (new-number n-asc) + surface-dirties-ll ε
+    surface-dirties-lm (AnaEnvFun _ (_ , n-ann) _ _ ε) = (new-number n-ann) + surface-dirties-ll ε
+    surface-dirties-lm (AnaEnvProj _ ε _) = surface-dirties-ll ε
+    surface-dirties-lm (AnaEnvAp1 ε _ e-arg) = surface-dirties-ll ε + surface-dirties-low e-arg
+    surface-dirties-lm (AnaEnvAp2 e-fun _ ε) = surface-dirties-low e-fun + surface-dirties-ll ε
+    surface-dirties-lm (AnaEnvPair1 ε e-snd _) = surface-dirties-ll ε + surface-dirties-low e-snd
+    surface-dirties-lm (AnaEnvPair2 e-fst ε _) = surface-dirties-low e-fst + surface-dirties-ll ε
 
 
-    surface-dirties-ll : LEnvLow -> ℕ
-    surface-dirties-ll L⊙ = 0
-    surface-dirties-ll (LEnvLowRec ε _ _) = surface-dirties-lu ε
+    surface-dirties-ll : AnaEnvAna -> ℕ
+    surface-dirties-ll A⊙ = 0
+    surface-dirties-ll (AnaEnvAnaRec ε _ _) = surface-dirties-lu ε
 
   mutual 
 
-    FillUEnvUp-surface : ∀ {ε e e-in} ->
-      ε U⟦ e-in ⟧U≡ e ->
+    FillSynEnvSyn-surface : ∀ {ε e e-in} ->
+      ε S⟦ e-in ⟧S≡ e ->
       surface-dirties-up e ≡ surface-dirties-uu ε + surface-dirties-up e-in
-    FillUEnvUp-surface FillU⊙ = refl
-    FillUEnvUp-surface (FillUEnvUpRec fill) = FillUEnvMid-surface fill
+    FillSynEnvSyn-surface FillS⊙ = refl
+    FillSynEnvSyn-surface (FillSynEnvSynRec fill) = FillSynEnvCon-surface fill
 
-    FillUEnvMid-surface : ∀ {ε e e-in} ->
-      ε U⟦ e-in ⟧M≡ e ->
+    FillSynEnvCon-surface : ∀ {ε e e-in} ->
+      ε S⟦ e-in ⟧C≡ e ->
       surface-dirties-mid e ≡ surface-dirties-um ε + surface-dirties-up e-in 
-    FillUEnvMid-surface {e-in = e-in} (FillUEnvAsc {ε = ε} {t = (_ , n)} fill) 
-      rewrite FillUEnvLow-surface fill 
+    FillSynEnvCon-surface {e-in = e-in} (FillSynEnvAsc {ε = ε} {t = (_ , n)} fill) 
+      rewrite FillSynEnvAna-surface fill 
       =  sym (+-assoc (new-number n) (surface-dirties-ul ε) (surface-dirties-up e-in))
-    FillUEnvMid-surface {e-in = e-in} (FillUEnvFun {ε = ε} {t = (_ , n)} fill) 
-      rewrite FillUEnvLow-surface fill 
+    FillSynEnvCon-surface {e-in = e-in} (FillSynEnvFun {ε = ε} {t = (_ , n)} fill) 
+      rewrite FillSynEnvAna-surface fill 
       = sym (+-assoc (new-number n) (surface-dirties-ul ε) (surface-dirties-up e-in))
-    FillUEnvMid-surface {e-in = e-in} (FillUEnvProj {ε = ε} fill) 
-      rewrite FillUEnvLow-surface fill 
+    FillSynEnvCon-surface {e-in = e-in} (FillSynEnvProj {ε = ε} fill) 
+      rewrite FillSynEnvAna-surface fill 
       = refl
-    FillUEnvMid-surface {e-in = e-in} (FillUEnvAp1 {ε = ε} {e2 = e2} fill) 
-      rewrite FillUEnvLow-surface fill 
+    FillSynEnvCon-surface {e-in = e-in} (FillSynEnvAp1 {ε = ε} {e2 = e2} fill) 
+      rewrite FillSynEnvAna-surface fill 
       rewrite (+-assoc (surface-dirties-ul ε) (surface-dirties-up e-in) (surface-dirties-low e2))
       rewrite +-comm (surface-dirties-up e-in) (surface-dirties-low e2) 
       rewrite sym (+-assoc (surface-dirties-ul ε) (surface-dirties-low e2) (surface-dirties-up e-in))
       = refl
-    FillUEnvMid-surface {e-in = e-in} (FillUEnvAp2 {ε = ε} {e1 = e1} fill) 
-      rewrite FillUEnvLow-surface fill 
+    FillSynEnvCon-surface {e-in = e-in} (FillSynEnvAp2 {ε = ε} {e1 = e1} fill) 
+      rewrite FillSynEnvAna-surface fill 
       = sym (+-assoc (surface-dirties-low e1) (surface-dirties-ul ε) (surface-dirties-up e-in))
-    FillUEnvMid-surface {e-in = e-in} (FillUEnvPair1 {ε = ε} {e2 = e2} fill) 
-      rewrite FillUEnvLow-surface fill 
+    FillSynEnvCon-surface {e-in = e-in} (FillSynEnvPair1 {ε = ε} {e2 = e2} fill) 
+      rewrite FillSynEnvAna-surface fill 
       rewrite (+-assoc (surface-dirties-ul ε) (surface-dirties-up e-in) (surface-dirties-low e2))
       rewrite +-comm (surface-dirties-up e-in) (surface-dirties-low e2) 
       rewrite sym (+-assoc (surface-dirties-ul ε) (surface-dirties-low e2) (surface-dirties-up e-in))
       = refl
-    FillUEnvMid-surface {e-in = e-in} (FillUEnvPair2 {ε = ε} {e1 = e1} fill) 
-      rewrite FillUEnvLow-surface fill 
+    FillSynEnvCon-surface {e-in = e-in} (FillSynEnvPair2 {ε = ε} {e1 = e1} fill) 
+      rewrite FillSynEnvAna-surface fill 
       = sym (+-assoc (surface-dirties-low e1) (surface-dirties-ul ε) (surface-dirties-up e-in))
 
-    FillUEnvLow-surface : ∀ {ε e e-in} ->
-      ε U⟦ e-in ⟧L≡ e ->
+    FillSynEnvAna-surface : ∀ {ε e e-in} ->
+      ε S⟦ e-in ⟧A≡ e ->
       surface-dirties-low e ≡ surface-dirties-ul ε + surface-dirties-up e-in
-    FillUEnvLow-surface (FillUEnvLowRec fill) = FillUEnvUp-surface fill
+    FillSynEnvAna-surface (FillSynEnvAnaRec fill) = FillSynEnvSyn-surface fill
 
   mutual 
 
-    FillLEnvUp-surface : ∀ {ε e e-in} ->
-      ε L⟦ e-in ⟧U≡ e ->
+    FillAnaEnvSyn-surface : ∀ {ε e e-in} ->
+      ε A⟦ e-in ⟧S≡ e ->
       surface-dirties-up e ≡ surface-dirties-lu ε + surface-dirties-low e-in
-    FillLEnvUp-surface (FillLEnvUpRec fill) = FillLEnvMid-surface fill
+    FillAnaEnvSyn-surface (FillAnaEnvSynRec fill) = FillAnaEnvCon-surface fill
 
-    FillLEnvMid-surface : ∀ {ε e e-in} ->
-      ε L⟦ e-in ⟧M≡ e ->
+    FillAnaEnvCon-surface : ∀ {ε e e-in} ->
+      ε A⟦ e-in ⟧C≡ e ->
       surface-dirties-mid e ≡ surface-dirties-lm ε + surface-dirties-low e-in 
-    FillLEnvMid-surface {e-in = e-in} (FillLEnvAsc {ε = ε} {t = (_ , n)} fill) 
-      rewrite FillLEnvLow-surface fill 
+    FillAnaEnvCon-surface {e-in = e-in} (FillAnaEnvAsc {ε = ε} {t = (_ , n)} fill) 
+      rewrite FillAnaEnvAna-surface fill 
       =  sym (+-assoc (new-number n) (surface-dirties-ll ε) (surface-dirties-low e-in))
-    FillLEnvMid-surface {e-in = e-in} (FillLEnvFun {ε = ε} {t = (_ , n)} fill) 
-      rewrite FillLEnvLow-surface fill 
+    FillAnaEnvCon-surface {e-in = e-in} (FillAnaEnvFun {ε = ε} {t = (_ , n)} fill) 
+      rewrite FillAnaEnvAna-surface fill 
       = sym (+-assoc (new-number n) (surface-dirties-ll ε) (surface-dirties-low e-in))
-    FillLEnvMid-surface {e-in = e-in} (FillLEnvProj {ε = ε} fill) 
-      rewrite FillLEnvLow-surface fill 
+    FillAnaEnvCon-surface {e-in = e-in} (FillAnaEnvProj {ε = ε} fill) 
+      rewrite FillAnaEnvAna-surface fill 
       = refl
-    FillLEnvMid-surface {e-in = e-in} (FillLEnvAp1 {ε = ε} {e2 = e2} fill) 
-      rewrite FillLEnvLow-surface fill 
+    FillAnaEnvCon-surface {e-in = e-in} (FillAnaEnvAp1 {ε = ε} {e2 = e2} fill) 
+      rewrite FillAnaEnvAna-surface fill 
       rewrite (+-assoc (surface-dirties-ll ε) (surface-dirties-low e-in) (surface-dirties-low e2))
       rewrite +-comm (surface-dirties-low e-in) (surface-dirties-low e2) 
       rewrite sym (+-assoc (surface-dirties-ll ε) (surface-dirties-low e2) (surface-dirties-low e-in))
       = refl
-    FillLEnvMid-surface {e-in = e-in} (FillLEnvAp2 {ε = ε} {e1 = e1} fill) 
-      rewrite FillLEnvLow-surface fill 
+    FillAnaEnvCon-surface {e-in = e-in} (FillAnaEnvAp2 {ε = ε} {e1 = e1} fill) 
+      rewrite FillAnaEnvAna-surface fill 
       = sym (+-assoc (surface-dirties-low e1) (surface-dirties-ll ε) (surface-dirties-low e-in))
-    FillLEnvMid-surface {e-in = e-in} (FillLEnvPair1 {ε = ε} {e2 = e2} fill) 
-      rewrite FillLEnvLow-surface fill 
+    FillAnaEnvCon-surface {e-in = e-in} (FillAnaEnvPair1 {ε = ε} {e2 = e2} fill) 
+      rewrite FillAnaEnvAna-surface fill 
       rewrite (+-assoc (surface-dirties-ll ε) (surface-dirties-low e-in) (surface-dirties-low e2))
       rewrite +-comm (surface-dirties-low e-in) (surface-dirties-low e2) 
       rewrite sym (+-assoc (surface-dirties-ll ε) (surface-dirties-low e2) (surface-dirties-low e-in))
       = refl
-    FillLEnvMid-surface {e-in = e-in} (FillLEnvPair2 {ε = ε} {e1 = e1} fill) 
-      rewrite FillLEnvLow-surface fill 
+    FillAnaEnvCon-surface {e-in = e-in} (FillAnaEnvPair2 {ε = ε} {e1 = e1} fill) 
+      rewrite FillAnaEnvAna-surface fill 
       = sym (+-assoc (surface-dirties-low e1) (surface-dirties-ll ε) (surface-dirties-low e-in))
 
-    FillLEnvLow-surface : ∀ {ε e e-in} ->
-      ε L⟦ e-in ⟧L≡ e ->
+    FillAnaEnvAna-surface : ∀ {ε e e-in} ->
+      ε A⟦ e-in ⟧A≡ e ->
       surface-dirties-low e ≡ surface-dirties-ll ε + surface-dirties-low e-in
-    FillLEnvLow-surface FillL⊙ = refl
-    FillLEnvLow-surface (FillLEnvLowRec fill) = FillLEnvUp-surface fill 
+    FillAnaEnvAna-surface FillA⊙ = refl
+    FillAnaEnvAna-surface (FillAnaEnvAnaRec fill) = FillAnaEnvSyn-surface fill 
 
   data SkelEnv : Set where 
     S⊙ : SkelEnv
@@ -360,207 +360,207 @@ module Core.Termination where
 
   mutual 
 
-    skel-lu : LEnvUp -> SkelEnv 
-    skel-lu (LEnvUpRec e _) = skel-lm e
+    skel-lu : AnaEnvSyn -> SkelEnv 
+    skel-lu (AnaEnvSynRec e _) = skel-lm e
 
-    skel-lm : LEnvMid -> SkelEnv 
-    skel-lm (LEnvAsc _ e) = SE1 (skel-ll e)
-    skel-lm (LEnvFun _ _ _ _ e) = SE1 (skel-ll e)
-    skel-lm (LEnvProj _ e _) = SE1 (skel-ll e)
-    skel-lm (LEnvAp1 e1 _ e2) = SEL (skel-ll e1) (SkelLow e2)
-    skel-lm (LEnvAp2 e1 _ e2) = SER (SkelLow e1) (skel-ll e2)
-    skel-lm (LEnvPair1 e1 e2 _) = SEL (skel-ll e1) (SkelLow e2)
-    skel-lm (LEnvPair2 e1 e2 _) = SER (SkelLow e1) (skel-ll e2)
+    skel-lm : AnaEnvCon -> SkelEnv 
+    skel-lm (AnaEnvAsc _ e) = SE1 (skel-ll e)
+    skel-lm (AnaEnvFun _ _ _ _ e) = SE1 (skel-ll e)
+    skel-lm (AnaEnvProj _ e _) = SE1 (skel-ll e)
+    skel-lm (AnaEnvAp1 e1 _ e2) = SEL (skel-ll e1) (SkelLow e2)
+    skel-lm (AnaEnvAp2 e1 _ e2) = SER (SkelLow e1) (skel-ll e2)
+    skel-lm (AnaEnvPair1 e1 e2 _) = SEL (skel-ll e1) (SkelLow e2)
+    skel-lm (AnaEnvPair2 e1 e2 _) = SER (SkelLow e1) (skel-ll e2)
 
-    skel-ll : LEnvLow -> SkelEnv 
-    skel-ll L⊙ = S⊙
-    skel-ll (LEnvLowRec e _ _) = skel-lu e
+    skel-ll : AnaEnvAna -> SkelEnv 
+    skel-ll A⊙ = S⊙
+    skel-ll (AnaEnvAnaRec e _ _) = skel-lu e
 
   mutual 
 
-    skel-uu : UEnvUp -> SkelEnv 
-    skel-uu U⊙ = S⊙
-    skel-uu (UEnvUpRec e _) = skel-um e
+    skel-uu : SynEnvSyn -> SkelEnv 
+    skel-uu S⊙ = S⊙
+    skel-uu (SynEnvSynRec e _) = skel-um e
 
-    skel-um : UEnvMid -> SkelEnv 
-    skel-um (UEnvAsc _ e) = SE1 (skel-ul e)
-    skel-um (UEnvFun _ _ _ _ e) = SE1 (skel-ul e)
-    skel-um (UEnvProj _ e _) = SE1 (skel-ul e)
-    skel-um (UEnvAp1 e1 _ e2) = SEL (skel-ul e1) (SkelLow e2)
-    skel-um (UEnvAp2 e1 _ e2) = SER (SkelLow e1) (skel-ul e2)
-    skel-um (UEnvPair1 e1 e2 _) = SEL (skel-ul e1) (SkelLow e2)
-    skel-um (UEnvPair2 e1 e2 _) = SER (SkelLow e1) (skel-ul e2)
+    skel-um : SynEnvCon -> SkelEnv 
+    skel-um (SynEnvAsc _ e) = SE1 (skel-ul e)
+    skel-um (SynEnvFun _ _ _ _ e) = SE1 (skel-ul e)
+    skel-um (SynEnvProj _ e _) = SE1 (skel-ul e)
+    skel-um (SynEnvAp1 e1 _ e2) = SEL (skel-ul e1) (SkelLow e2)
+    skel-um (SynEnvAp2 e1 _ e2) = SER (SkelLow e1) (skel-ul e2)
+    skel-um (SynEnvPair1 e1 e2 _) = SEL (skel-ul e1) (SkelLow e2)
+    skel-um (SynEnvPair2 e1 e2 _) = SER (SkelLow e1) (skel-ul e2)
 
-    skel-ul : UEnvLow -> SkelEnv 
-    skel-ul (UEnvLowRec e _ _) = skel-uu e
+    skel-ul : SynEnvAna -> SkelEnv 
+    skel-ul (SynEnvAnaRec e _ _) = skel-uu e
 
   mutual 
 
     skel-lu-comm : ∀ {ε e e-in} ->
-      ε L⟦ e-in ⟧U≡ e ->
+      ε A⟦ e-in ⟧S≡ e ->
       SkelFill (SkelLow e-in) (skel-lu ε) ≡ SkelUp e
-    skel-lu-comm (FillLEnvUpRec x) = skel-lm-comm x
+    skel-lu-comm (FillAnaEnvSynRec x) = skel-lm-comm x
 
     skel-lm-comm : ∀ {ε e e-in} ->
-      ε L⟦ e-in ⟧M≡ e ->
+      ε A⟦ e-in ⟧C≡ e ->
       SkelFill (SkelLow e-in) (skel-lm ε) ≡ SkelMid e
-    skel-lm-comm (FillLEnvFun x) = cong S1 (skel-ll-comm x)
-    skel-lm-comm (FillLEnvProj x) = cong S1 (skel-ll-comm x)
-    skel-lm-comm (FillLEnvAsc x) = cong S1 (skel-ll-comm x)
-    skel-lm-comm (FillLEnvAp1 {e2 = e2} x) = cong (λ a -> S2 a (SkelLow e2)) (skel-ll-comm x)
-    skel-lm-comm (FillLEnvAp2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ll-comm x)
-    skel-lm-comm (FillLEnvPair1 {e2 = e2} x) = cong (λ a -> S2 a (SkelLow e2)) (skel-ll-comm x)
-    skel-lm-comm (FillLEnvPair2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ll-comm x)
+    skel-lm-comm (FillAnaEnvFun x) = cong S1 (skel-ll-comm x)
+    skel-lm-comm (FillAnaEnvProj x) = cong S1 (skel-ll-comm x)
+    skel-lm-comm (FillAnaEnvAsc x) = cong S1 (skel-ll-comm x)
+    skel-lm-comm (FillAnaEnvAp1 {e2 = e2} x) = cong (λ a -> S2 a (SkelLow e2)) (skel-ll-comm x)
+    skel-lm-comm (FillAnaEnvAp2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ll-comm x)
+    skel-lm-comm (FillAnaEnvPair1 {e2 = e2} x) = cong (λ a -> S2 a (SkelLow e2)) (skel-ll-comm x)
+    skel-lm-comm (FillAnaEnvPair2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ll-comm x)
 
     skel-ll-comm : ∀ {ε e e-in} ->
-      ε L⟦ e-in ⟧L≡ e ->
+      ε A⟦ e-in ⟧A≡ e ->
       SkelFill (SkelLow e-in) (skel-ll ε) ≡ SkelLow e
-    skel-ll-comm FillL⊙ = refl
-    skel-ll-comm (FillLEnvLowRec x) = skel-lu-comm x
+    skel-ll-comm FillA⊙ = refl
+    skel-ll-comm (FillAnaEnvAnaRec x) = skel-lu-comm x
 
   mutual 
 
     skel-uu-comm : ∀ {ε e e-in} ->
-      ε U⟦ e-in ⟧U≡ e ->
+      ε S⟦ e-in ⟧S≡ e ->
       SkelFill (SkelUp e-in) (skel-uu ε) ≡ SkelUp e
-    skel-uu-comm FillU⊙ = refl
-    skel-uu-comm (FillUEnvUpRec x) = skel-um-comm x
+    skel-uu-comm FillS⊙ = refl
+    skel-uu-comm (FillSynEnvSynRec x) = skel-um-comm x
 
     skel-um-comm : ∀ {ε e e-in} ->
-      ε U⟦ e-in ⟧M≡ e ->
+      ε S⟦ e-in ⟧C≡ e ->
       SkelFill (SkelUp e-in) (skel-um ε) ≡ SkelMid e
-    skel-um-comm (FillUEnvFun x) = cong S1 (skel-ul-comm x)
-    skel-um-comm (FillUEnvAsc x) = cong S1 (skel-ul-comm x)
-    skel-um-comm (FillUEnvProj x) = cong S1 (skel-ul-comm x)
-    skel-um-comm (FillUEnvAp1 {e2 = e2} x) = cong (λ a -> S2 a (SkelLow e2)) (skel-ul-comm x)
-    skel-um-comm (FillUEnvAp2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ul-comm x)
-    skel-um-comm (FillUEnvPair1 {e2 = e2} x) = cong (λ a -> S2 a (SkelLow e2)) (skel-ul-comm x)
-    skel-um-comm (FillUEnvPair2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ul-comm x)
+    skel-um-comm (FillSynEnvFun x) = cong S1 (skel-ul-comm x)
+    skel-um-comm (FillSynEnvAsc x) = cong S1 (skel-ul-comm x)
+    skel-um-comm (FillSynEnvProj x) = cong S1 (skel-ul-comm x)
+    skel-um-comm (FillSynEnvAp1 {e2 = e2} x) = cong (λ a -> S2 a (SkelLow e2)) (skel-ul-comm x)
+    skel-um-comm (FillSynEnvAp2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ul-comm x)
+    skel-um-comm (FillSynEnvPair1 {e2 = e2} x) = cong (λ a -> S2 a (SkelLow e2)) (skel-ul-comm x)
+    skel-um-comm (FillSynEnvPair2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ul-comm x)
 
     skel-ul-comm : ∀ {ε e e-in} ->
-      ε U⟦ e-in ⟧L≡ e ->
+      ε S⟦ e-in ⟧A≡ e ->
       SkelFill (SkelUp e-in) (skel-ul ε) ≡ SkelLow e
-    skel-ul-comm (FillUEnvLowRec x) = skel-uu-comm x
+    skel-ul-comm (FillSynEnvAnaRec x) = skel-uu-comm x
 
   mutual 
 
-    FillLEnvUp-<Up : ∀ {ε e e' e-in e-in' s} ->
-      ε L⟦ e-in' ⟧U≡ e' ->
-      ε L⟦ e-in ⟧U≡ e ->
+    FillAnaEnvSyn-<Up : ∀ {ε e e' e-in e-in' s} ->
+      ε A⟦ e-in' ⟧S≡ e' ->
+      ε A⟦ e-in ⟧S≡ e ->
       <Low s e-in' e-in ->
       <Up (SkelFill s (skel-lu ε)) e' e
-    FillLEnvUp-<Up (FillLEnvUpRec fill1) (FillLEnvUpRec fill2) lt = <Upper (FillLEnvMid-<Mid fill1 fill2 lt)
+    FillAnaEnvSyn-<Up (FillAnaEnvSynRec fill1) (FillAnaEnvSynRec fill2) lt = <Upper (FillAnaEnvCon-<Mid fill1 fill2 lt)
 
-    FillLEnvMid-<Mid : ∀ {ε e e' e-in e-in' s} ->
-      ε L⟦ e-in' ⟧M≡ e' ->
-      ε L⟦ e-in ⟧M≡ e ->
+    FillAnaEnvCon-<Mid : ∀ {ε e e' e-in e-in' s} ->
+      ε A⟦ e-in' ⟧C≡ e' ->
+      ε A⟦ e-in ⟧C≡ e ->
       <Low s e-in' e-in ->
       <Mid (SkelFill s (skel-lm ε)) e' e
-    FillLEnvMid-<Mid (FillLEnvAsc fill1) (FillLEnvAsc fill2) lt = <Asc (FillLEnvLow-<Low fill1 fill2 lt)
-    FillLEnvMid-<Mid (FillLEnvFun fill1) (FillLEnvFun fill2) lt = <Fun (FillLEnvLow-<Low fill1 fill2 lt)
-    FillLEnvMid-<Mid (FillLEnvProj fill1) (FillLEnvProj fill2) lt = <Proj (FillLEnvLow-<Low fill1 fill2 lt)
-    FillLEnvMid-<Mid (FillLEnvAp1 fill1) (FillLEnvAp1 fill2) lt = <Ap< (FillLEnvLow-<Low fill1 fill2 lt) refl
-    FillLEnvMid-<Mid (FillLEnvAp2 fill1) (FillLEnvAp2 fill2) lt = <Ap=< (FillLEnvLow-<Low fill1 fill2 lt)
-    FillLEnvMid-<Mid (FillLEnvPair1 fill1) (FillLEnvPair1 fill2) lt = <Pair< (FillLEnvLow-<Low fill1 fill2 lt) refl
-    FillLEnvMid-<Mid (FillLEnvPair2 fill1) (FillLEnvPair2 fill2) lt = <Pair=< (FillLEnvLow-<Low fill1 fill2 lt)
+    FillAnaEnvCon-<Mid (FillAnaEnvAsc fill1) (FillAnaEnvAsc fill2) lt = <Asc (FillAnaEnvAna-<Low fill1 fill2 lt)
+    FillAnaEnvCon-<Mid (FillAnaEnvFun fill1) (FillAnaEnvFun fill2) lt = <Fun (FillAnaEnvAna-<Low fill1 fill2 lt)
+    FillAnaEnvCon-<Mid (FillAnaEnvProj fill1) (FillAnaEnvProj fill2) lt = <Proj (FillAnaEnvAna-<Low fill1 fill2 lt)
+    FillAnaEnvCon-<Mid (FillAnaEnvAp1 fill1) (FillAnaEnvAp1 fill2) lt = <Ap< (FillAnaEnvAna-<Low fill1 fill2 lt) refl
+    FillAnaEnvCon-<Mid (FillAnaEnvAp2 fill1) (FillAnaEnvAp2 fill2) lt = <Ap=< (FillAnaEnvAna-<Low fill1 fill2 lt)
+    FillAnaEnvCon-<Mid (FillAnaEnvPair1 fill1) (FillAnaEnvPair1 fill2) lt = <Pair< (FillAnaEnvAna-<Low fill1 fill2 lt) refl
+    FillAnaEnvCon-<Mid (FillAnaEnvPair2 fill1) (FillAnaEnvPair2 fill2) lt = <Pair=< (FillAnaEnvAna-<Low fill1 fill2 lt)
 
-    FillLEnvLow-<Low : ∀ {ε e e' e-in e-in' s} ->
-      ε L⟦ e-in' ⟧L≡ e' ->
-      ε L⟦ e-in ⟧L≡ e ->
+    FillAnaEnvAna-<Low : ∀ {ε e e' e-in e-in' s} ->
+      ε A⟦ e-in' ⟧A≡ e' ->
+      ε A⟦ e-in ⟧A≡ e ->
       <Low s e-in' e-in ->
       <Low (SkelFill s (skel-ll ε)) e' e
-    FillLEnvLow-<Low FillL⊙ FillL⊙ lt = lt
-    FillLEnvLow-<Low (FillLEnvLowRec fill1) (FillLEnvLowRec fill2) lt = <Lower= =★-refl (FillLEnvUp-<Up fill1 fill2 lt)
+    FillAnaEnvAna-<Low FillA⊙ FillA⊙ lt = lt
+    FillAnaEnvAna-<Low (FillAnaEnvAnaRec fill1) (FillAnaEnvAnaRec fill2) lt = <Lower= =★-refl (FillAnaEnvSyn-<Up fill1 fill2 lt)
   
   mutual 
 
-    FillUEnvUp-<Up : ∀ {ε e e' e-in e-in' s} ->
-      ε U⟦ e-in' ⟧U≡ e' ->
-      ε U⟦ e-in ⟧U≡ e ->
+    FillSynEnvSyn-<Up : ∀ {ε e e' e-in e-in' s} ->
+      ε S⟦ e-in' ⟧S≡ e' ->
+      ε S⟦ e-in ⟧S≡ e ->
       <Up s e-in' e-in ->
       <Up (SkelFill s (skel-uu ε)) e' e
-    FillUEnvUp-<Up FillU⊙ FillU⊙ lt = lt
-    FillUEnvUp-<Up (FillUEnvUpRec fill1) (FillUEnvUpRec fill2) lt = <Upper (FillUEnvMid-<Mid fill1 fill2 lt)
+    FillSynEnvSyn-<Up FillS⊙ FillS⊙ lt = lt
+    FillSynEnvSyn-<Up (FillSynEnvSynRec fill1) (FillSynEnvSynRec fill2) lt = <Upper (FillSynEnvCon-<Mid fill1 fill2 lt)
 
-    FillUEnvMid-<Mid : ∀ {ε e e' e-in e-in' s} ->
-      ε U⟦ e-in' ⟧M≡ e' ->
-      ε U⟦ e-in ⟧M≡ e ->
+    FillSynEnvCon-<Mid : ∀ {ε e e' e-in e-in' s} ->
+      ε S⟦ e-in' ⟧C≡ e' ->
+      ε S⟦ e-in ⟧C≡ e ->
       <Up s e-in' e-in ->
       <Mid (SkelFill s (skel-um ε)) e' e
-    FillUEnvMid-<Mid (FillUEnvAsc fill1) (FillUEnvAsc fill2) lt = <Asc (FillUEnvLow-<Low fill1 fill2 lt)
-    FillUEnvMid-<Mid (FillUEnvFun fill1) (FillUEnvFun fill2) lt = <Fun (FillUEnvLow-<Low fill1 fill2 lt)
-    FillUEnvMid-<Mid (FillUEnvProj fill1) (FillUEnvProj fill2) lt = <Proj (FillUEnvLow-<Low fill1 fill2 lt)
-    FillUEnvMid-<Mid (FillUEnvAp1 fill1) (FillUEnvAp1 fill2) lt = <Ap< (FillUEnvLow-<Low fill1 fill2 lt) refl
-    FillUEnvMid-<Mid (FillUEnvAp2 fill1) (FillUEnvAp2 fill2) lt = <Ap=< (FillUEnvLow-<Low fill1 fill2 lt)
-    FillUEnvMid-<Mid (FillUEnvPair1 fill1) (FillUEnvPair1 fill2) lt = <Pair< (FillUEnvLow-<Low fill1 fill2 lt) refl
-    FillUEnvMid-<Mid (FillUEnvPair2 fill1) (FillUEnvPair2 fill2) lt = <Pair=< (FillUEnvLow-<Low fill1 fill2 lt)
+    FillSynEnvCon-<Mid (FillSynEnvAsc fill1) (FillSynEnvAsc fill2) lt = <Asc (FillSynEnvAna-<Low fill1 fill2 lt)
+    FillSynEnvCon-<Mid (FillSynEnvFun fill1) (FillSynEnvFun fill2) lt = <Fun (FillSynEnvAna-<Low fill1 fill2 lt)
+    FillSynEnvCon-<Mid (FillSynEnvProj fill1) (FillSynEnvProj fill2) lt = <Proj (FillSynEnvAna-<Low fill1 fill2 lt)
+    FillSynEnvCon-<Mid (FillSynEnvAp1 fill1) (FillSynEnvAp1 fill2) lt = <Ap< (FillSynEnvAna-<Low fill1 fill2 lt) refl
+    FillSynEnvCon-<Mid (FillSynEnvAp2 fill1) (FillSynEnvAp2 fill2) lt = <Ap=< (FillSynEnvAna-<Low fill1 fill2 lt)
+    FillSynEnvCon-<Mid (FillSynEnvPair1 fill1) (FillSynEnvPair1 fill2) lt = <Pair< (FillSynEnvAna-<Low fill1 fill2 lt) refl
+    FillSynEnvCon-<Mid (FillSynEnvPair2 fill1) (FillSynEnvPair2 fill2) lt = <Pair=< (FillSynEnvAna-<Low fill1 fill2 lt)
 
-    FillUEnvLow-<Low : ∀ {ε e e' e-in e-in' s} ->
-      ε U⟦ e-in' ⟧L≡ e' ->
-      ε U⟦ e-in ⟧L≡ e ->
+    FillSynEnvAna-<Low : ∀ {ε e e' e-in e-in' s} ->
+      ε S⟦ e-in' ⟧A≡ e' ->
+      ε S⟦ e-in ⟧A≡ e ->
       <Up s e-in' e-in ->
       <Low (SkelFill s (skel-ul ε)) e' e
-    FillUEnvLow-<Low (FillUEnvLowRec fill1) (FillUEnvLowRec fill2) lt = <Lower= =★-refl (FillUEnvUp-<Up fill1 fill2 lt)
+    FillSynEnvAna-<Low (FillSynEnvAnaRec fill1) (FillSynEnvAnaRec fill2) lt = <Lower= =★-refl (FillSynEnvSyn-<Up fill1 fill2 lt)
     
-  FillLEnvLow-<ExpLow : ∀ {ε e e' e-in e-in'} ->
-    ε L⟦ e-in' ⟧L≡ e' ->
-    ε L⟦ e-in ⟧L≡ e ->
-    <ExpLow e-in' e-in ->
-    <ExpLow e' e
-  FillLEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpLow< lt) = <ExpLow< lt'
+  FillAnaEnvAna-<AnaExp : ∀ {ε e e' e-in e-in'} ->
+    ε A⟦ e-in' ⟧A≡ e' ->
+    ε A⟦ e-in ⟧A≡ e ->
+    <AnaExp e-in' e-in ->
+    <AnaExp e' e
+  FillAnaEnvAna-<AnaExp {ε} {e} {e'} fill1 fill2 (<AnaExp< lt) = <AnaExp< lt'
     where 
     lt' : surface-dirties-low e' < surface-dirties-low e
     lt' 
-      rewrite FillLEnvLow-surface fill1 
-      rewrite FillLEnvLow-surface fill2 
+      rewrite FillAnaEnvAna-surface fill1 
+      rewrite FillAnaEnvAna-surface fill2 
       = +-monoʳ-< (surface-dirties-ll ε) lt
-  FillLEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpLow= eq lt) = <ExpLow= eq' fill'
+  FillAnaEnvAna-<AnaExp {ε} {e} {e'} fill1 fill2 (<AnaExp= eq lt) = <AnaExp= eq' fill'
     where 
     eq' : surface-dirties-low e' ≡ surface-dirties-low e
     eq' 
-      rewrite FillLEnvLow-surface fill1 
-      rewrite FillLEnvLow-surface fill2 
+      rewrite FillAnaEnvAna-surface fill1 
+      rewrite FillAnaEnvAna-surface fill2 
       rewrite eq
       = refl
     fill' : <Low (SkelLow e') e' e
-    fill' rewrite sym (skel-ll-comm fill1) = FillLEnvLow-<Low fill1 fill2 lt 
+    fill' rewrite sym (skel-ll-comm fill1) = FillAnaEnvAna-<Low fill1 fill2 lt 
 
-  FillUEnvLow-<ExpLow : ∀ {ε e e' e-in e-in'} ->
-    ε U⟦ e-in' ⟧L≡ e' ->
-    ε U⟦ e-in ⟧L≡ e ->
-    <ExpUp e-in' e-in ->
-    <ExpLow e' e
-  FillUEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpUp< lt) = <ExpLow< lt'
+  FillSynEnvAna-<AnaExp : ∀ {ε e e' e-in e-in'} ->
+    ε S⟦ e-in' ⟧A≡ e' ->
+    ε S⟦ e-in ⟧A≡ e ->
+    <SynExp e-in' e-in ->
+    <AnaExp e' e
+  FillSynEnvAna-<AnaExp {ε} {e} {e'} fill1 fill2 (<SynExp< lt) = <AnaExp< lt'
     where 
     lt' : surface-dirties-low e' < surface-dirties-low e
     lt' 
-      rewrite FillUEnvLow-surface fill1 
-      rewrite FillUEnvLow-surface fill2 
+      rewrite FillSynEnvAna-surface fill1 
+      rewrite FillSynEnvAna-surface fill2 
       = +-monoʳ-< (surface-dirties-ul ε) lt
-  FillUEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpUp= eq lt) = <ExpLow= eq' fill'
+  FillSynEnvAna-<AnaExp {ε} {e} {e'} fill1 fill2 (<SynExp= eq lt) = <AnaExp= eq' fill'
     where 
     eq' : surface-dirties-low e' ≡ surface-dirties-low e
     eq' 
-      rewrite FillUEnvLow-surface fill1 
-      rewrite FillUEnvLow-surface fill2 
+      rewrite FillSynEnvAna-surface fill1 
+      rewrite FillSynEnvAna-surface fill2 
       rewrite eq
       = refl
     fill' : <Low (SkelLow e') e' e 
-    fill' rewrite sym (skel-ul-comm fill1) = FillUEnvLow-<Low fill1 fill2 lt 
+    fill' rewrite sym (skel-ul-comm fill1) = FillSynEnvAna-<Low fill1 fill2 lt 
   
   StepDecreaseLow : ∀ {e e'} ->
     e L↦ e' -> 
-    <ExpLow e' e
-  StepDecreaseLow (StepLow fill1 step fill2) = FillLEnvLow-<ExpLow fill2 fill1 (StepDecreaseL step)
-  StepDecreaseLow (StepUp fill1 step fill2) = FillUEnvLow-<ExpLow fill2 fill1 (StepDecreaseU step)
+    <AnaExp e' e
+  StepDecreaseLow (StepLow fill1 step fill2) = FillAnaEnvAna-<AnaExp fill2 fill1 (StepDecreaseL step)
+  StepDecreaseLow (StepUp fill1 step fill2) = FillSynEnvAna-<AnaExp fill2 fill1 (StepDecreaseU step)
 
   StepDecrease : ∀ {p p'} ->
     p' ↤P p -> 
     <Program p' p 
   StepDecrease TopStep = <Program= refl (<Lower= =★-refl (<Upper= <★C)) 
   StepDecrease {p} {p'} (InsideStep step) with StepDecreaseLow step
-  ... | <ExpLow< lt = <Program< lt
-  ... | <ExpLow= eq lt = <Program= eq lt
+  ... | <AnaExp< lt = <Program< lt
+  ... | <AnaExp= eq lt = <Program= eq lt
   
   mutual 
 
@@ -746,7 +746,7 @@ module Core.Termination where
     
     <Up-wf-old' : 
       (s : Skeleton) ->
-      (e : ExpMid) -> 
+      (e : ConExp) -> 
       {t : Data} -> 
       ∀ {e'} ->
       (<Up s e' (e ⇒ (t , •))) -> 
@@ -755,14 +755,14 @@ module Core.Termination where
 
     <Up-wf-old : 
       (s : Skeleton) ->
-      (e : ExpMid) -> 
+      (e : ConExp) -> 
       {t : Data} -> 
       (Acc (<Up s) (e ⇒ (t , •))) 
     <Up-wf-old s e = acc (<Up-wf-old' s e)
 
     <Up-wf' : 
       (s : Skeleton) ->
-      (e : ExpUp) -> 
+      (e : SynExp) -> 
       ∀ {e'} ->
       (<Up s e' e) -> 
       (Acc (<Up s) e') 
@@ -774,7 +774,7 @@ module Core.Termination where
 
     <Mid-wf' : 
       (s : Skeleton) ->
-      (e : ExpMid) -> 
+      (e : ConExp) -> 
       ∀ {e'} ->
       (<Mid s e' e) -> 
       (Acc (<Mid s) e') 
@@ -796,7 +796,7 @@ module Core.Termination where
 
     <Low-wf' : 
       (s : Skeleton) ->
-      (e : ExpLow) -> 
+      (e : AnaExp) -> 
       ∀ {e'} ->
       (<Low s e' e) -> 
       (Acc (<Low s) e') 
@@ -808,25 +808,25 @@ module Core.Termination where
   <Program-wf'' : 
     (p : Program) -> 
     (n : ℕ) -> 
-    (n ≡ surface-dirties-low (ExpLowOfProgram p)) ->
+    (n ≡ surface-dirties-low (AnaExpOfProgram p)) ->
     Acc (_<_) n ->
     (s : Skeleton) ->
     (s ≡ SkelProgram p) ->
-    Acc (<Low s) (ExpLowOfProgram p) ->
+    Acc (<Low s) (AnaExpOfProgram p) ->
     ∀ {p'} ->
     (<Program p' p) -> 
     (Acc <Program p') 
   <Program-wf'' p n eq1 (acc rs) s eq2 ac {p'} (<Program< lt) = acc (<Program-wf'' p' _ refl (rs lt') _ refl (<Low-wf _ _))
     where 
-    lt' : surface-dirties-low (ExpLowOfProgram p') < n
+    lt' : surface-dirties-low (AnaExpOfProgram p') < n
     lt' rewrite eq1 = lt
   <Program-wf'' p n eq1 ac1 s eq2 (acc rs) {p'} (<Program= eq3 lt) = acc (<Program-wf'' p' n eq1' ac1 s eq2' (rs lt'))
     where 
-    lt' : <Low s (ExpLowOfProgram p') (ExpLowOfProgram p)
+    lt' : <Low s (AnaExpOfProgram p') (AnaExpOfProgram p)
     lt' rewrite eq2 rewrite sym (<Low-skel lt) = lt
-    eq1' : n ≡ surface-dirties-low (ExpLowOfProgram p') 
+    eq1' : n ≡ surface-dirties-low (AnaExpOfProgram p') 
     eq1' rewrite eq1 rewrite eq3 = refl
-    eq2' : s ≡ SkelLow (ExpLowOfProgram p') 
+    eq2' : s ≡ SkelLow (AnaExpOfProgram p') 
     eq2' rewrite eq2 = sym (<Low-skel lt)
 
   <Program-wf : WellFounded <Program 

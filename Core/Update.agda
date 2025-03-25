@@ -12,7 +12,7 @@ module Core.Update where
   infix 10 _l↦_ 
   infix 10 _u↦_ 
 
-  data _l↦_ : ExpLow -> ExpLow -> Set where 
+  data _l↦_ : AnaExp -> AnaExp -> Set where 
     StepSyn : ∀ {e-all t-syn t-ana m-all m-all' n-ana} ->
       t-syn ~D (■ t-ana) , m-all' ->
       (e-all ⇒ (t-syn , ★)) [ m-all ]⇐ (■ t-ana , n-ana) l↦
@@ -45,7 +45,7 @@ module Core.Update where
       (((EPair ((e-fst ⇒ (t-fst , n-fst)) [ m-fst ]⇐ ana-fst) ((e-snd ⇒ (t-snd , ★)) [ m-snd ]⇐ (□ , n-snd)) m-ana) ⇒ syn-all) [ m-all ]⇐ (ana-all , n-ana)) l↦
       (((EPair ((e-fst ⇒ (t-fst , n-fst)) [ m-fst ]⇐ ana-fst) ((e-snd ⇒ (t-snd , •)) [ ✔ ]⇐ (□ , n-snd)) m-ana) ⇒ (DUnless (DProd t-fst t-snd) ana-all , ★)) [ m-all ]⇐ (ana-all , n-ana))
 
-  data _u↦_ : ExpUp -> ExpUp -> Set where 
+  data _u↦_ : SynExp -> SynExp -> Set where 
     StepAp : ∀ {e-fun e-arg t-fun t-in-fun t-out-fun m-all m-arg m m-fun n-fun syn-all ana-fun ana-arg} ->
       t-fun ▸DTArrow t-in-fun , t-out-fun , m-fun -> 
       (EAp ((e-fun ⇒ (t-fun , ★)) [ m ]⇐ (ana-fun , n-fun)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all u↦
@@ -58,33 +58,33 @@ module Core.Update where
       (EProj s ((e-body ⇒ (t-body , ★)) [ m-body ]⇐ ana-body) m-all) ⇒ syn-all u↦
       (EProj s ((e-body ⇒ (t-body , •)) [ m-body ]⇐ ana-body) m-all-body) ⇒ (t-side-body , ★)
 
-  data _U↦_ : (e e' : ExpUp) -> Set where
+  data _U↦_ : (e e' : SynExp) -> Set where
     StepUp : ∀{ε e e' e-in e-in'} ->
-      ε U⟦ e-in ⟧U≡ e ->
+      ε S⟦ e-in ⟧S≡ e ->
       e-in u↦ e-in' ->
-      ε U⟦ e-in' ⟧U≡ e' ->
+      ε S⟦ e-in' ⟧S≡ e' ->
       e U↦ e'
     StepLow : ∀{ε e e' e-in e-in'} ->
-      ε L⟦ e-in ⟧U≡ e ->
+      ε A⟦ e-in ⟧S≡ e ->
       e-in l↦ e-in' ->
-      ε L⟦ e-in' ⟧U≡ e' ->
+      ε A⟦ e-in' ⟧S≡ e' ->
       e U↦ e'
 
-  data _L↦_ : (e e' : ExpLow) -> Set where
+  data _L↦_ : (e e' : AnaExp) -> Set where
     StepUp : ∀{ε e e' e-in e-in'} ->
-      ε U⟦ e-in ⟧L≡ e ->
+      ε S⟦ e-in ⟧A≡ e ->
       e-in u↦ e-in' ->
-      ε U⟦ e-in' ⟧L≡ e' ->
+      ε S⟦ e-in' ⟧A≡ e' ->
       e L↦ e'
     StepLow : ∀{ε e e' e-in e-in'} ->
-      ε L⟦ e-in ⟧L≡ e ->
+      ε A⟦ e-in ⟧A≡ e ->
       e-in l↦ e-in' ->
-      ε L⟦ e-in' ⟧L≡ e' ->
+      ε A⟦ e-in' ⟧A≡ e' ->
       e L↦ e'
 
   data _P↦_ : (p p' : Program) -> Set where
     InsideStep : ∀{p p'} ->
-      (ExpLowOfProgram p) L↦ (ExpLowOfProgram p') ->
+      (AnaExpOfProgram p) L↦ (AnaExpOfProgram p') ->
       p P↦ p'
     TopStep : ∀ {e t n} ->
       (Root (e ⇒ (t , ★)) n) P↦ (Root (e ⇒ (t , •)) n)
@@ -93,25 +93,25 @@ module Core.Update where
   p' ↤P p = p P↦ p'
 
   StepUpLow : ∀{ε e e' e-in e-in'} ->
-    ε U⟦ e-in ⟧L≡ e ->
+    ε S⟦ e-in ⟧A≡ e ->
     e-in U↦ e-in' ->
-    ε U⟦ e-in' ⟧L≡ e' ->
+    ε S⟦ e-in' ⟧A≡ e' ->
     e L↦ e'
   StepUpLow fill1 (StepUp fill2 step fill3) fill4 = StepUp (FillUUL fill2 fill1) step (FillUUL fill3 fill4)
   StepUpLow fill1 (StepLow fill2 step fill3) fill4 = StepLow (FillLUL fill2 fill1) step (FillLUL fill3 fill4)
 
   StepLowLow : ∀{ε e e' e-in e-in'} ->
-    ε L⟦ e-in ⟧L≡ e ->
+    ε A⟦ e-in ⟧A≡ e ->
     e-in L↦ e-in' ->
-    ε L⟦ e-in' ⟧L≡ e' ->
+    ε A⟦ e-in' ⟧A≡ e' ->
     e L↦ e'
   StepLowLow fill1 (StepUp fill2 step fill3) fill4 = StepUp (FillULL fill2 fill1) step (FillULL fill3 fill4)
   StepLowLow fill1 (StepLow fill2 step fill3) fill4 = StepLow (FillLLL fill2 fill1) step (FillLLL fill3 fill4)
 
   StepLowUp : ∀{ε e e' e-in e-in'} ->
-    ε L⟦ e-in ⟧U≡ e ->
+    ε A⟦ e-in ⟧S≡ e ->
     e-in L↦ e-in' ->
-    ε L⟦ e-in' ⟧U≡ e' ->
+    ε A⟦ e-in' ⟧S≡ e' ->
     e U↦ e'
   StepLowUp fill1 (StepUp fill2 step fill3) fill4 = StepUp (FillULU fill2 fill1) step (FillULU fill3 fill4)
   StepLowUp fill1 (StepLow fill2 step fill3) fill4 = StepLow (FillLLU fill2 fill1) step (FillLLU fill3 fill4)

@@ -109,7 +109,7 @@ module Core.Actions where
     AB*StepDone : ∀{e} ->
       [] , e AB↦* e
 
-  data _⊢_,_αU↦_ : Ctx -> Action -> ExpUp -> ExpUp -> Set where 
+  data _⊢_,_αU↦_ : Ctx -> Action -> SynExp -> SynExp -> Set where 
     ActInsertConst : ∀ {Γ syn} ->
       Γ ⊢ InsertConst , (EHole ⇒ syn) αU↦ (EConst ⇒ (■ TBase , ★))
     ActWrapFun : ∀ {Γ e t n} ->
@@ -159,19 +159,19 @@ module Core.Actions where
       VariableUpdate x ann ✔ e (e' ⇒ (t' , n')) ->
       Γ ⊢ InsertBinder x , ((EFun BHole (ann , n-ann) m1 m2 (e [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun (BVar x) (ann , n-ann) m1 m2 ((e' ⇒ (t' , ★)) [ m ]⇐ ana)) ⇒ syn)
 
-  data _⊢_,_αL↦_ : Ctx -> Action -> ExpLow -> ExpLow -> Set where 
+  data _⊢_,_αL↦_ : Ctx -> Action -> AnaExp -> AnaExp -> Set where 
     ALC : ∀ {Γ α e e' m t n} ->
         Γ ⊢ α , e  αU↦ e' ->
         Γ ⊢ α , e [ m ]⇐ (t , n) αL↦ (e' [ m ]⇐ (t , ★))
 
   mutual 
 
-    data _⊢_,_AU↦_ : (Γ : Ctx) -> (α : LocalizedAction) -> (e : ExpUp) -> (e' : ExpUp) -> Set where
+    data _⊢_,_AU↦_ : (Γ : Ctx) -> (α : LocalizedAction) -> (e : SynExp) -> (e' : SynExp) -> Set where
       AUpMid : ∀ {Γ α e e' syn} ->
         Γ ⊢ α , e  AM↦ e' ->
         Γ ⊢ α , (e ⇒ syn) AU↦ (e' ⇒ syn) 
 
-    data _⊢_,_AM↦_ : (Γ : Ctx) -> (α : LocalizedAction) -> (e : ExpMid) -> (e' : ExpMid) -> Set where 
+    data _⊢_,_AM↦_ : (Γ : Ctx) -> (α : LocalizedAction) -> (e : ConExp) -> (e' : ConExp) -> Set where 
       AMidAsc : ∀ {Γ α l e e' a1} ->
         Γ ⊢ (α , l) , e AL↦ e' ->
         Γ ⊢ (α , One ∷ l) , (EAsc a1 e) AM↦ (EAsc a1 e')
@@ -194,7 +194,7 @@ module Core.Actions where
         Γ ⊢ (α , l) , e AL↦ e' ->
         Γ ⊢ (α , One ∷ l) , (EProj s e m) AM↦ (EProj s e' m)
 
-    data _⊢_,_AL↦_ : (Γ : Ctx) -> (α : LocalizedAction) -> (e : ExpLow) -> (e' : ExpLow) -> Set where
+    data _⊢_,_AL↦_ : (Γ : Ctx) -> (α : LocalizedAction) -> (e : AnaExp) -> (e' : AnaExp) -> Set where
       ALowDone : ∀ {Γ α e e'} ->
         Γ ⊢ α , e αL↦ e' ->
         Γ ⊢ (α , []) , e AL↦ e'
@@ -204,6 +204,6 @@ module Core.Actions where
 
   data _,_AP↦_ : (α : LocalizedAction) -> (p p' : Program) -> Set where
     AStepProgram : ∀{α p p'} ->
-      ∅ ⊢ α , (ExpLowOfProgram p) AL↦ (ExpLowOfProgram p') ->
+      ∅ ⊢ α , (AnaExpOfProgram p) AL↦ (AnaExpOfProgram p') ->
       α , p AP↦ p'
 

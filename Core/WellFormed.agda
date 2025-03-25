@@ -131,13 +131,13 @@ module Core.WellFormed where
 
   mutual 
 
-    data _U⊢_ : (Γ : Ctx) (e : ExpUp) -> Set where 
+    data _S⊢_ : (Γ : Ctx) (e : SynExp) -> Set where 
       WFConst : ∀ {Γ syn-all} ->
         ▷ (■ TBase , •) syn-all ->
-        Γ U⊢ (EConst ⇒ syn-all)
+        Γ S⊢ (EConst ⇒ syn-all)
       WFHole : ∀ {Γ syn-all} ->
         ▷ (■ THole , •) syn-all ->
-        Γ U⊢ (EHole ⇒ syn-all)
+        Γ S⊢ (EHole ⇒ syn-all)
       WFAp : ∀ {Γ e-fun e-arg syn-all syn-fun ana-arg t-in-fun t-out-fun m-all m-fun m-arg n} ->
         syn-fun ▸NTArrow t-in-fun , t-out-fun , m-fun -> 
         ▷ t-out-fun syn-all -> 
@@ -145,29 +145,29 @@ module Core.WellFormed where
         ▶ m-fun m-all -> 
         Γ L⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) ->
         Γ L⊢ (e-arg [ m-arg ]⇐ ana-arg) ->
-        Γ U⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all)
+        Γ S⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all)
       WFVar : ∀ {Γ x syn-all t-var m-var n-syn} ->
         x , t-var ∈N Γ , m-var ->
         ▷ t-var (syn-all , n-syn) ->
-        Γ U⊢ ((EVar x m-var) ⇒ (■ syn-all , n-syn))
+        Γ S⊢ ((EVar x m-var) ⇒ (■ syn-all , n-syn))
       WFAsc : ∀ {Γ e-body syn-all ana-body t-asc m-body n-syn n-ana} ->
         ▷ t-asc (syn-all , n-syn) -> 
         ▷ t-asc (ana-body , n-ana) -> 
         Γ L⊢ (e-body [ m-body ]⇐ (■ ana-body , n-ana)) ->
-        Γ U⊢ ((EAsc t-asc (e-body [ m-body ]⇐ (■ ana-body , n-ana))) ⇒ (■ syn-all , n-syn))
+        Γ S⊢ ((EAsc t-asc (e-body [ m-body ]⇐ (■ ana-body , n-ana))) ⇒ (■ syn-all , n-syn))
       WFProj : ∀ {Γ s e-body syn-body syn-all t-side-body m-body m-all n} ->
         syn-body , s ▸NTProj t-side-body , m-body -> 
         ▷ t-side-body syn-all -> 
         ▶ m-body m-all -> 
         Γ L⊢ ((e-body ⇒ syn-body) [ ✔ ]⇐ (□ , n)) ->
-        Γ U⊢ ((EProj s ((e-body ⇒ syn-body) [ ✔ ]⇐ (□ , n)) m-all) ⇒ syn-all)
+        Γ S⊢ ((EProj s ((e-body ⇒ syn-body) [ ✔ ]⇐ (□ , n)) m-all) ⇒ syn-all)
 
-    data _L⊢_ : (Γ : Ctx) (e : ExpLow) -> Set where 
+    data _L⊢_ : (Γ : Ctx) (e : AnaExp) -> Set where 
       WFSubsume : ∀ {Γ e-all syn-all ana-all m-all m-consist} ->
         SubsumableMid e-all ->
         syn-all ~N ana-all , m-consist ->
         ▶ m-consist m-all ->
-        Γ U⊢ (e-all ⇒ syn-all) -> 
+        Γ S⊢ (e-all ⇒ syn-all) -> 
         Γ L⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all)
       WFFun : ∀ {Γ x e-body syn-all syn-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana m-all-ana} ->
         ana-all ▸NTArrow t-in-ana , t-out-ana , m-ana-ana -> 
@@ -194,5 +194,5 @@ module Core.WellFormed where
       
   data P⊢ : Program -> Set where 
     WFProgram : ∀ {p} ->
-      ∅ L⊢ (ExpLowOfProgram p) ->
+      ∅ L⊢ (AnaExpOfProgram p) ->
       P⊢ p

@@ -12,7 +12,7 @@ open import Prelude
 open import Core.Core
 open import Core.Marking
 open import Core.WellFormed
-open import Core.Validity
+open import Core.QuiescentValidity
 open import Core.Update
 open import Core.Actions
 open import Core.UpdatePreservation renaming (PreservationProgram to UpdatePreservationProgram)
@@ -63,7 +63,7 @@ module Core.Main where
   main-theorem-valid wt (AP*StepUpdate step steps) = main-theorem-valid (UpdatePreservationProgram wt step) steps
   main-theorem-valid {p} wt (AP*StepDone nostep) with ProgressProgram wt
   ... | Inl step = ⊥-elim (nostep step)
-  ... | Inr settled = validity wt settled
+  ... | Inr settled = quiescent-validity wt settled
 
   main-theorem-convergent : ∀ {As p p' p''} ->
     P⊢ p ->

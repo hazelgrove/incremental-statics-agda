@@ -8,10 +8,10 @@ module Core.Marking where
 
   mutual 
 
-    U◇ : ExpUp -> BareExp
+    U◇ : SynExp -> BareExp
     U◇ (e ⇒ syn) = M◇ e
 
-    M◇ : ExpMid -> BareExp 
+    M◇ : ConExp -> BareExp 
     M◇ EConst = BareEConst
     M◇ EHole = BareEHole
     M◇ (EVar x m) = (BareEVar x)
@@ -21,11 +21,11 @@ module Core.Marking where
     M◇ (EPair e1 e2 m) = (BareEPair (L◇ e1) (L◇ e2))
     M◇ (EProj s e m) = (BareEProj s (L◇ e))
     
-    L◇ : ExpLow -> BareExp
+    L◇ : AnaExp -> BareExp
     L◇ (e [ m ]⇐ ana) = U◇ e
 
   P◇ : Program -> BareExp
-  P◇ p = L◇ (ExpLowOfProgram p) 
+  P◇ p = L◇ (AnaExpOfProgram p) 
 
   Γ◇ : Ctx -> BareCtx 
   Γ◇ ∅ = ∅
@@ -33,7 +33,7 @@ module Core.Marking where
 
   mutual 
 
-    data _⊢_~>_⇒_ : (Γ : BareCtx) (b : BareExp) (e : ExpUp) (t : Type) → Set where 
+    data _⊢_~>_⇒_ : (Γ : BareCtx) (b : BareExp) (e : SynExp) (t : Type) → Set where 
       MarkConst : ∀ {Γ} →
         Γ ⊢ BareEConst ~> (EConst ⇒ ((■ TBase , •))) ⇒ TBase
       MarkHole : ∀ {Γ} →
@@ -61,7 +61,7 @@ module Core.Marking where
         t , s ▸TProj t-side , m ->
         Γ ⊢ (BareEProj s b) ~> ((EProj s (e [ ✔ ]⇐ (□ , •)) m) ⇒ ((■ t-side , •))) ⇒ t-side
 
-    data _⊢_~>_⇐_ : (Γ : BareCtx) (b : BareExp) (e : ExpLow) (t : Type) → Set where  
+    data _⊢_~>_⇐_ : (Γ : BareCtx) (b : BareExp) (e : AnaExp) (t : Type) → Set where  
       MarkSubsume : ∀ {Γ b-all e-all t-syn t-ana m-all} ->
         Γ ⊢ b-all ~> e-all ⇒ t-syn ->
         BareSubsumable b-all ->
