@@ -4,8 +4,8 @@ open import Data.Product hiding (map)
 
 open import Prelude
 open import Core.Core
-open import Core.WellTyped
-open import Core.VarsSynthesize
+open import Core.WellFormed
+open import Core.VariableUpdate
 open import Core.Actions
 
 module Core.ActionCompleteness where

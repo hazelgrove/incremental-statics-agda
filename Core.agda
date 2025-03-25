@@ -5,25 +5,25 @@ module Core where
   import Core.Environment
 
   import Core.Marking
-  import Core.WellTyped
+  import Core.WellFormed
   
   import Core.Settled
   import Core.Validity
   
   import Core.Lemmas
   
-  import Core.VarsSynthesize
+  import Core.VariableUpdate
   import Core.Update
   import Core.Actions
 
-  import Core.VarsSynthesizePreservation
+  import Core.VariableUpdatePreservation
   import Core.UpdatePreservation
   import Core.ActionPreservation
 
   import Core.MarkingUnicity
   import Core.ActionUnicity
 
-  import Core.VarsSynthesizeErasure
+  import Core.VariableUpdateErasure
   import Core.UpdateErasure
   import Core.ActionErasure
 

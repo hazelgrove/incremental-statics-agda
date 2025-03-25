@@ -11,7 +11,7 @@ open import Induction.WellFounded
 open import Prelude
 open import Core.Core
 open import Core.Marking
-open import Core.WellTyped
+open import Core.WellFormed
 open import Core.Validity
 open import Core.Update
 open import Core.Actions
@@ -87,9 +87,9 @@ module Core.Main where
     helper p (acc ac) steps = helper (λ n -> (p (suc n))) (ac (steps 0)) λ n -> (steps (suc n))
     
   InitProgram : Program 
-  InitProgram = Root (EHole ⇒ (■ THole , Old)) Old
+  InitProgram = Root (EHole ⇒ (■ THole , •)) •
  
-  InitWellTyped : P⊢ InitProgram 
-  InitWellTyped = WTProgram (WTUp SubsumableHole (~N-pair ~DVoidR) ▶Old (WTHole (▷Pair ▶Old)))
+  InitWellFormed : P⊢ InitProgram 
+  InitWellFormed = WFProgram (WFSubsume SubsumableHole (~N-pair ~DVoidR) ▶• (WFHole (▷Pair ▶•)))
 
     

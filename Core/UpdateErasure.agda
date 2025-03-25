@@ -6,7 +6,7 @@ open import Core.Core
 open import Core.Marking
 open import Core.Environment
 open import Core.Update
-open import Core.VarsSynthesizeErasure
+open import Core.VariableUpdateErasure
 
 module Core.UpdateErasure where
 
@@ -20,15 +20,15 @@ module Core.UpdateErasure where
   l↦-erase : ∀ {e e'} ->
     (e l↦ e') ->
     (L◇ e) ≡ (L◇ e')
-  l↦-erase (StepSynConsist _) = refl
-  l↦-erase (StepAnaConsist _ _) = refl
+  l↦-erase (StepSyn _) = refl
+  l↦-erase (StepAna _ _) = refl
   l↦-erase (StepAnaFun _ _) = refl
   l↦-erase StepSynFun = refl
   l↦-erase (StepAnaPair _) = refl
   l↦-erase StepSynPairFst = refl
   l↦-erase StepSynPairSnd = refl
-  l↦-erase (StepAnnFun vars-syn) 
-    rewrite vars-syn?-erase vars-syn = refl
+  l↦-erase (StepAnnFun var-update) 
+    rewrite var-update?-erase var-update = refl
 
   mutual 
 

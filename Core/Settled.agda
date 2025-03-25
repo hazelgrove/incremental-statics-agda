@@ -11,7 +11,7 @@ mutual
   data _U̸↦ : ExpUp -> Set where 
     SettledUp : ∀ {e t} ->
       e M̸↦ -> 
-      (e ⇒ (t , Old)) U̸↦
+      (e ⇒ (t , •)) U̸↦
 
   data _M̸↦ : ExpMid -> Set where 
     SettledConst :
@@ -20,7 +20,7 @@ mutual
       EHole M̸↦
     SettledFun : ∀ {x t e m1 m2} ->
       e L̸↦ ->
-      ((EFun x (t , Old) m1 m2 e)) M̸↦
+      ((EFun x (t , •) m1 m2 e)) M̸↦
     SettledAp : ∀ {m e1 e2} ->
       e1 L̸↦ -> 
       e2 L̸↦ -> 
@@ -29,7 +29,7 @@ mutual
       (EVar x m) M̸↦
     SettledAsc : ∀ {t e} ->
       e L̸↦ -> 
-      (EAsc (t , Old) e) M̸↦
+      (EAsc (t , •) e) M̸↦
     SettledPair : ∀ {m e1 e2} ->
       e1 L̸↦ -> 
       e2 L̸↦ -> 
@@ -41,7 +41,7 @@ mutual
   data _L̸↦ : ExpLow -> Set where 
     SettledLow : ∀ {t e m} ->
       e U̸↦ ->
-      (e [ m ]⇐ (t , Old)) L̸↦
+      (e [ m ]⇐ (t , •)) L̸↦
 
 data _almost-U̸↦ : ExpUp -> Set where 
   AlmostSettledUp : ∀ {n e t} ->
@@ -51,7 +51,7 @@ data _almost-U̸↦ : ExpUp -> Set where
 data _almost-L̸↦ : ExpLow -> Set where 
   AlmostSettledLow : ∀ {t e m} ->
     e almost-U̸↦ ->
-    (e [ m ]⇐ (t , Old)) almost-L̸↦
+    (e [ m ]⇐ (t , •)) almost-L̸↦
 
 data _P̸↦ : Program -> Set where 
   SettledProgram : ∀ {p} ->

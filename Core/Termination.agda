@@ -8,46 +8,46 @@ open import Induction.WellFounded
 open import Prelude
 open import Core.Core
 open import Core.Environment
-open import Core.VarsSynthesize
+open import Core.VariableUpdate
 open import Core.Update
 
 module Core.Termination where
 
-  new-number : Newness -> ℕ 
-  new-number Old = 0
-  new-number New = 1
+  new-number : Dirtiness -> ℕ 
+  new-number • = 0
+  new-number ★ = 1
 
   mutual 
     
-    surface-news-up : ExpUp -> ℕ
-    surface-news-up (e ⇒ _) = surface-news-mid e
+    surface-dirties-up : ExpUp -> ℕ
+    surface-dirties-up (e ⇒ _) = surface-dirties-mid e
 
-    surface-news-mid : ExpMid -> ℕ
-    surface-news-mid (EConst) = 0
-    surface-news-mid (EHole) = 0
-    surface-news-mid (EVar _ _) = 0
-    surface-news-mid (EAsc (_ , n-asc) e-body) = (new-number n-asc) + surface-news-low e-body
-    surface-news-mid (EFun _ (_ , n-ann) _ _ e-body) = (new-number n-ann) + surface-news-low e-body
-    surface-news-mid (EAp e-fun _ e-arg) = surface-news-low e-fun + surface-news-low e-arg
-    surface-news-mid (EPair e-fst e-snd _) = surface-news-low e-fst + surface-news-low e-snd
-    surface-news-mid (EProj _ e _) = surface-news-low e
+    surface-dirties-mid : ExpMid -> ℕ
+    surface-dirties-mid (EConst) = 0
+    surface-dirties-mid (EHole) = 0
+    surface-dirties-mid (EVar _ _) = 0
+    surface-dirties-mid (EAsc (_ , n-asc) e-body) = (new-number n-asc) + surface-dirties-low e-body
+    surface-dirties-mid (EFun _ (_ , n-ann) _ _ e-body) = (new-number n-ann) + surface-dirties-low e-body
+    surface-dirties-mid (EAp e-fun _ e-arg) = surface-dirties-low e-fun + surface-dirties-low e-arg
+    surface-dirties-mid (EPair e-fst e-snd _) = surface-dirties-low e-fst + surface-dirties-low e-snd
+    surface-dirties-mid (EProj _ e _) = surface-dirties-low e
 
-    surface-news-low : ExpLow -> ℕ
-    surface-news-low (e [ _ ]⇐ _) = surface-news-up e
+    surface-dirties-low : ExpLow -> ℕ
+    surface-dirties-low (e [ _ ]⇐ _) = surface-dirties-up e
 
-  data =New : NewData -> NewData -> Set where 
-    =NewOld : ∀ {t1 t2} ->
-      =New (t1 , Old) (t2 , Old)
-    =NewNew : ∀ {t1 t2} ->
-      =New (t1 , New) (t2 , New)
+  data =★ : ○Data -> ○Data -> Set where 
+    =★• : ∀ {t1 t2} ->
+      =★ (t1 , •) (t2 , •)
+    =★★ : ∀ {t1 t2} ->
+      =★ (t1 , ★) (t2 , ★)
 
-  =New-refl : ∀ {n} -> =New n n 
-  =New-refl {_ , Old} = =NewOld
-  =New-refl {_ , New} = =NewNew
+  =★-refl : ∀ {n} -> =★ n n 
+  =★-refl {_ , •} = =★•
+  =★-refl {_ , ★} = =★★
 
-  data <New : NewData -> NewData -> Set where 
-    <NewC : ∀ {t1 t2} ->
-      <New (t1 , Old) (t2 , New)
+  data <★ : ○Data -> ○Data -> Set where 
+    <★C : ∀ {t1 t2} ->
+      <★ (t1 , •) (t2 , ★)
 
   data Skeleton : Set where 
     S0 : Skeleton 
@@ -82,7 +82,7 @@ module Core.Termination where
         <Mid s e1 e2 ->  
         <Up s (e1 ⇒ syn1) (e2 ⇒ syn2)
       <Upper= : ∀ {e syn1 syn2} ->
-        <New syn1 syn2 ->  
+        <★ syn1 syn2 ->  
         <Up (SkelMid e) (e ⇒ syn1) (e ⇒ syn2)
       
     data <Mid : Skeleton -> ExpMid -> ExpMid -> Set where 
@@ -112,38 +112,38 @@ module Core.Termination where
 
     data <Low : Skeleton -> ExpLow -> ExpLow -> Set where 
       <Lower : ∀ {e1 e2 a1 a2 ana1 ana2} ->
-        <New ana1 ana2 ->  
+        <★ ana1 ana2 ->  
         (SkelUp e1) ≡ (SkelUp e2) ->
         <Low (SkelUp e1) (e1 [ a1 ]⇐ ana1) (e2 [ a2 ]⇐ ana2)
       <Lower= : ∀ {s e1 e2 a1 a2 ana1 ana2} ->
-        =New ana1 ana2 ->  
+        =★ ana1 ana2 ->  
         <Up s e1 e2 ->
         <Low s (e1 [ a1 ]⇐ ana1) (e2 [ a2 ]⇐ ana2)
 
   data <Program : Program -> Program -> Set where 
     <Program< : ∀ {p p'} ->
-      surface-news-low (ExpLowOfProgram p) < surface-news-low (ExpLowOfProgram p') -> 
+      surface-dirties-low (ExpLowOfProgram p) < surface-dirties-low (ExpLowOfProgram p') -> 
       <Program p p'
     <Program= : ∀ {p p'} ->
-      surface-news-low (ExpLowOfProgram p) ≡ surface-news-low (ExpLowOfProgram p') -> 
+      surface-dirties-low (ExpLowOfProgram p) ≡ surface-dirties-low (ExpLowOfProgram p') -> 
       <Low (SkelProgram p) (ExpLowOfProgram p) (ExpLowOfProgram p') ->
       <Program p p'
 
   data <ExpUp : ExpUp -> ExpUp -> Set where 
     <ExpUp< : ∀ {e e'} ->
-      surface-news-up e < surface-news-up e' -> 
+      surface-dirties-up e < surface-dirties-up e' -> 
       <ExpUp e e'
     <ExpUp= : ∀ {e e'} ->
-      surface-news-up e ≡ surface-news-up e' -> 
+      surface-dirties-up e ≡ surface-dirties-up e' -> 
       <Up (SkelUp e) e e' ->
       <ExpUp e e'
 
   data <ExpLow : ExpLow -> ExpLow -> Set where 
     <ExpLow< : ∀ {e e'} ->
-      surface-news-low e < surface-news-low e' -> 
+      surface-dirties-low e < surface-dirties-low e' -> 
       <ExpLow e e'
     <ExpLow= : ∀ {e e'} ->
-      surface-news-low e ≡ surface-news-low e' -> 
+      surface-dirties-low e ≡ surface-dirties-low e' -> 
       <Low (SkelLow e) e e' ->
       <ExpLow e e'
 
@@ -172,177 +172,177 @@ module Core.Termination where
     <Low-skel (<Lower _ eq) = eq
     <Low-skel (<Lower= _ lt) = <Up-skel lt
 
-  vars-syn-preserves-surface-news : ∀{x t m e e'} ->
-    VarsSynthesize x t m e e' ->
-    surface-news-up e ≡ surface-news-up e'
-  vars-syn-preserves-surface-news VSConst = refl
-  vars-syn-preserves-surface-news VSHole = refl
-  vars-syn-preserves-surface-news VSVarEq = refl
-  vars-syn-preserves-surface-news (VSVarNeq _) = refl
-  vars-syn-preserves-surface-news VSFunEq = refl
-  vars-syn-preserves-surface-news (VSFunNeq _ vars-syn) 
-    rewrite vars-syn-preserves-surface-news vars-syn = refl
-  vars-syn-preserves-surface-news (VSAsc vars-syn) 
-    rewrite vars-syn-preserves-surface-news vars-syn = refl
-  vars-syn-preserves-surface-news (VSProj vars-syn) 
-    rewrite vars-syn-preserves-surface-news vars-syn = refl
-  vars-syn-preserves-surface-news (VSAp vars-syn1 vars-syn2) 
-    rewrite vars-syn-preserves-surface-news vars-syn1
-    rewrite vars-syn-preserves-surface-news vars-syn2 = refl
-  vars-syn-preserves-surface-news (VSPair vars-syn1 vars-syn2) 
-    rewrite vars-syn-preserves-surface-news vars-syn1
-    rewrite vars-syn-preserves-surface-news vars-syn2 = refl
+  var-update-preserves-surface-dirties : ∀{x t m e e'} ->
+    VariableUpdate x t m e e' ->
+    surface-dirties-up e ≡ surface-dirties-up e'
+  var-update-preserves-surface-dirties VSConst = refl
+  var-update-preserves-surface-dirties VSHole = refl
+  var-update-preserves-surface-dirties VSVarEq = refl
+  var-update-preserves-surface-dirties (VSVarNeq _) = refl
+  var-update-preserves-surface-dirties VSFunEq = refl
+  var-update-preserves-surface-dirties (VSFunNeq _ var-update) 
+    rewrite var-update-preserves-surface-dirties var-update = refl
+  var-update-preserves-surface-dirties (VSAsc var-update) 
+    rewrite var-update-preserves-surface-dirties var-update = refl
+  var-update-preserves-surface-dirties (VSProj var-update) 
+    rewrite var-update-preserves-surface-dirties var-update = refl
+  var-update-preserves-surface-dirties (VSAp var-update1 var-update2) 
+    rewrite var-update-preserves-surface-dirties var-update1
+    rewrite var-update-preserves-surface-dirties var-update2 = refl
+  var-update-preserves-surface-dirties (VSPair var-update1 var-update2) 
+    rewrite var-update-preserves-surface-dirties var-update1
+    rewrite var-update-preserves-surface-dirties var-update2 = refl
 
-  vars-syn?-preserves-surface-news : ∀{x t m e e'} ->
-    VarsSynthesize? x t m e e' ->
-    surface-news-up e ≡ surface-news-up e'
-  vars-syn?-preserves-surface-news {BHole} refl = refl
-  vars-syn?-preserves-surface-news {BVar x} = vars-syn-preserves-surface-news
+  var-update?-preserves-surface-dirties : ∀{x t m e e'} ->
+    VariableUpdate? x t m e e' ->
+    surface-dirties-up e ≡ surface-dirties-up e'
+  var-update?-preserves-surface-dirties {BHole} refl = refl
+  var-update?-preserves-surface-dirties {BVar x} = var-update-preserves-surface-dirties
 
   StepDecreaseU : ∀ {e e'} ->
     e u↦ e' -> 
     <ExpUp e' e
   StepDecreaseU StepAsc = <ExpUp< (n<1+n _)
-  StepDecreaseU (StepAp x) = <ExpUp= refl (<Upper (<Ap< (<Lower= =New-refl (<Upper= <NewC)) refl))
-  StepDecreaseU (StepProj x) = <ExpUp= refl (<Upper (<Proj (<Lower= =New-refl (<Upper= <NewC))))
+  StepDecreaseU (StepAp x) = <ExpUp= refl (<Upper (<Ap< (<Lower= =★-refl (<Upper= <★C)) refl))
+  StepDecreaseU (StepProj x) = <ExpUp= refl (<Upper (<Proj (<Lower= =★-refl (<Upper= <★C))))
 
   StepDecreaseL : ∀ {e e'} ->
     e l↦ e' -> 
     <ExpLow e' e
-  StepDecreaseL (StepAnnFun {e-body = e ⇒ _} {e-body' = e' ⇒ _} vars-syn) = <ExpLow< helper
+  StepDecreaseL (StepAnnFun {e-body = e ⇒ _} {e-body' = e' ⇒ _} var-update) = <ExpLow< helper
     where 
-    helper : surface-news-mid e' < suc (surface-news-mid e)
-    helper rewrite (vars-syn?-preserves-surface-news vars-syn) = ≤-refl
-  StepDecreaseL (StepSynConsist x) = <ExpLow= refl (<Lower= =New-refl (<Upper= <NewC))
-  StepDecreaseL (StepAnaConsist x x₁) = <ExpLow= refl (<Lower <NewC refl)
-  StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <NewC refl)
-  StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =New-refl (<Upper (<Fun (<Lower= =New-refl (<Upper= <NewC)))))
-  StepDecreaseL (StepAnaPair x) = <ExpLow= refl (<Lower <NewC refl)
-  StepDecreaseL StepSynPairFst = <ExpLow= refl (<Lower= =New-refl (<Upper (<Pair< (<Lower= =New-refl (<Upper= <NewC)) refl)))
-  StepDecreaseL StepSynPairSnd = <ExpLow= refl (<Lower= =New-refl (<Upper (<Pair=< (<Lower= =New-refl (<Upper= <NewC)))))
+    helper : surface-dirties-mid e' < suc (surface-dirties-mid e)
+    helper rewrite (var-update?-preserves-surface-dirties var-update) = ≤-refl
+  StepDecreaseL (StepSyn x) = <ExpLow= refl (<Lower= =★-refl (<Upper= <★C))
+  StepDecreaseL (StepAna x x₁) = <ExpLow= refl (<Lower <★C refl)
+  StepDecreaseL (StepAnaFun x x₁) = <ExpLow= refl (<Lower <★C refl)
+  StepDecreaseL StepSynFun = <ExpLow= refl (<Lower= =★-refl (<Upper (<Fun (<Lower= =★-refl (<Upper= <★C)))))
+  StepDecreaseL (StepAnaPair x) = <ExpLow= refl (<Lower <★C refl)
+  StepDecreaseL StepSynPairFst = <ExpLow= refl (<Lower= =★-refl (<Upper (<Pair< (<Lower= =★-refl (<Upper= <★C)) refl)))
+  StepDecreaseL StepSynPairSnd = <ExpLow= refl (<Lower= =★-refl (<Upper (<Pair=< (<Lower= =★-refl (<Upper= <★C)))))
 
   mutual 
     
-    surface-news-uu : UEnvUp -> ℕ
-    surface-news-uu U⊙ = 0
-    surface-news-uu (UEnvUpRec ε _) = surface-news-um ε
+    surface-dirties-uu : UEnvUp -> ℕ
+    surface-dirties-uu U⊙ = 0
+    surface-dirties-uu (UEnvUpRec ε _) = surface-dirties-um ε
 
-    surface-news-um : UEnvMid -> ℕ
-    surface-news-um (UEnvAsc (_ , n-asc) ε) = (new-number n-asc) + surface-news-ul ε
-    surface-news-um (UEnvFun _ (_ , n-ann) _ _ ε) = (new-number n-ann) + surface-news-ul ε
-    surface-news-um (UEnvProj _ ε _) = surface-news-ul ε
-    surface-news-um (UEnvAp1 ε _ e-arg) = surface-news-ul ε + surface-news-low e-arg
-    surface-news-um (UEnvAp2 e-fun _ ε) = surface-news-low e-fun + surface-news-ul ε
-    surface-news-um (UEnvPair1 ε e-snd _) = surface-news-ul ε + surface-news-low e-snd
-    surface-news-um (UEnvPair2 e-fst ε _) = surface-news-low e-fst + surface-news-ul ε
+    surface-dirties-um : UEnvMid -> ℕ
+    surface-dirties-um (UEnvAsc (_ , n-asc) ε) = (new-number n-asc) + surface-dirties-ul ε
+    surface-dirties-um (UEnvFun _ (_ , n-ann) _ _ ε) = (new-number n-ann) + surface-dirties-ul ε
+    surface-dirties-um (UEnvProj _ ε _) = surface-dirties-ul ε
+    surface-dirties-um (UEnvAp1 ε _ e-arg) = surface-dirties-ul ε + surface-dirties-low e-arg
+    surface-dirties-um (UEnvAp2 e-fun _ ε) = surface-dirties-low e-fun + surface-dirties-ul ε
+    surface-dirties-um (UEnvPair1 ε e-snd _) = surface-dirties-ul ε + surface-dirties-low e-snd
+    surface-dirties-um (UEnvPair2 e-fst ε _) = surface-dirties-low e-fst + surface-dirties-ul ε
 
-    surface-news-ul : UEnvLow -> ℕ
-    surface-news-ul (UEnvLowRec ε _ _) = surface-news-uu ε
+    surface-dirties-ul : UEnvLow -> ℕ
+    surface-dirties-ul (UEnvLowRec ε _ _) = surface-dirties-uu ε
 
   mutual
 
-    surface-news-lu : LEnvUp -> ℕ
-    surface-news-lu (LEnvUpRec ε _) = surface-news-lm ε
+    surface-dirties-lu : LEnvUp -> ℕ
+    surface-dirties-lu (LEnvUpRec ε _) = surface-dirties-lm ε
 
-    surface-news-lm : LEnvMid -> ℕ
-    surface-news-lm (LEnvAsc (_ , n-asc) ε) = (new-number n-asc) + surface-news-ll ε
-    surface-news-lm (LEnvFun _ (_ , n-ann) _ _ ε) = (new-number n-ann) + surface-news-ll ε
-    surface-news-lm (LEnvProj _ ε _) = surface-news-ll ε
-    surface-news-lm (LEnvAp1 ε _ e-arg) = surface-news-ll ε + surface-news-low e-arg
-    surface-news-lm (LEnvAp2 e-fun _ ε) = surface-news-low e-fun + surface-news-ll ε
-    surface-news-lm (LEnvPair1 ε e-snd _) = surface-news-ll ε + surface-news-low e-snd
-    surface-news-lm (LEnvPair2 e-fst ε _) = surface-news-low e-fst + surface-news-ll ε
+    surface-dirties-lm : LEnvMid -> ℕ
+    surface-dirties-lm (LEnvAsc (_ , n-asc) ε) = (new-number n-asc) + surface-dirties-ll ε
+    surface-dirties-lm (LEnvFun _ (_ , n-ann) _ _ ε) = (new-number n-ann) + surface-dirties-ll ε
+    surface-dirties-lm (LEnvProj _ ε _) = surface-dirties-ll ε
+    surface-dirties-lm (LEnvAp1 ε _ e-arg) = surface-dirties-ll ε + surface-dirties-low e-arg
+    surface-dirties-lm (LEnvAp2 e-fun _ ε) = surface-dirties-low e-fun + surface-dirties-ll ε
+    surface-dirties-lm (LEnvPair1 ε e-snd _) = surface-dirties-ll ε + surface-dirties-low e-snd
+    surface-dirties-lm (LEnvPair2 e-fst ε _) = surface-dirties-low e-fst + surface-dirties-ll ε
 
 
-    surface-news-ll : LEnvLow -> ℕ
-    surface-news-ll L⊙ = 0
-    surface-news-ll (LEnvLowRec ε _ _) = surface-news-lu ε
+    surface-dirties-ll : LEnvLow -> ℕ
+    surface-dirties-ll L⊙ = 0
+    surface-dirties-ll (LEnvLowRec ε _ _) = surface-dirties-lu ε
 
   mutual 
 
     FillUEnvUp-surface : ∀ {ε e e-in} ->
       ε U⟦ e-in ⟧U≡ e ->
-      surface-news-up e ≡ surface-news-uu ε + surface-news-up e-in
+      surface-dirties-up e ≡ surface-dirties-uu ε + surface-dirties-up e-in
     FillUEnvUp-surface FillU⊙ = refl
     FillUEnvUp-surface (FillUEnvUpRec fill) = FillUEnvMid-surface fill
 
     FillUEnvMid-surface : ∀ {ε e e-in} ->
       ε U⟦ e-in ⟧M≡ e ->
-      surface-news-mid e ≡ surface-news-um ε + surface-news-up e-in 
+      surface-dirties-mid e ≡ surface-dirties-um ε + surface-dirties-up e-in 
     FillUEnvMid-surface {e-in = e-in} (FillUEnvAsc {ε = ε} {t = (_ , n)} fill) 
       rewrite FillUEnvLow-surface fill 
-      =  sym (+-assoc (new-number n) (surface-news-ul ε) (surface-news-up e-in))
+      =  sym (+-assoc (new-number n) (surface-dirties-ul ε) (surface-dirties-up e-in))
     FillUEnvMid-surface {e-in = e-in} (FillUEnvFun {ε = ε} {t = (_ , n)} fill) 
       rewrite FillUEnvLow-surface fill 
-      = sym (+-assoc (new-number n) (surface-news-ul ε) (surface-news-up e-in))
+      = sym (+-assoc (new-number n) (surface-dirties-ul ε) (surface-dirties-up e-in))
     FillUEnvMid-surface {e-in = e-in} (FillUEnvProj {ε = ε} fill) 
       rewrite FillUEnvLow-surface fill 
       = refl
     FillUEnvMid-surface {e-in = e-in} (FillUEnvAp1 {ε = ε} {e2 = e2} fill) 
       rewrite FillUEnvLow-surface fill 
-      rewrite (+-assoc (surface-news-ul ε) (surface-news-up e-in) (surface-news-low e2))
-      rewrite +-comm (surface-news-up e-in) (surface-news-low e2) 
-      rewrite sym (+-assoc (surface-news-ul ε) (surface-news-low e2) (surface-news-up e-in))
+      rewrite (+-assoc (surface-dirties-ul ε) (surface-dirties-up e-in) (surface-dirties-low e2))
+      rewrite +-comm (surface-dirties-up e-in) (surface-dirties-low e2) 
+      rewrite sym (+-assoc (surface-dirties-ul ε) (surface-dirties-low e2) (surface-dirties-up e-in))
       = refl
     FillUEnvMid-surface {e-in = e-in} (FillUEnvAp2 {ε = ε} {e1 = e1} fill) 
       rewrite FillUEnvLow-surface fill 
-      = sym (+-assoc (surface-news-low e1) (surface-news-ul ε) (surface-news-up e-in))
+      = sym (+-assoc (surface-dirties-low e1) (surface-dirties-ul ε) (surface-dirties-up e-in))
     FillUEnvMid-surface {e-in = e-in} (FillUEnvPair1 {ε = ε} {e2 = e2} fill) 
       rewrite FillUEnvLow-surface fill 
-      rewrite (+-assoc (surface-news-ul ε) (surface-news-up e-in) (surface-news-low e2))
-      rewrite +-comm (surface-news-up e-in) (surface-news-low e2) 
-      rewrite sym (+-assoc (surface-news-ul ε) (surface-news-low e2) (surface-news-up e-in))
+      rewrite (+-assoc (surface-dirties-ul ε) (surface-dirties-up e-in) (surface-dirties-low e2))
+      rewrite +-comm (surface-dirties-up e-in) (surface-dirties-low e2) 
+      rewrite sym (+-assoc (surface-dirties-ul ε) (surface-dirties-low e2) (surface-dirties-up e-in))
       = refl
     FillUEnvMid-surface {e-in = e-in} (FillUEnvPair2 {ε = ε} {e1 = e1} fill) 
       rewrite FillUEnvLow-surface fill 
-      = sym (+-assoc (surface-news-low e1) (surface-news-ul ε) (surface-news-up e-in))
+      = sym (+-assoc (surface-dirties-low e1) (surface-dirties-ul ε) (surface-dirties-up e-in))
 
     FillUEnvLow-surface : ∀ {ε e e-in} ->
       ε U⟦ e-in ⟧L≡ e ->
-      surface-news-low e ≡ surface-news-ul ε + surface-news-up e-in
+      surface-dirties-low e ≡ surface-dirties-ul ε + surface-dirties-up e-in
     FillUEnvLow-surface (FillUEnvLowRec fill) = FillUEnvUp-surface fill
 
   mutual 
 
     FillLEnvUp-surface : ∀ {ε e e-in} ->
       ε L⟦ e-in ⟧U≡ e ->
-      surface-news-up e ≡ surface-news-lu ε + surface-news-low e-in
+      surface-dirties-up e ≡ surface-dirties-lu ε + surface-dirties-low e-in
     FillLEnvUp-surface (FillLEnvUpRec fill) = FillLEnvMid-surface fill
 
     FillLEnvMid-surface : ∀ {ε e e-in} ->
       ε L⟦ e-in ⟧M≡ e ->
-      surface-news-mid e ≡ surface-news-lm ε + surface-news-low e-in 
+      surface-dirties-mid e ≡ surface-dirties-lm ε + surface-dirties-low e-in 
     FillLEnvMid-surface {e-in = e-in} (FillLEnvAsc {ε = ε} {t = (_ , n)} fill) 
       rewrite FillLEnvLow-surface fill 
-      =  sym (+-assoc (new-number n) (surface-news-ll ε) (surface-news-low e-in))
+      =  sym (+-assoc (new-number n) (surface-dirties-ll ε) (surface-dirties-low e-in))
     FillLEnvMid-surface {e-in = e-in} (FillLEnvFun {ε = ε} {t = (_ , n)} fill) 
       rewrite FillLEnvLow-surface fill 
-      = sym (+-assoc (new-number n) (surface-news-ll ε) (surface-news-low e-in))
+      = sym (+-assoc (new-number n) (surface-dirties-ll ε) (surface-dirties-low e-in))
     FillLEnvMid-surface {e-in = e-in} (FillLEnvProj {ε = ε} fill) 
       rewrite FillLEnvLow-surface fill 
       = refl
     FillLEnvMid-surface {e-in = e-in} (FillLEnvAp1 {ε = ε} {e2 = e2} fill) 
       rewrite FillLEnvLow-surface fill 
-      rewrite (+-assoc (surface-news-ll ε) (surface-news-low e-in) (surface-news-low e2))
-      rewrite +-comm (surface-news-low e-in) (surface-news-low e2) 
-      rewrite sym (+-assoc (surface-news-ll ε) (surface-news-low e2) (surface-news-low e-in))
+      rewrite (+-assoc (surface-dirties-ll ε) (surface-dirties-low e-in) (surface-dirties-low e2))
+      rewrite +-comm (surface-dirties-low e-in) (surface-dirties-low e2) 
+      rewrite sym (+-assoc (surface-dirties-ll ε) (surface-dirties-low e2) (surface-dirties-low e-in))
       = refl
     FillLEnvMid-surface {e-in = e-in} (FillLEnvAp2 {ε = ε} {e1 = e1} fill) 
       rewrite FillLEnvLow-surface fill 
-      = sym (+-assoc (surface-news-low e1) (surface-news-ll ε) (surface-news-low e-in))
+      = sym (+-assoc (surface-dirties-low e1) (surface-dirties-ll ε) (surface-dirties-low e-in))
     FillLEnvMid-surface {e-in = e-in} (FillLEnvPair1 {ε = ε} {e2 = e2} fill) 
       rewrite FillLEnvLow-surface fill 
-      rewrite (+-assoc (surface-news-ll ε) (surface-news-low e-in) (surface-news-low e2))
-      rewrite +-comm (surface-news-low e-in) (surface-news-low e2) 
-      rewrite sym (+-assoc (surface-news-ll ε) (surface-news-low e2) (surface-news-low e-in))
+      rewrite (+-assoc (surface-dirties-ll ε) (surface-dirties-low e-in) (surface-dirties-low e2))
+      rewrite +-comm (surface-dirties-low e-in) (surface-dirties-low e2) 
+      rewrite sym (+-assoc (surface-dirties-ll ε) (surface-dirties-low e2) (surface-dirties-low e-in))
       = refl
     FillLEnvMid-surface {e-in = e-in} (FillLEnvPair2 {ε = ε} {e1 = e1} fill) 
       rewrite FillLEnvLow-surface fill 
-      = sym (+-assoc (surface-news-low e1) (surface-news-ll ε) (surface-news-low e-in))
+      = sym (+-assoc (surface-dirties-low e1) (surface-dirties-ll ε) (surface-dirties-low e-in))
 
     FillLEnvLow-surface : ∀ {ε e e-in} ->
       ε L⟦ e-in ⟧L≡ e ->
-      surface-news-low e ≡ surface-news-ll ε + surface-news-low e-in
+      surface-dirties-low e ≡ surface-dirties-ll ε + surface-dirties-low e-in
     FillLEnvLow-surface FillL⊙ = refl
     FillLEnvLow-surface (FillLEnvLowRec fill) = FillLEnvUp-surface fill 
 
@@ -470,7 +470,7 @@ module Core.Termination where
       <Low s e-in' e-in ->
       <Low (SkelFill s (skel-ll ε)) e' e
     FillLEnvLow-<Low FillL⊙ FillL⊙ lt = lt
-    FillLEnvLow-<Low (FillLEnvLowRec fill1) (FillLEnvLowRec fill2) lt = <Lower= =New-refl (FillLEnvUp-<Up fill1 fill2 lt)
+    FillLEnvLow-<Low (FillLEnvLowRec fill1) (FillLEnvLowRec fill2) lt = <Lower= =★-refl (FillLEnvUp-<Up fill1 fill2 lt)
   
   mutual 
 
@@ -500,7 +500,7 @@ module Core.Termination where
       ε U⟦ e-in ⟧L≡ e ->
       <Up s e-in' e-in ->
       <Low (SkelFill s (skel-ul ε)) e' e
-    FillUEnvLow-<Low (FillUEnvLowRec fill1) (FillUEnvLowRec fill2) lt = <Lower= =New-refl (FillUEnvUp-<Up fill1 fill2 lt)
+    FillUEnvLow-<Low (FillUEnvLowRec fill1) (FillUEnvLowRec fill2) lt = <Lower= =★-refl (FillUEnvUp-<Up fill1 fill2 lt)
     
   FillLEnvLow-<ExpLow : ∀ {ε e e' e-in e-in'} ->
     ε L⟦ e-in' ⟧L≡ e' ->
@@ -509,14 +509,14 @@ module Core.Termination where
     <ExpLow e' e
   FillLEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpLow< lt) = <ExpLow< lt'
     where 
-    lt' : surface-news-low e' < surface-news-low e
+    lt' : surface-dirties-low e' < surface-dirties-low e
     lt' 
       rewrite FillLEnvLow-surface fill1 
       rewrite FillLEnvLow-surface fill2 
-      = +-monoʳ-< (surface-news-ll ε) lt
+      = +-monoʳ-< (surface-dirties-ll ε) lt
   FillLEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpLow= eq lt) = <ExpLow= eq' fill'
     where 
-    eq' : surface-news-low e' ≡ surface-news-low e
+    eq' : surface-dirties-low e' ≡ surface-dirties-low e
     eq' 
       rewrite FillLEnvLow-surface fill1 
       rewrite FillLEnvLow-surface fill2 
@@ -532,14 +532,14 @@ module Core.Termination where
     <ExpLow e' e
   FillUEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpUp< lt) = <ExpLow< lt'
     where 
-    lt' : surface-news-low e' < surface-news-low e
+    lt' : surface-dirties-low e' < surface-dirties-low e
     lt' 
       rewrite FillUEnvLow-surface fill1 
       rewrite FillUEnvLow-surface fill2 
-      = +-monoʳ-< (surface-news-ul ε) lt
+      = +-monoʳ-< (surface-dirties-ul ε) lt
   FillUEnvLow-<ExpLow {ε} {e} {e'} fill1 fill2 (<ExpUp= eq lt) = <ExpLow= eq' fill'
     where 
-    eq' : surface-news-low e' ≡ surface-news-low e
+    eq' : surface-dirties-low e' ≡ surface-dirties-low e
     eq' 
       rewrite FillUEnvLow-surface fill1 
       rewrite FillUEnvLow-surface fill2 
@@ -557,7 +557,7 @@ module Core.Termination where
   StepDecrease : ∀ {p p'} ->
     p' ↤P p -> 
     <Program p' p 
-  StepDecrease TopStep = <Program= refl (<Lower= =New-refl (<Upper= <NewC)) 
+  StepDecrease TopStep = <Program= refl (<Lower= =★-refl (<Upper= <★C)) 
   StepDecrease {p} {p'} (InsideStep step) with StepDecreaseLow step
   ... | <ExpLow< lt = <Program< lt
   ... | <ExpLow= eq lt = <Program= eq lt
@@ -568,14 +568,14 @@ module Core.Termination where
       (s : Skeleton) ->
       Acc (<Mid s) e ->
       ∀ {e'} ->
-      (<Up s e' (e ⇒ (t , Old))) -> 
+      (<Up s e' (e ⇒ (t , •))) -> 
       (Acc (<Up s) e')
     translate-acc-up-old' s (acc ac) (<Upper x) = translate-acc-up s (ac x)
     
     translate-acc-up-old : ∀{e t} ->
       (s : Skeleton) ->
       Acc (<Mid s) e ->
-      Acc (<Up s) (e ⇒ (t , Old))
+      Acc (<Up s) (e ⇒ (t , •))
     translate-acc-up-old s ac = acc (translate-acc-up-old' s ac)
 
     translate-acc-up' : ∀{e syn} ->
@@ -584,7 +584,7 @@ module Core.Termination where
       ∀ {e'} ->
       (<Up s e' (e ⇒ syn)) -> 
       (Acc (<Up s) e') 
-    translate-acc-up' s ac (<Upper= <NewC) = translate-acc-up-old s ac
+    translate-acc-up' s ac (<Upper= <★C) = translate-acc-up-old s ac
     translate-acc-up' s (acc ac) (<Upper x) = translate-acc-up s (ac x)
 
     translate-acc-up : ∀{e syn} ->
@@ -599,14 +599,14 @@ module Core.Termination where
       (s : Skeleton) ->
       Acc (<Up s) e ->
       ∀ {e'} ->
-      (<Low s e' (e [ m ]⇐ (t , Old))) -> 
+      (<Low s e' (e [ m ]⇐ (t , •))) -> 
       (Acc (<Low s) e') 
-    translate-acc-low-old' s (acc ac) (<Lower= =NewOld lt) = translate-acc-low-old s (ac lt)
+    translate-acc-low-old' s (acc ac) (<Lower= =★• lt) = translate-acc-low-old s (ac lt)
 
     translate-acc-low-old : ∀{e m t} ->
       (s : Skeleton) ->
       Acc (<Up s) e ->
-      Acc (<Low s) (e [ m ]⇐ (t , Old))
+      Acc (<Low s) (e [ m ]⇐ (t , •))
     translate-acc-low-old s ac = acc (translate-acc-low-old' s ac)
 
   mutual
@@ -618,7 +618,7 @@ module Core.Termination where
       ∀ {e'} ->
       (<Low s e' (e [ m ]⇐ ana)) -> 
       (Acc (<Low s) e') 
-    translate-acc-low'' s wf ac (<Lower <NewC eq) = translate-acc-low-old s (wf _)
+    translate-acc-low'' s wf ac (<Lower <★C eq) = translate-acc-low-old s (wf _)
     translate-acc-low'' s wf (acc rs) (<Lower= eq lt) = translate-acc-low' s wf (rs lt)
 
     translate-acc-low' : ∀{e m ana} ->
@@ -749,7 +749,7 @@ module Core.Termination where
       (e : ExpMid) -> 
       {t : Data} -> 
       ∀ {e'} ->
-      (<Up s e' (e ⇒ (t , Old))) -> 
+      (<Up s e' (e ⇒ (t , •))) -> 
       (Acc (<Up s) e') 
     <Up-wf-old' s e (<Upper lt) = translate-acc-up s (<Mid-wf' s _ lt)
 
@@ -757,7 +757,7 @@ module Core.Termination where
       (s : Skeleton) ->
       (e : ExpMid) -> 
       {t : Data} -> 
-      (Acc (<Up s) (e ⇒ (t , Old))) 
+      (Acc (<Up s) (e ⇒ (t , •))) 
     <Up-wf-old s e = acc (<Up-wf-old' s e)
 
     <Up-wf' : 
@@ -766,7 +766,7 @@ module Core.Termination where
       ∀ {e'} ->
       (<Up s e' e) -> 
       (Acc (<Up s) e') 
-    <Up-wf' s (e ⇒ _) (<Upper= <NewC) = <Up-wf-old s e
+    <Up-wf' s (e ⇒ _) (<Upper= <★C) = <Up-wf-old s e
     <Up-wf' s e (<Upper lt) = translate-acc-up s (<Mid-wf s _)
     
     <Up-wf : (s : Skeleton) -> WellFounded (<Up s)
@@ -808,7 +808,7 @@ module Core.Termination where
   <Program-wf'' : 
     (p : Program) -> 
     (n : ℕ) -> 
-    (n ≡ surface-news-low (ExpLowOfProgram p)) ->
+    (n ≡ surface-dirties-low (ExpLowOfProgram p)) ->
     Acc (_<_) n ->
     (s : Skeleton) ->
     (s ≡ SkelProgram p) ->
@@ -818,13 +818,13 @@ module Core.Termination where
     (Acc <Program p') 
   <Program-wf'' p n eq1 (acc rs) s eq2 ac {p'} (<Program< lt) = acc (<Program-wf'' p' _ refl (rs lt') _ refl (<Low-wf _ _))
     where 
-    lt' : surface-news-low (ExpLowOfProgram p') < n
+    lt' : surface-dirties-low (ExpLowOfProgram p') < n
     lt' rewrite eq1 = lt
   <Program-wf'' p n eq1 ac1 s eq2 (acc rs) {p'} (<Program= eq3 lt) = acc (<Program-wf'' p' n eq1' ac1 s eq2' (rs lt'))
     where 
     lt' : <Low s (ExpLowOfProgram p') (ExpLowOfProgram p)
     lt' rewrite eq2 rewrite sym (<Low-skel lt) = lt
-    eq1' : n ≡ surface-news-low (ExpLowOfProgram p') 
+    eq1' : n ≡ surface-dirties-low (ExpLowOfProgram p') 
     eq1' rewrite eq1 rewrite eq3 = refl
     eq2' : s ≡ SkelLow (ExpLowOfProgram p') 
     eq2' rewrite eq2 = sym (<Low-skel lt)

@@ -4,8 +4,8 @@ open import Data.Product
 
 open import Prelude
 open import Core.Core
-open import Core.WellTyped
-open import Core.VarsSynthesize
+open import Core.WellFormed
+open import Core.VariableUpdate
 
 module Core.Actions where
 
@@ -111,58 +111,58 @@ module Core.Actions where
 
   data _⊢_,_αU↦_ : Ctx -> Action -> ExpUp -> ExpUp -> Set where 
     ActInsertConst : ∀ {Γ syn} ->
-      Γ ⊢ InsertConst , (EHole ⇒ syn) αU↦ (EConst ⇒ (■ TBase , New))
+      Γ ⊢ InsertConst , (EHole ⇒ syn) αU↦ (EConst ⇒ (■ TBase , ★))
     ActWrapFun : ∀ {Γ e t n} ->
-      Γ ⊢ WrapFun , (e ⇒ (t , n)) αU↦ ((EFun BHole (THole , Old) ✔ ✔ ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New))) ⇒ (□ , New))
+      Γ ⊢ WrapFun , (e ⇒ (t , n)) αU↦ ((EFun BHole (THole , •) ✔ ✔ ((e ⇒ (t , ★)) [ ✔ ]⇐ (□ , ★))) ⇒ (□ , ★))
     ActWrapApOne : ∀ {Γ e t n} ->
-      Γ ⊢ (WrapAp One) , (e ⇒ (t , n)) αU↦ ((EAp ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔ ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old))) ⇒ (□ , New))
+      Γ ⊢ (WrapAp One) , (e ⇒ (t , n)) αU↦ ((EAp ((e ⇒ (t , ★)) [ ✔ ]⇐ (□ , ★)) ✔ ((EHole ⇒ (■ THole , •)) [ ✔ ]⇐ (□ , •))) ⇒ (□ , ★))
     ActWrapApTwo : ∀ {Γ e t n} ->
-      Γ ⊢ (WrapAp Two) , (e ⇒ (t , n)) αU↦ ((EAp ((EHole ⇒ (■ THole , Old)) [ ✔ ]⇐ (□ , Old)) ✔ ((e ⇒ (t , Old)) [ ✔ ]⇐ (■ THole , New))) ⇒ (■ THole , New))
+      Γ ⊢ (WrapAp Two) , (e ⇒ (t , n)) αU↦ ((EAp ((EHole ⇒ (■ THole , •)) [ ✔ ]⇐ (□ , •)) ✔ ((e ⇒ (t , •)) [ ✔ ]⇐ (■ THole , ★))) ⇒ (■ THole , ★))
     ActWrapPairOne : ∀ {Γ e t n} -> 
-      Γ ⊢ (WrapPair One) , (e ⇒ (t , n)) αU↦ ((EPair ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ((EHole ⇒ (■ THole , New)) [ ✔ ]⇐ (□ , Old)) ✔ ) ⇒ (□ , New))
+      Γ ⊢ (WrapPair One) , (e ⇒ (t , n)) αU↦ ((EPair ((e ⇒ (t , ★)) [ ✔ ]⇐ (□ , ★)) ((EHole ⇒ (■ THole , ★)) [ ✔ ]⇐ (□ , •)) ✔ ) ⇒ (□ , ★))
     ActWrapPairTwo : ∀ {Γ e t n} -> 
-      Γ ⊢ (WrapPair Two) , (e ⇒ (t , n)) αU↦ ((EPair ((EHole ⇒ (■ THole , New)) [ ✔ ]⇐ (□ , Old)) ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔ ) ⇒ (□ , New))
+      Γ ⊢ (WrapPair Two) , (e ⇒ (t , n)) αU↦ ((EPair ((EHole ⇒ (■ THole , ★)) [ ✔ ]⇐ (□ , •)) ((e ⇒ (t , ★)) [ ✔ ]⇐ (□ , ★)) ✔ ) ⇒ (□ , ★))
     ActWrapProj : ∀ {Γ s e t n} -> 
-      Γ ⊢ (WrapProj s) , (e ⇒ (t , n)) αU↦ ((EProj s ((e ⇒ (t , New)) [ ✔ ]⇐ (□ , New)) ✔) ⇒ (□ , New))
+      Γ ⊢ (WrapProj s) , (e ⇒ (t , n)) αU↦ ((EProj s ((e ⇒ (t , ★)) [ ✔ ]⇐ (□ , ★)) ✔) ⇒ (□ , ★))
     ActInsertVar : ∀ {Γ syn x n t m} ->
       x , (t , n) ∈N Γ , m ->
-      Γ ⊢ (InsertVar x) , (EHole ⇒ syn) αU↦ ((EVar x m) ⇒ (■ t , New))
+      Γ ⊢ (InsertVar x) , (EHole ⇒ syn) αU↦ ((EVar x m) ⇒ (■ t , ★))
     ActWrapAsc : ∀ {Γ e syn} ->
-      Γ ⊢ WrapAsc , (e ⇒ syn) αU↦ ((EAsc (THole , Old) ((e ⇒ syn) [ ✔ ]⇐ (■ THole , New))) ⇒ (■ THole , New))
+      Γ ⊢ WrapAsc , (e ⇒ syn) αU↦ ((EAsc (THole , •) ((e ⇒ syn) [ ✔ ]⇐ (■ THole , ★))) ⇒ (■ THole , ★))
     ActDelete : ∀ {Γ e} ->
-      Γ ⊢ Delete , e αU↦ (EHole ⇒ (■ THole , New))
+      Γ ⊢ Delete , e αU↦ (EHole ⇒ (■ THole , ★))
     ActUnwrapFun : ∀ {Γ x asc m-ana m-ann e e' t' n' tx nx m m-body ana syn} ->
       x , (tx , nx) ∈N? Γ , m ->
-      VarsSynthesize? x tx m e (e' ⇒ (t' , n')) ->
-      Γ ⊢ (Unwrap One) , ((EFun x asc m-ana m-ann (e [ m-body ]⇐ ana)) ⇒ syn) αU↦ (e' ⇒ (t' , New))
+      VariableUpdate? x tx m e (e' ⇒ (t' , n')) ->
+      Γ ⊢ (Unwrap One) , ((EFun x asc m-ana m-ann (e [ m-body ]⇐ ana)) ⇒ syn) αU↦ (e' ⇒ (t' , ★))
     ActUnwrapApOne : ∀ {Γ e t n m ana e-arg syn m'} ->
-      Γ ⊢ (Unwrap One) , ((EAp ((e ⇒ (t , n)) [ m ]⇐ ana) m' e-arg) ⇒ syn) αU↦ (e ⇒ (t , New))
+      Γ ⊢ (Unwrap One) , ((EAp ((e ⇒ (t , n)) [ m ]⇐ ana) m' e-arg) ⇒ syn) αU↦ (e ⇒ (t , ★))
     ActUnwrapApTwo : ∀ {Γ e t n m ana e-fun syn m'} ->
-      Γ ⊢ (Unwrap Two) , ((EAp e-fun m' ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ (e ⇒ (t , New))
+      Γ ⊢ (Unwrap Two) , ((EAp e-fun m' ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ (e ⇒ (t , ★))
     ActUnwrapAsc : ∀ {Γ asc e t n m ana syn} ->
-      Γ ⊢ (Unwrap One) , ((EAsc asc ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ (e ⇒ (t , New))
+      Γ ⊢ (Unwrap One) , ((EAsc asc ((e ⇒ (t , n)) [ m ]⇐ ana)) ⇒ syn) αU↦ (e ⇒ (t , ★))
     ActUnwrapPairOne : ∀ {Γ e t n m ana e-snd syn m'} ->
-      Γ ⊢ (Unwrap One) , ((EPair ((e ⇒ (t , n)) [ m ]⇐ ana) e-snd m') ⇒ syn) αU↦ (e ⇒ (t , New))
+      Γ ⊢ (Unwrap One) , ((EPair ((e ⇒ (t , n)) [ m ]⇐ ana) e-snd m') ⇒ syn) αU↦ (e ⇒ (t , ★))
     ActUnwrapPairTwo : ∀ {Γ e t n m ana e-fst syn m'} ->
-      Γ ⊢ (Unwrap Two) , ((EPair e-fst ((e ⇒ (t , n)) [ m ]⇐ ana) m') ⇒ syn) αU↦ (e ⇒ (t , New))
+      Γ ⊢ (Unwrap Two) , ((EPair e-fst ((e ⇒ (t , n)) [ m ]⇐ ana) m') ⇒ syn) αU↦ (e ⇒ (t , ★))
     ActUnwrapProj : ∀ {Γ e t s n m ana syn m'} ->
-      Γ ⊢ (Unwrap One) , ((EProj s ((e ⇒ (t , n)) [ m ]⇐ ana) m') ⇒ syn) αU↦ (e ⇒ (t , New))
+      Γ ⊢ (Unwrap One) , ((EProj s ((e ⇒ (t , n)) [ m ]⇐ ana) m') ⇒ syn) αU↦ (e ⇒ (t , ★))
     ActSetAsc : ∀ {Γ asc e t syn} ->
-      Γ ⊢ (SetAsc t) , ((EAsc asc e) ⇒ syn) αU↦ ((EAsc (t , New) e) ⇒ syn)
+      Γ ⊢ (SetAsc t) , ((EAsc asc e) ⇒ syn) αU↦ ((EAsc (t , ★) e) ⇒ syn)
     ActSetAnn : ∀ {Γ x e t ann m1 m2 syn} ->
-      Γ ⊢ (SetAnn t) , ((EFun x ann m1 m2 e) ⇒ syn) αU↦ ((EFun x (t , New) m1 m2 e) ⇒ syn)
+      Γ ⊢ (SetAnn t) , ((EFun x ann m1 m2 e) ⇒ syn) αU↦ ((EFun x (t , ★) m1 m2 e) ⇒ syn)
     ActDeleteBinder : ∀ {Γ x tx nx m ann m1 m2 e e' t' n' syn ana} ->
       x , (tx , nx) ∈N? Γ , m ->
-      VarsSynthesize? x tx m e (e' ⇒ (t' , n')) ->
-      Γ ⊢ DeleteBinder , ((EFun x ann m1 m2 (e [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun BHole ann m1 m2 ((e' ⇒ (t' , New)) [ m ]⇐ ana)) ⇒ syn)
+      VariableUpdate? x tx m e (e' ⇒ (t' , n')) ->
+      Γ ⊢ DeleteBinder , ((EFun x ann m1 m2 (e [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun BHole ann m1 m2 ((e' ⇒ (t' , ★)) [ m ]⇐ ana)) ⇒ syn)
     ActInsertBinder : ∀ {Γ x ann n-ann m1 m2 e e' t' n' syn m ana} ->
-      VarsSynthesize x ann ✔ e (e' ⇒ (t' , n')) ->
-      Γ ⊢ InsertBinder x , ((EFun BHole (ann , n-ann) m1 m2 (e [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun (BVar x) (ann , n-ann) m1 m2 ((e' ⇒ (t' , New)) [ m ]⇐ ana)) ⇒ syn)
+      VariableUpdate x ann ✔ e (e' ⇒ (t' , n')) ->
+      Γ ⊢ InsertBinder x , ((EFun BHole (ann , n-ann) m1 m2 (e [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun (BVar x) (ann , n-ann) m1 m2 ((e' ⇒ (t' , ★)) [ m ]⇐ ana)) ⇒ syn)
 
   data _⊢_,_αL↦_ : Ctx -> Action -> ExpLow -> ExpLow -> Set where 
     ALC : ∀ {Γ α e e' m t n} ->
         Γ ⊢ α , e  αU↦ e' ->
-        Γ ⊢ α , e [ m ]⇐ (t , n) αL↦ (e' [ m ]⇐ (t , New))
+        Γ ⊢ α , e [ m ]⇐ (t , n) αL↦ (e' [ m ]⇐ (t , ★))
 
   mutual 
 

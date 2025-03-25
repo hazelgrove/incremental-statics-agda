@@ -43,14 +43,6 @@ module Core.Core where
     BareSubsumableVar : ∀ {x} -> BareSubsumable (BareEVar x) 
     BareSubsumableAsc : ∀ {t e} -> BareSubsumable (BareEAsc t e) 
     BareSubsumableProj : ∀ {s e} -> BareSubsumable (BareEProj s e) 
-
-  data Newness : Set where 
-    Old : Newness 
-    New : Newness 
-
-  _⊓_ : Newness -> Newness -> Newness 
-  Old ⊓ n = n
-  New ⊓ n = New
     
   data Mark : Set where 
     ✖ : Mark
@@ -117,38 +109,46 @@ module Core.Core where
     □ : Data
     ■ : Type -> Data
 
-  NEW : (A : Set) -> Set 
-  NEW A = A × Newness 
+  data Dirtiness : Set where 
+    • : Dirtiness 
+    ★ : Dirtiness 
 
-  NewType : Set 
-  NewType = NEW Type 
+  _⊓_ : Dirtiness -> Dirtiness -> Dirtiness 
+  • ⊓ n = n
+  ★ ⊓ n = ★
 
-  NewData : Set 
-  NewData = NEW Data
+  ○ : (A : Set) -> Set 
+  ○ A = A × Dirtiness 
 
-  NewMark : Set 
-  NewMark = NEW Mark
+  ○Type : Set 
+  ○Type = ○ Type 
+
+  ○Data : Set 
+  ○Data = ○ Data
+
+  ○Mark : Set 
+  ○Mark = ○ Mark
 
   mutual 
 
     data ExpUp : Set where  
-      _⇒_ : ExpMid -> NewData -> ExpUp
+      _⇒_ : ExpMid -> ○Data -> ExpUp
 
     data ExpMid : Set where 
       EConst : ExpMid 
       EHole : ExpMid
-      EFun : Binding -> NewType -> Mark -> Mark -> ExpLow -> ExpMid 
+      EFun : Binding -> ○Type -> Mark -> Mark -> ExpLow -> ExpMid 
       EAp : ExpLow -> Mark -> ExpLow -> ExpMid 
       EVar : Var -> Mark -> ExpMid 
-      EAsc : NewType -> ExpLow -> ExpMid 
+      EAsc : ○Type -> ExpLow -> ExpMid 
       EPair : ExpLow -> ExpLow -> Mark -> ExpMid
       EProj : ProdSide -> ExpLow -> Mark -> ExpMid
 
     data ExpLow : Set where 
-      _[_]⇐_ : ExpUp -> Mark -> NewData -> ExpLow
+      _[_]⇐_ : ExpUp -> Mark -> ○Data -> ExpLow
 
   data Program : Set where 
-    Root : ExpUp -> Newness -> Program
+    Root : ExpUp -> Dirtiness -> Program
     
   ExpLowOfProgram : Program -> ExpLow  
   ExpLowOfProgram (Root e n) = (e [ ✔ ]⇐ (□ , n)) 
@@ -190,4 +190,4 @@ module Core.Core where
   BVar x , t ∈? Γ , m = x , t ∈ Γ , m
     
   Ctx : Set 
-  Ctx = Context NewType
+  Ctx = Context ○Type

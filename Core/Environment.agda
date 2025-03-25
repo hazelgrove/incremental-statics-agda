@@ -7,38 +7,38 @@ module Core.Environment where
   mutual 
 
     data LEnvUp : Set where 
-      LEnvUpRec : LEnvMid -> NewData -> LEnvUp
+      LEnvUpRec : LEnvMid -> ○Data -> LEnvUp
 
     data LEnvMid : Set where 
-      LEnvFun : Binding -> NewType -> Mark -> Mark -> LEnvLow -> LEnvMid 
+      LEnvFun : Binding -> ○Type -> Mark -> Mark -> LEnvLow -> LEnvMid 
       LEnvAp1 : LEnvLow -> Mark -> ExpLow -> LEnvMid 
       LEnvAp2 : ExpLow -> Mark -> LEnvLow -> LEnvMid 
-      LEnvAsc : NewType -> LEnvLow -> LEnvMid 
+      LEnvAsc : ○Type -> LEnvLow -> LEnvMid 
       LEnvPair1 : LEnvLow -> ExpLow -> Mark -> LEnvMid
       LEnvPair2 : ExpLow -> LEnvLow -> Mark -> LEnvMid
       LEnvProj : ProdSide -> LEnvLow -> Mark -> LEnvMid
 
     data LEnvLow : Set where 
       L⊙ : LEnvLow
-      LEnvLowRec : LEnvUp -> Mark -> NewData -> LEnvLow
+      LEnvLowRec : LEnvUp -> Mark -> ○Data -> LEnvLow
 
   mutual 
 
     data UEnvUp : Set where 
       U⊙ : UEnvUp
-      UEnvUpRec : UEnvMid -> NewData -> UEnvUp
+      UEnvUpRec : UEnvMid -> ○Data -> UEnvUp
 
     data UEnvMid : Set where 
-      UEnvFun : Binding -> NewType -> Mark -> Mark -> UEnvLow -> UEnvMid 
+      UEnvFun : Binding -> ○Type -> Mark -> Mark -> UEnvLow -> UEnvMid 
       UEnvAp1 : UEnvLow -> Mark -> ExpLow -> UEnvMid 
       UEnvAp2 : ExpLow -> Mark -> UEnvLow -> UEnvMid 
-      UEnvAsc : NewType -> UEnvLow -> UEnvMid 
+      UEnvAsc : ○Type -> UEnvLow -> UEnvMid 
       UEnvPair1 : UEnvLow -> ExpLow -> Mark -> UEnvMid
       UEnvPair2 : ExpLow -> UEnvLow -> Mark -> UEnvMid
       UEnvProj : ProdSide -> UEnvLow -> Mark -> UEnvMid
 
     data UEnvLow : Set where 
-      UEnvLowRec : UEnvUp -> Mark -> NewData -> UEnvLow 
+      UEnvLowRec : UEnvUp -> Mark -> ○Data -> UEnvLow 
 
   mutual 
     data _L⟦_⟧U≡_ : (ε : LEnvUp) (e : ExpLow) (e' : ExpUp)  -> Set where

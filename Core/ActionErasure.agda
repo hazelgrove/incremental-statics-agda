@@ -5,7 +5,7 @@ open import Prelude
 open import Core.Core
 open import Core.Marking
 open import Core.Actions
-open import Core.VarsSynthesizeErasure
+open import Core.VariableUpdateErasure
 
 module Core.ActionErasure where
   
@@ -28,14 +28,14 @@ module Core.ActionErasure where
   αU↦-erase ActUnwrapPairTwo = ActUnwrapPairTwo
   αU↦-erase ActUnwrapProj = ActUnwrapProj
   αU↦-erase (ActInsertVar in-ctx) = ActInsertVar
-  αU↦-erase (ActUnwrapFun x vars-syn) 
-    rewrite vars-syn?-erase vars-syn = ActUnwrapFun
+  αU↦-erase (ActUnwrapFun x var-update) 
+    rewrite var-update?-erase var-update = ActUnwrapFun
   αU↦-erase ActSetAsc = ActSetAsc
   αU↦-erase ActSetAnn = ActSetAnn
-  αU↦-erase (ActDeleteBinder in-ctx vars-syn) 
-    rewrite vars-syn?-erase vars-syn = ActDeleteBinder
-  αU↦-erase (ActInsertBinder vars-syn)
-    rewrite vars-syn?-erase vars-syn = ActInsertBinder
+  αU↦-erase (ActDeleteBinder in-ctx var-update) 
+    rewrite var-update?-erase var-update = ActDeleteBinder
+  αU↦-erase (ActInsertBinder var-update)
+    rewrite var-update?-erase var-update = ActInsertBinder
 
   αL↦-erase : ∀ {Γ α e e'} ->
     (Γ ⊢ α , e αL↦ e') ->

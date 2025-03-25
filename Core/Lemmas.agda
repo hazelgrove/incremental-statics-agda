@@ -5,24 +5,24 @@ open import Relation.Binary.PropositionalEquality
 open import Prelude
 open import Core.Core
 open import Core.Environment
-open import Core.WellTyped
+open import Core.WellFormed
 open import Core.MarkingUnicity
 
 module Core.Lemmas where
 
-  data =▷ {A : Set} : NEW A -> NEW A -> Set where 
-    =▷New : ∀ {s t} -> 
-      =▷ s (t , New)
+  data =▷ {A : Set} : ○ A -> ○ A -> Set where 
+    =▷★ : ∀ {s t} -> 
+      =▷ s (t , ★)
     =▷Refl : ∀ {s} -> 
       =▷ s s
 
-  data ◁▷ {A : Set} : NEW A -> NEW A -> Set where 
+  data ◁▷ {A : Set} : ○ A -> ○ A -> Set where 
     ◁▷C : ∀ {t n n'} -> 
       ◁▷ (t , n) (t , n')
 
-  max-new : (n : Newness) -> n ⊓ New ≡ New 
-  max-new Old = refl
-  max-new New = refl
+  max-dirty : (n : Dirtiness) -> n ⊓ ★ ≡ ★ 
+  max-dirty • = refl
+  max-dirty ★ = refl
 
   ~DVoid-right : ∀ {t m} ->
     t ~D □ , m ->
@@ -35,23 +35,23 @@ module Core.Lemmas where
   ~D-unless {t2 = □} = ~DVoidR
   ~D-unless {t2 = ■ x} = ~DVoidL 
 
-  new-through-~N-left : ∀ {d t m} ->
-    d ~N (t , New) , m -> 
-    ∃[ m' ] m ≡ (m' , New)
-  new-through-~N-left (~N-pair {n1 = n1} consist) rewrite max-new n1 = _ , refl
+  dirty-through-~N-left : ∀ {d t m} ->
+    d ~N (t , ★) , m -> 
+    ∃[ m' ] m ≡ (m' , ★)
+  dirty-through-~N-left (~N-pair {n1 = n1} consist) rewrite max-dirty n1 = _ , refl
 
   ▶Same : ∀ {n} ->
     {A : Set} ->
     {a : A} ->
     ▶ (a , n) a
-  ▶Same {Old} = ▶Old
-  ▶Same {New} = ▶New
+  ▶Same {•} = ▶•
+  ▶Same {★} = ▶★
 
-  ▶New-max-r : ∀ {n} -> 
+  ▶★-max-r : ∀ {n} -> 
     {A : Set} -> 
     {a a' : A} ->
-    ▶ (a , (n ⊓ New)) a'
-  ▶New-max-r {n = n} rewrite max-new n = ▶New
+    ▶ (a , (n ⊓ ★)) a'
+  ▶★-max-r {n = n} rewrite max-dirty n = ▶★
 
   ▸TArrow-dec : 
     (t : Type) -> 
@@ -69,7 +69,7 @@ module Core.Lemmas where
   ... | t1 , t2 , m , match = ■ t1 , ■ t2 , m , DTArrowSome match
 
   ▸NTArrow-dec : 
-    (d : NewData) -> 
+    (d : ○Data) -> 
     ∃[ t-in ] ∃[ t-out ] ∃[ m ] d ▸NTArrow t-in , t-out , m
   ▸NTArrow-dec (d , n) with ▸DTArrow-dec d 
   ... | t1 , t2 , m , match = (t1 , n) , (t2 , n) , (m , n) , NTArrowC match
@@ -90,7 +90,7 @@ module Core.Lemmas where
   ... | t1 , t2 , m , match = ■ t1 , ■ t2 , m , DTProdSome match
 
   ▸NTProd-dec : 
-    (d : NewData) -> 
+    (d : ○Data) -> 
     ∃[ t-in ] ∃[ t-out ] ∃[ m ] d ▸NTProd t-in , t-out , m
   ▸NTProd-dec (d , n) with ▸DTProd-dec d 
   ... | t1 , t2 , m , match = (t1 , n) , (t2 , n) , (m , n) , NTProdC match
@@ -119,7 +119,7 @@ module Core.Lemmas where
 
   ▸NTProj-dec : 
     (s : ProdSide) -> 
-    (d : NewData) -> 
+    (d : ○Data) -> 
     ∃[ t ] ∃[ m ] d , s ▸NTProj t , m
   ▸NTProj-dec s (d , n) with ▸DTProj-dec s d 
   ... | t , m , match = (t , n) , (m , n) , NTProjC match
@@ -150,7 +150,7 @@ module Core.Lemmas where
   ... | m , consist = m , (~DSome consist)
 
   ~N-dec : 
-    (syn ana : NewData) -> 
+    (syn ana : ○Data) -> 
     ∃[ m ] syn ~N ana , m 
   ~N-dec (syn-d , syn-n) (ana-d , ana-n) with ~D-dec syn-d ana-d
   ... | m , consist = (m , (syn-n ⊓ ana-n)) , ~N-pair consist
@@ -218,7 +218,7 @@ module Core.Lemmas where
     syn ▸NTArrow t-in , t-out , m -> 
     syn' ▸NTArrow t-in' , t-out' , m' -> 
     (=▷ t-in t-in' × =▷ t-out t-out' × =▷ m m')
-  beyond-▸NTArrow =▷New (NTArrowC _) (NTArrowC _) = =▷New , =▷New , =▷New
+  beyond-▸NTArrow =▷★ (NTArrowC _) (NTArrowC _) = =▷★ , =▷★ , =▷★
   beyond-▸NTArrow =▷Refl (NTArrowC match1) (NTArrowC match2) with ▸DTArrow-unicity match1 match2 
   ... | refl , refl , refl = =▷Refl , =▷Refl , =▷Refl
 
@@ -227,36 +227,36 @@ module Core.Lemmas where
     syn , s ▸NTProj t , m -> 
     syn' , s ▸NTProj t' , m' -> 
     (=▷ t t' × =▷ m m')
-  beyond-▸NTProj =▷New (NTProjC x) (NTProjC x₁) = =▷New , =▷New
+  beyond-▸NTProj =▷★ (NTProjC x) (NTProjC x₁) = =▷★ , =▷★
   beyond-▸NTProj =▷Refl (NTProjC x) (NTProjC x₁) with ▸DTProj-unicity x x₁ 
   ... | refl , refl = =▷Refl , =▷Refl
 
-  NUnless-new : ∀ {d n t} ->
-    NUnless (d , n) (t , New) ≡ (DUnless d t , New)
-  NUnless-new {n = n} {t = □} rewrite max-new n = refl 
-  NUnless-new {t = ■ x} = refl  
+  NUnless-dirty : ∀ {d n t} ->
+    NUnless (d , n) (t , ★) ≡ (DUnless d t , ★)
+  NUnless-dirty {n = n} {t = □} rewrite max-dirty n = refl 
+  NUnless-dirty {t = ■ x} = refl  
 
-  NUnless-new-▷ : ∀ {d n t d'} ->
-    ▷ (NUnless (d , n) (t , New)) d'
-  NUnless-new-▷ {d} {n} {t} rewrite NUnless-new {d} {n} {t} = ▷Pair ▶New
+  NUnless-dirty-▷ : ∀ {d n t d'} ->
+    ▷ (NUnless (d , n) (t , ★)) d'
+  NUnless-dirty-▷ {d} {n} {t} rewrite NUnless-dirty {d} {n} {t} = ▷Pair ▶★
 
   beyond-▶ : 
     {A : Set} -> 
-    {a a' : NEW A} 
+    {a a' : ○ A} 
     {b : A} ->
     =▷ a a' ->
     ▶ a b ->
     ▶ a' b 
-  beyond-▶ =▷New consist = ▶New
+  beyond-▶ =▷★ consist = ▶★
   beyond-▶ =▷Refl consist = consist
 
   beyond-▷ : 
     {A : Set} -> 
-    {a a' b : NEW A} ->
+    {a a' b : ○ A} ->
     =▷ a a' ->
     ▷ a b ->
     ▷ a' b 
-  beyond-▷ =▷New consist = ▷Pair ▶New
+  beyond-▷ =▷★ consist = ▷Pair ▶★
   beyond-▷ =▷Refl consist = consist
 
   beyond-through-~N : ∀ {syn syn' ana m m'} ->
@@ -264,45 +264,45 @@ module Core.Lemmas where
     syn ~N ana , m -> 
     syn' ~N ana , m' ->
     =▷ m m'
-  beyond-through-~N =▷New consist1 (~N-pair consist2) = =▷New
+  beyond-through-~N =▷★ consist1 (~N-pair consist2) = =▷★
   beyond-through-~N =▷Refl consist1 consist2 rewrite ~N-unicity consist1 consist2 = =▷Refl
 
   preservation-lambda-lemma : ∀ {t syn1 syn1' syn2 ana} ->
     =▷ syn1 syn1' ->
     ▷ (NUnless (NArrow t syn1) ana) syn2 ->
     ▷ (NUnless (NArrow t syn1') ana) syn2
-  preservation-lambda-lemma {t = t , n} {ana = □ , n-ana} =▷New (▷Pair consist) rewrite max-new n = ▷Pair ▶New
-  preservation-lambda-lemma {t = t , n} {ana = ■ ana , n-ana} =▷New (▷Pair consist) = ▷Pair consist
+  preservation-lambda-lemma {t = t , n} {ana = □ , n-ana} =▷★ (▷Pair consist) rewrite max-dirty n = ▷Pair ▶★
+  preservation-lambda-lemma {t = t , n} {ana = ■ ana , n-ana} =▷★ (▷Pair consist) = ▷Pair consist
   preservation-lambda-lemma {t = t , n} =▷Refl consist = consist
 
   consist-unless-lemma : ∀ {t1 t2 n1 n2 d} ->
-    ▷ (NUnless (NArrow (t1 , n1) (t2 , n2)) (d , Old))
-      (DUnless (DArrow t1 t2) d , New)
+    ▷ (NUnless (NArrow (t1 , n1) (t2 , n2)) (d , •))
+      (DUnless (DArrow t1 t2) d , ★)
   consist-unless-lemma {d = □} = ▷Pair ▶Same
-  consist-unless-lemma {d = ■ d} = ▷Pair ▶Old
+  consist-unless-lemma {d = ■ d} = ▷Pair ▶•
 
   consist-unless-prod : ∀ {t1 t2 n1 n2 d} ->
-    ▷ (NUnless (NProd (t1 , n1) (t2 , n2)) (d , Old))
-      (DUnless (DProd t1 t2) d , New)
+    ▷ (NUnless (NProd (t1 , n1) (t2 , n2)) (d , •))
+      (DUnless (DProd t1 t2) d , ★)
   consist-unless-prod {d = □} = ▷Pair ▶Same
-  consist-unless-prod {d = ■ d} = ▷Pair ▶Old
+  consist-unless-prod {d = ■ d} = ▷Pair ▶•
 
   preservation-pair-lemma : ∀ {syn1 syn1' syn2 syn2' ana syn-all} ->
     =▷ syn1 syn1' ->
     =▷ syn2 syn2' ->
     ▷ (NUnless (NProd syn1 syn2) ana) syn-all ->
     ▷ (NUnless (NProd syn1' syn2') ana) syn-all
-  preservation-pair-lemma {ana = □ , n-ana} =▷New =▷New (▷Pair consist) = ▷Pair ▶New
-  preservation-pair-lemma {ana = ■ ana , n-ana} =▷New =▷New (▷Pair consist) = ▷Pair consist
-  preservation-pair-lemma {ana = □ , n-ana} =▷New =▷Refl (▷Pair consist) = ▷Pair ▶New
-  preservation-pair-lemma {ana = ■ ana , n-ana} =▷New =▷Refl (▷Pair consist) = ▷Pair consist
-  preservation-pair-lemma {syn1 = syn1 , n1} {ana = □ , n-ana} =▷Refl =▷New (▷Pair consist) rewrite max-new n1 = ▷Pair ▶New
-  preservation-pair-lemma {syn1 = syn1 , n1} {ana = ■ ana , n-ana} =▷Refl =▷New (▷Pair consist) = ▷Pair consist
+  preservation-pair-lemma {ana = □ , n-ana} =▷★ =▷★ (▷Pair consist) = ▷Pair ▶★
+  preservation-pair-lemma {ana = ■ ana , n-ana} =▷★ =▷★ (▷Pair consist) = ▷Pair consist
+  preservation-pair-lemma {ana = □ , n-ana} =▷★ =▷Refl (▷Pair consist) = ▷Pair ▶★
+  preservation-pair-lemma {ana = ■ ana , n-ana} =▷★ =▷Refl (▷Pair consist) = ▷Pair consist
+  preservation-pair-lemma {syn1 = syn1 , n1} {ana = □ , n-ana} =▷Refl =▷★ (▷Pair consist) rewrite max-dirty n1 = ▷Pair ▶★
+  preservation-pair-lemma {syn1 = syn1 , n1} {ana = ■ ana , n-ana} =▷Refl =▷★ (▷Pair consist) = ▷Pair consist
   preservation-pair-lemma =▷Refl =▷Refl consist = consist
 
   beyond-▷-contra : 
     {A : Set} -> 
-    {a b b' : NEW A} ->
+    {a b b' : ○ A} ->
     ◁▷ b b' ->
     ▷ a b ->
     ▷ a b' 
@@ -333,100 +333,100 @@ module Core.Lemmas where
   oldify-syn : ∀ {Γ e t n n'} ->
     Γ U⊢ (e ⇒ (t , n)) ->
     Γ U⊢ (e ⇒ (t , n'))
-  oldify-syn (WTConst (▷Pair consist)) = WTConst (▷Pair consist) 
-  oldify-syn (WTHole (▷Pair consist)) = WTHole (▷Pair consist)
-  oldify-syn (WTAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana) = WTAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana
-  oldify-syn (WTVar in-ctx (▷Pair consist)) = WTVar in-ctx (▷Pair consist)
-  oldify-syn (WTAsc (▷Pair consist-syn) consist-ana ana) = WTAsc (▷Pair consist-syn) consist-ana ana
-  oldify-syn (WTProj x (▷Pair x₁) x₂ x₃) = WTProj x (▷Pair x₁) x₂ x₃
+  oldify-syn (WFConst (▷Pair consist)) = WFConst (▷Pair consist) 
+  oldify-syn (WFHole (▷Pair consist)) = WFHole (▷Pair consist)
+  oldify-syn (WFAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana) = WFAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana
+  oldify-syn (WFVar in-ctx (▷Pair consist)) = WFVar in-ctx (▷Pair consist)
+  oldify-syn (WFAsc (▷Pair consist-syn) consist-ana ana) = WFAsc (▷Pair consist-syn) consist-ana ana
+  oldify-syn (WFProj x (▷Pair x₁) x₂ x₃) = WFProj x (▷Pair x₁) x₂ x₃
 
   oldify-syn-inner : ∀ {Γ e t m n n'} ->
     Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ (□ , n')) ->
-    Γ L⊢ ((e ⇒ (t , Old)) [ ✔ ]⇐ (□ , n'))
-  oldify-syn-inner (WTUp subsumable (~N-pair consist) consist-m syn) = WTUp subsumable (~N-pair ~DVoidR) ▶Same (oldify-syn syn)
-  oldify-syn-inner (WTFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ x₅ x₆ x₇ syn) = WTFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ (beyond-▷-contra ◁▷C x₅) (~N-pair ~DVoidR) ▶Same syn
-  oldify-syn-inner (WTPair (NTProdC DTProdNone) (▷Pair x) (▷Pair x₁) x₃ x₄ x₅ x₆ w w₁) = WTPair (NTProdC DTProdNone) (▷Pair x) (▷Pair x₁) x₃ (beyond-▷-contra ◁▷C x₄) (~N-pair ~DVoidR) ▶Same w w₁
+    Γ L⊢ ((e ⇒ (t , •)) [ ✔ ]⇐ (□ , n'))
+  oldify-syn-inner (WFSubsume subsumable (~N-pair consist) consist-m syn) = WFSubsume subsumable (~N-pair ~DVoidR) ▶Same (oldify-syn syn)
+  oldify-syn-inner (WFFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ x₅ x₆ x₇ syn) = WFFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ (beyond-▷-contra ◁▷C x₅) (~N-pair ~DVoidR) ▶Same syn
+  oldify-syn-inner (WFPair (NTProdC DTProdNone) (▷Pair x) (▷Pair x₁) x₃ x₄ x₅ x₆ w w₁) = WFPair (NTProdC DTProdNone) (▷Pair x) (▷Pair x₁) x₃ (beyond-▷-contra ◁▷C x₄) (~N-pair ~DVoidR) ▶Same w w₁
 
-  newify-syn-inner : ∀ {Γ e n m m' ana t} ->
+  dirty-syn-inner : ∀ {Γ e n m m' ana t} ->
     Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ ana) -> 
-    Γ L⊢ ((e ⇒ (t , New)) [ m' ]⇐ ana)
-  newify-syn-inner (WTUp x (~N-pair x₁) x₂ x₃) = WTUp x (~N-pair x₁) ▶New (oldify-syn x₃)
-  newify-syn-inner (WTFun x x₁ x₂ x₃ x₄ (▷Pair x₅) (~N-pair x₆) x₇ wt) = WTFun x x₁ x₂ x₃ x₄ (▷Pair x₅) (~N-pair x₆) ▶New wt
-  newify-syn-inner (WTPair (NTProdC y) (▷Pair x) (▷Pair x₁) x₃ x₄ (~N-pair x₅) x₆ w w₁) = WTPair (NTProdC y) (▷Pair x) (▷Pair x₁) x₃ (beyond-▷-contra ◁▷C x₄) (~N-pair x₅) ▶New w w₁
+    Γ L⊢ ((e ⇒ (t , ★)) [ m' ]⇐ ana)
+  dirty-syn-inner (WFSubsume x (~N-pair x₁) x₂ x₃) = WFSubsume x (~N-pair x₁) ▶★ (oldify-syn x₃)
+  dirty-syn-inner (WFFun x x₁ x₂ x₃ x₄ (▷Pair x₅) (~N-pair x₆) x₇ wt) = WFFun x x₁ x₂ x₃ x₄ (▷Pair x₅) (~N-pair x₆) ▶★ wt
+  dirty-syn-inner (WFPair (NTProdC y) (▷Pair x) (▷Pair x₁) x₃ x₄ (~N-pair x₅) x₆ w w₁) = WFPair (NTProdC y) (▷Pair x) (▷Pair x₁) x₃ (beyond-▷-contra ◁▷C x₄) (~N-pair x₅) ▶★ w w₁
 
-  newify-ana : ∀ {Γ e n n' m m' ana t t'} ->
+  dirty-ana : ∀ {Γ e n n' m m' ana t t'} ->
     Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ ana) -> 
-    Γ L⊢ ((e ⇒ (t , n')) [ m' ]⇐ (t' , New))
-  newify-ana {n' = n'} {t = t} {t' = t'} (WTUp {syn-all = syn-all} subsumable consist-t consist-m syn) with ~N-dec (t , n') (t' , New)
-  ... | _ , (~N-pair consist-t') = WTUp subsumable (~N-pair consist-t') ▶New-max-r (oldify-syn syn)
-  newify-ana {t = t} {t' = t'} (WTFun {syn-all = syn-all} {syn-body = syn-body , n-body} {t-asc = t-asc , n-asc} (NTArrowC _) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ▸NTArrow-dec (t' , New)
-  ... | (t-in , New) , (t-out , New) , (m , New) , NTArrowC marrow with ~N-dec (■ t-asc , n-asc) (t-in , New) | ~N-dec (t , New) (t' , New)
-  ... | m' , consist | _ , ~N-pair consist' with new-through-~N-left consist 
-  ... | _ , refl = WTFun (NTArrowC marrow) (■~N-pair consist) (▷Pair ▶New) ▶New ▶New NUnless-new-▷ (~N-pair consist') ▶New-max-r ana
-  newify-ana {t = t} {t' = t'} (WTPair (NTProdC y) (▷Pair x) (▷Pair x₁) x₃ x₄ (~N-pair x₅) x₆ w w₁) with ▸NTProd-dec (t' , New)
-  ... | (t-fst , New) , (t-snd , New) , (m , New) , NTProdC marrow with ~N-dec (t , New) (t' , New)
-  ... | _ , ~N-pair consist' = WTPair (NTProdC marrow) (▷Pair ▶New) (▷Pair ▶New) ▶New NUnless-new-▷ (~N-pair consist') ▶New-max-r w w₁
+    Γ L⊢ ((e ⇒ (t , n')) [ m' ]⇐ (t' , ★))
+  dirty-ana {n' = n'} {t = t} {t' = t'} (WFSubsume {syn-all = syn-all} subsumable consist-t consist-m syn) with ~N-dec (t , n') (t' , ★)
+  ... | _ , (~N-pair consist-t') = WFSubsume subsumable (~N-pair consist-t') ▶★-max-r (oldify-syn syn)
+  dirty-ana {t = t} {t' = t'} (WFFun {syn-all = syn-all} {syn-body = syn-body , n-body} {t-asc = t-asc , n-asc} (NTArrowC _) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ▸NTArrow-dec (t' , ★)
+  ... | (t-in , ★) , (t-out , ★) , (m , ★) , NTArrowC marrow with ~N-dec (■ t-asc , n-asc) (t-in , ★) | ~N-dec (t , ★) (t' , ★)
+  ... | m' , consist | _ , ~N-pair consist' with dirty-through-~N-left consist 
+  ... | _ , refl = WFFun (NTArrowC marrow) (■~N-pair consist) (▷Pair ▶★) ▶★ ▶★ NUnless-dirty-▷ (~N-pair consist') ▶★-max-r ana
+  dirty-ana {t = t} {t' = t'} (WFPair (NTProdC y) (▷Pair x) (▷Pair x₁) x₃ x₄ (~N-pair x₅) x₆ w w₁) with ▸NTProd-dec (t' , ★)
+  ... | (t-fst , ★) , (t-snd , ★) , (m , ★) , NTProdC marrow with ~N-dec (t , ★) (t' , ★)
+  ... | _ , ~N-pair consist' = WFPair (NTProdC marrow) (▷Pair ▶★) (▷Pair ▶★) ▶★ NUnless-dirty-▷ (~N-pair consist') ▶★-max-r w w₁
 
-  small-newify-ana : ∀ {Γ e m m' ana t} ->
+  small-dirty-ana : ∀ {Γ e m m' ana t} ->
     Γ L⊢ (e [ m ]⇐ ana) -> 
-    Γ L⊢ (e [ m' ]⇐ (t , New))
-  small-newify-ana {e = e ⇒ (t , n)} ana = newify-ana ana
+    Γ L⊢ (e [ m' ]⇐ (t , ★))
+  small-dirty-ana {e = e ⇒ (t , n)} ana = dirty-ana ana
 
 
-  data NewerCtx : Ctx -> Ctx -> Set where  
-    NewerCtxRefl : ∀{Γ} ->
-       NewerCtx Γ Γ
-    NewerCtxInit : ∀{x t t' Γ} ->
-       NewerCtx (x ∶ (t' , New) ∷ Γ) (x ∶ t ∷ Γ) 
-    NewerCtxCons : ∀{x t Γ Γ'} ->
-       NewerCtx Γ Γ' -> 
-       NewerCtx (x ∶ t ∷ Γ) (x ∶ t ∷ Γ')
+  data ★erCtx : Ctx -> Ctx -> Set where  
+    ★erCtxRefl : ∀{Γ} ->
+       ★erCtx Γ Γ
+    ★erCtxInit : ∀{x t t' Γ} ->
+       ★erCtx (x ∶ (t' , ★) ∷ Γ) (x ∶ t ∷ Γ) 
+    ★erCtxCons : ∀{x t Γ Γ'} ->
+       ★erCtx Γ Γ' -> 
+       ★erCtx (x ∶ t ∷ Γ) (x ∶ t ∷ Γ')
 
-  NewerCtxInit? : ∀{x t t' Γ} ->
-    NewerCtx (x ∶ (t' , New) ∷? Γ) (x ∶ t ∷? Γ)  
-  NewerCtxInit? {BHole} = NewerCtxRefl
-  NewerCtxInit? {BVar x} = NewerCtxInit
+  ★erCtxInit? : ∀{x t t' Γ} ->
+    ★erCtx (x ∶ (t' , ★) ∷? Γ) (x ∶ t ∷? Γ)  
+  ★erCtxInit? {BHole} = ★erCtxRefl
+  ★erCtxInit? {BVar x} = ★erCtxInit
 
-  NewerCtxCons? : ∀{x t Γ Γ'} ->
-    NewerCtx Γ Γ' -> 
-    NewerCtx (x ∶ t ∷? Γ) (x ∶ t ∷? Γ')
-  NewerCtxCons? {BHole} newer = newer 
-  NewerCtxCons? {BVar x} = NewerCtxCons
+  ★erCtxCons? : ∀{x t Γ Γ'} ->
+    ★erCtx Γ Γ' -> 
+    ★erCtx (x ∶ t ∷? Γ) (x ∶ t ∷? Γ')
+  ★erCtxCons? {BHole} dirtyer = dirtyer 
+  ★erCtxCons? {BVar x} = ★erCtxCons
   
-  newer-ctx-lookup : ∀{Γ Γ' x t m} ->
-    NewerCtx Γ Γ' -> 
+  dirtyer-ctx-lookup : ∀{Γ Γ' x t m} ->
+    ★erCtx Γ Γ' -> 
     x , t ∈N Γ' , m ->
     ∃[ t' ] (x , t' ∈N Γ , m) × (=▷ t t')
-  newer-ctx-lookup NewerCtxRefl in-ctx = _ , in-ctx , =▷Refl
-  newer-ctx-lookup NewerCtxInit InCtxFound = _ , InCtxFound , =▷New
-  newer-ctx-lookup NewerCtxInit (InCtxSkip x in-ctx) = _ , InCtxSkip x in-ctx , =▷Refl
-  newer-ctx-lookup (NewerCtxCons newer) InCtxFound = _ , InCtxFound , =▷Refl
-  newer-ctx-lookup (NewerCtxCons newer) (InCtxSkip x in-ctx) with newer-ctx-lookup newer in-ctx 
+  dirtyer-ctx-lookup ★erCtxRefl in-ctx = _ , in-ctx , =▷Refl
+  dirtyer-ctx-lookup ★erCtxInit InCtxFound = _ , InCtxFound , =▷★
+  dirtyer-ctx-lookup ★erCtxInit (InCtxSkip x in-ctx) = _ , InCtxSkip x in-ctx , =▷Refl
+  dirtyer-ctx-lookup (★erCtxCons dirtyer) InCtxFound = _ , InCtxFound , =▷Refl
+  dirtyer-ctx-lookup (★erCtxCons dirtyer) (InCtxSkip x in-ctx) with dirtyer-ctx-lookup dirtyer in-ctx 
   ... | t' , in-ctx' , beyond = _ , InCtxSkip x in-ctx' , beyond
 
   mutual 
 
-    newer-ctx-u : ∀{Γ Γ' e} ->
-      NewerCtx Γ Γ' -> 
+    dirtyer-ctx-u : ∀{Γ Γ' e} ->
+      ★erCtx Γ Γ' -> 
       Γ' U⊢ e ->
       Γ U⊢ e
-    newer-ctx-u newer (WTConst x) = WTConst x
-    newer-ctx-u newer (WTHole x) = WTHole x
-    newer-ctx-u newer (WTAp x x₁ x₂ x₃ x₄ x₅) = WTAp x x₁ x₂ x₃ (newer-ctx-l newer x₄) (newer-ctx-l newer x₅)
-    newer-ctx-u newer (WTAsc x x₁ x₂) = WTAsc x x₁ (newer-ctx-l newer x₂)
-    newer-ctx-u newer (WTVar x x₁) with newer-ctx-lookup newer x 
-    ... | t' , in-ctx' , beyond = WTVar in-ctx' (beyond-▷ beyond x₁)
-    newer-ctx-u newer (WTProj x x₁ x₂ x₃) = WTProj x x₁ x₂ (newer-ctx-l newer x₃)
+    dirtyer-ctx-u dirtyer (WFConst x) = WFConst x
+    dirtyer-ctx-u dirtyer (WFHole x) = WFHole x
+    dirtyer-ctx-u dirtyer (WFAp x x₁ x₂ x₃ x₄ x₅) = WFAp x x₁ x₂ x₃ (dirtyer-ctx-l dirtyer x₄) (dirtyer-ctx-l dirtyer x₅)
+    dirtyer-ctx-u dirtyer (WFAsc x x₁ x₂) = WFAsc x x₁ (dirtyer-ctx-l dirtyer x₂)
+    dirtyer-ctx-u dirtyer (WFVar x x₁) with dirtyer-ctx-lookup dirtyer x 
+    ... | t' , in-ctx' , beyond = WFVar in-ctx' (beyond-▷ beyond x₁)
+    dirtyer-ctx-u dirtyer (WFProj x x₁ x₂ x₃) = WFProj x x₁ x₂ (dirtyer-ctx-l dirtyer x₃)
 
-    newer-ctx-l : ∀{Γ Γ' e} ->
-      NewerCtx Γ Γ' -> 
+    dirtyer-ctx-l : ∀{Γ Γ' e} ->
+      ★erCtx Γ Γ' -> 
       Γ' L⊢ e ->
       Γ L⊢ e
-    newer-ctx-l newer (WTUp x x₁ x₂ x₃) = WTUp x x₁ x₂ (newer-ctx-u newer x₃)
-    newer-ctx-l newer (WTFun {x = x} x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ wt) = WTFun x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ (newer-ctx-l (NewerCtxCons? {x} newer) wt)
-    newer-ctx-l newer (WTPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) = WTPair x x₁ x₂ x₃ x₄ x₅ x₆ (newer-ctx-l newer wt) (newer-ctx-l newer wt₁)
+    dirtyer-ctx-l dirtyer (WFSubsume x x₁ x₂ x₃) = WFSubsume x x₁ x₂ (dirtyer-ctx-u dirtyer x₃)
+    dirtyer-ctx-l dirtyer (WFFun {x = x} x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ wt) = WFFun x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ (dirtyer-ctx-l (★erCtxCons? {x} dirtyer) wt)
+    dirtyer-ctx-l dirtyer (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) = WFPair x x₁ x₂ x₃ x₄ x₅ x₆ (dirtyer-ctx-l dirtyer wt) (dirtyer-ctx-l dirtyer wt₁)
  
-  newify-ctx : ∀{Γ x t t' e} ->  
+  dirty-ctx : ∀{Γ x t t' e} ->  
     (x ∶ t ∷? Γ) L⊢ e ->  
-    (x ∶ (t' , New) ∷? Γ) L⊢ e        
-  newify-ctx {x = x} = newer-ctx-l (NewerCtxInit? {x})
+    (x ∶ (t' , ★) ∷? Γ) L⊢ e        
+  dirty-ctx {x = x} = dirtyer-ctx-l (★erCtxInit? {x})
