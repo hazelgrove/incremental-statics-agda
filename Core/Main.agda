@@ -55,13 +55,13 @@ module Core.Main where
   AP↦*-erase (AP*StepUpdate step steps) rewrite P↦-erase step = AP↦*-erase steps
   AP↦*-erase (AP*StepDone nostep) = AB*StepDone
 
-  main-theorem-valid : ∀ {p p' As} ->
+  main-theorem-validity : ∀ {p p' As} ->
     P⊢ p ->
     As , p AP↦* p' ->
     (P◇ p') ~> p'
-  main-theorem-valid wt (AP*StepAct step steps) = main-theorem-valid (ActionPreservationProgram wt step) steps
-  main-theorem-valid wt (AP*StepUpdate step steps) = main-theorem-valid (UpdatePreservationProgram wt step) steps
-  main-theorem-valid {p} wt (AP*StepDone nostep) with ProgressProgram wt
+  main-theorem-validity wt (AP*StepAct step steps) = main-theorem-validity (ActionPreservationProgram wt step) steps
+  main-theorem-validity wt (AP*StepUpdate step steps) = main-theorem-validity (UpdatePreservationProgram wt step) steps
+  main-theorem-validity {p} wt (AP*StepDone nostep) with ProgressProgram wt
   ... | Inl step = ⊥-elim (nostep step)
   ... | Inr settled = quiescent-validity wt settled
 
@@ -71,7 +71,7 @@ module Core.Main where
     As , p AP↦* p'' ->
     p' ≡ p''
   main-theorem-convergent wt steps1 steps2 with AP↦*-erase steps1 | AP↦*-erase steps2
-  ... | steps1' | steps2' with AB↦*-unicity steps1' steps2' | main-theorem-valid wt steps1 | main-theorem-valid wt steps2
+  ... | steps1' | steps2' with AB↦*-unicity steps1' steps2' | main-theorem-validity wt steps1 | main-theorem-validity wt steps2
   ... | eq | mark1 | mark2 rewrite eq = marking-unicity mark1 mark2 
 
   main-theorem-termination : 
