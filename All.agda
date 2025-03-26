@@ -1,5 +1,5 @@
 
-module Core where 
+module All where 
   
   import Core.Core
   import Core.Environment
