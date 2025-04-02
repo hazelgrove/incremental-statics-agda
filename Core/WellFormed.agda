@@ -62,26 +62,26 @@ module Core.WellFormed where
       d , s ▸DTProj t , m ->
       (d , n) , s ▸NTProj (t , n) , (m , n)
 
-  data _,_∈N_,_ : Var -> ○Type -> Ctx -> Mark -> Set where 
-    InCtxEmpty : ∀ {x} ->
-      x ,  (THole , •) ∈N ∅ , ✖ 
-    InCtxFound : ∀ {Γ x t} ->
-      x , t ∈N (x ∶ t ∷ Γ) , ✔
-    InCtxSkip : ∀ {Γ t t' x x' m} -> 
-      ¬(x ≡ x') ->
-      (x , t ∈N Γ , m) -> 
-      (x , t ∈N (x' ∶ t' ∷ Γ) , m)
+  -- data _,_∈N_,_ : Var -> ○Type -> Ctx -> Mark -> Set where 
+  --   InCtxEmpty : ∀ {x} ->
+  --     x ,  (THole , •) ∈N ∅ , ✖ 
+  --   InCtxFound : ∀ {Γ x t} ->
+  --     x , t ∈N (x ∶ t ∷ Γ) , ✔
+  --   InCtxSkip : ∀ {Γ t t' x x' m} -> 
+  --     ¬(x ≡ x') ->
+  --     (x , t ∈N Γ , m) -> 
+  --     (x , t ∈N (x' ∶ t' ∷ Γ) , m)
 
-  _,_∈N?_,_ : Binding -> ○Type -> Ctx -> Mark -> Set
-  BHole , t ∈N? Γ , m = ⊤
-  BVar x , t ∈N? Γ , m = x , t ∈N Γ , m
+  -- _,_∈N?_,_ : Binding -> ○Type -> Ctx -> Mark -> Set
+  -- BHole , t ∈N? Γ , m = ⊤
+  -- BVar x , t ∈N? Γ , m = x , t ∈N Γ , m
 
-  InCtxSkip? : ∀ {x' x  Γ t t' m} -> 
-    ¬((BVar x) ≡ x') ->
-    (x , t ∈N Γ , m) -> 
-    (x , t ∈N (x' ∶ t' ∷? Γ) , m)
-  InCtxSkip? {BHole} neq in-ctx = in-ctx
-  InCtxSkip? {BVar x} neq in-ctx = InCtxSkip (λ eq → neq (cong BVar eq)) in-ctx
+  -- InCtxSkip? : ∀ {x' x  Γ t t' m} -> 
+  --   ¬((BVar x) ≡ x') ->
+  --   (x , t ∈N Γ , m) -> 
+  --   (x , t ∈N (x' ∶ t' ∷? Γ) , m)
+  -- InCtxSkip? {BHole} neq in-ctx = in-ctx
+  -- InCtxSkip? {BVar x} neq in-ctx = InCtxSkip (λ eq → neq (cong BVar eq)) in-ctx
 
   data _~D_,_ : Data -> Data -> Mark -> Set where 
     ~DVoidL : ∀ {d} ->
@@ -148,7 +148,7 @@ module Core.WellFormed where
         Γ L⊢ (e-arg [ m-arg ]⇐ ana-arg) ->
         Γ S⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all)
       WFVar : ∀ {Γ x syn-all t-var m-var n-syn} ->
-        x , t-var ∈N Γ , m-var ->
+        x , t-var ∈ Γ , m-var ->
         ▷ t-var (syn-all , n-syn) ->
         Γ S⊢ ((EVar x m-var) ⇒ (■ syn-all , n-syn))
       WFAsc : ∀ {Γ e-body syn-all ana-body t-asc m-body n-syn n-ana} ->
@@ -195,5 +195,5 @@ module Core.WellFormed where
       
   data P⊢ : Program -> Set where 
     WFProgram : ∀ {p} ->
-      ∅ L⊢ (AnaExpOfProgram p) ->
+      (∅ (THole , •)) L⊢ (AnaExpOfProgram p) ->
       P⊢ p
