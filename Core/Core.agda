@@ -16,13 +16,13 @@ module Core.Core where
     BHole : Binding
     BVar : Var -> Binding
 
-  data Type : Set where 
-    TBase : Type 
-    THole : Type
-    TArrow : Type -> Type -> Type 
-    TProd : Type -> Type -> Type 
-    TVar : Var -> Type
-    TForall : Binding -> Type -> Type
+  data BareType : Set where 
+    BareTBase : BareType 
+    BareTHole : BareType
+    BareTArrow : BareType -> BareType -> BareType 
+    BareTProd : BareType -> BareType -> BareType 
+    BareTVar : Var -> BareType
+    BareTForall : Binding -> BareType -> BareType
 
   data ProdSide : Set where 
     Fst : ProdSide 
@@ -31,10 +31,10 @@ module Core.Core where
   data BareExp : Set where 
     BareEConst : BareExp 
     BareEHole : BareExp
-    BareEFun : Binding -> Type -> BareExp -> BareExp 
+    BareEFun : Binding -> BareType -> BareExp -> BareExp 
     BareEAp : BareExp -> BareExp -> BareExp 
     BareEVar : Var -> BareExp 
-    BareEAsc : Type -> BareExp -> BareExp 
+    BareEAsc : BareType -> BareExp -> BareExp 
     BareEPair : BareExp -> BareExp -> BareExp 
     BareEProj : ProdSide -> BareExp -> BareExp
 
@@ -53,6 +53,14 @@ module Core.Core where
   _⊓M_ : Mark -> Mark -> Mark 
   ✔ ⊓M m = m
   ✖ ⊓M m = ✖
+
+  data Type : Set where 
+    TBase : Type 
+    THole : Type
+    TArrow : Type -> Type -> Type 
+    TProd : Type -> Type -> Type 
+    TVar : Var -> Mark -> Type
+    TForall : Binding -> Type -> Type
 
   data Data : Set where 
     □ : Data
@@ -116,10 +124,15 @@ module Core.Core where
   data Context (A : Set) : Set where 
     ∅ : Context A
     _∶_∷_ : Var -> A -> Context A -> Context A
+    _T∷_ : Var -> Context A -> Context A
 
   _∶_∷?_ : {A : Set} -> Binding -> A -> Context A -> Context A
   BHole ∶ t ∷? Γ = Γ
   BVar x ∶ t ∷? Γ = x ∶ t ∷ Γ
+
+  _T∷?_ : {A : Set} -> Binding -> Context A -> Context A
+  BHole T∷? Γ = Γ
+  BVar x T∷? Γ = x T∷ Γ
 
   BareCtx : Set 
   BareCtx = Context Type
@@ -133,10 +146,30 @@ module Core.Core where
       ¬(x ≡ x') ->
       (x , t ∈ Γ , m) -> 
       (x , t ∈ (x' ∶ t' ∷ Γ) , m)
+    InCtxTSkip : ∀ {Γ t x x' m} -> 
+      (x , t ∈ Γ , m) -> 
+      (x , t ∈ (x' T∷ Γ) , m)
 
   _,_∈?_,_ : Binding -> Type -> BareCtx -> Mark -> Set
   BHole , t ∈? Γ , m = ⊤
   BVar x , t ∈? Γ , m = x , t ∈ Γ , m
+
+  data _T∈_,_ : Var -> BareCtx -> Mark -> Set where 
+    InCtxEmpty : ∀ {x} ->
+      x T∈ ∅ , ✖
+    InCtxFound : ∀ {Γ x} ->
+      x T∈ (x T∷ Γ) , ✔
+    InCtxSkip : ∀ {Γ t x x' m} -> 
+      (x T∈ Γ , m) -> 
+      (x T∈ (x' ∶ t ∷ Γ) , m)
+    InCtxTSkip : ∀ {Γ x x' m} -> 
+      ¬(x ≡ x') ->
+      (x T∈ Γ , m) -> 
+      (x T∈ (x' T∷ Γ) , m)
+
+  _T∈?_,_ : Binding -> BareCtx -> Mark -> Set
+  BHole T∈? Γ , m = ⊤
+  BVar x T∈? Γ , m = x T∈ Γ , m
     
   Ctx : Set 
   Ctx = Context ○Type
