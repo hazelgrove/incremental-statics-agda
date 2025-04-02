@@ -4,6 +4,7 @@ open import Relation.Binary.PropositionalEquality
 
 open import Prelude
 open import Core.Core
+open import Core.SideConditions
 open import Core.WellFormed
 open import Core.Lemmas
 open import Core.Actions
@@ -106,7 +107,7 @@ module Core.ActionPreservation where
   PreservationStep ana (ALC ActInsertConst) = WrapSubsume (WFConst (▷Pair ▶•))
   PreservationStep ana (ALC (ActInsertVar in-ctx)) = WrapSubsume (WFVar in-ctx (▷Pair ▶Same))
   PreservationStep ana (ALC ActWrapAsc) = WrapSubsume (WFAsc (▷Pair ▶Same) (▷Pair ▶Same) (dirty-ana ana))
-  PreservationStep ana (ALC ActWrapApTwo) = WrapSubsume (WFAp (NTArrowC (DTArrowSome MArrowHole)) (▷Pair ▶•) (▷Pair ▶•) ▶• (WFSubsume SubsumableHole (~N-pair ~DVoidR) ▶• (WFHole (▷Pair ▶•))) (dirty-ana ana))
+  PreservationStep ana (ALC ActWrapApTwo) = WrapSubsume (WFAp (NTArrowC (DTArrowSome (proj₂ (proj₂ (proj₂ (▸TArrow-dec THole)))))) (▷Pair ▶★) (▷Pair ▶★) ▶★ (WFSubsume SubsumableHole (~N-pair ~DVoidR) ▶★ (WFHole (▷Pair ▶•))) (dirty-ana ana))
   -- PreservationStep ana (ALC {t = t} {n = n} (ActWrapFun {t = t'} {n = n'} var-update)) with ▸NTArrow-dec (t , ★) | ~N-dec (t' , n') (t , ★)
   -- ... | (t-in , ★) , (t-out , ★) , (m , ★) , NTArrowC consist | m' , consist-syn with ~N-dec (■ THole , ★) (t-in , ★) | dirty-through-~N-left consist-syn
   -- ... | _ , (~N-pair consist') | _ , refl = WFFun (NTArrowC consist) (■~N-pair (~N-pair consist')) (▷Pair ▶★) ▶★ ▶★ NUnless-dirty-▷ consist-syn ▶★ (dirty-ana (preservation-vars-ana?-alt ana var-update))

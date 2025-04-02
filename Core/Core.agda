@@ -8,12 +8,6 @@ open import Prelude
 
 module Core.Core where
 
-  data Type : Set where 
-    TBase : Type 
-    THole : Type
-    TArrow : Type -> Type -> Type 
-    TProd : Type -> Type -> Type 
-
   postulate 
     Var : Set 
     _≡?_ : (x y : Var) -> Dec (x ≡ y) 
@@ -21,6 +15,14 @@ module Core.Core where
   data Binding : Set where 
     BHole : Binding
     BVar : Var -> Binding
+
+  data Type : Set where 
+    TBase : Type 
+    THole : Type
+    TArrow : Type -> Type -> Type 
+    TProd : Type -> Type -> Type 
+    TVar : Var -> Type
+    TForall : Binding -> Type -> Type
 
   data ProdSide : Set where 
     Fst : ProdSide 
@@ -51,59 +53,6 @@ module Core.Core where
   _⊓M_ : Mark -> Mark -> Mark 
   ✔ ⊓M m = m
   ✖ ⊓M m = ✖
-  
-  data _▸TArrow_,_,_ : Type -> Type -> Type -> Mark -> Set where 
-    MArrowBase :
-      TBase ▸TArrow THole , THole , ✖
-    MArrowHole :
-      THole ▸TArrow THole , THole , ✔
-    MArrowArrow : ∀ {t1 t2} -> 
-      (TArrow t1 t2) ▸TArrow t1 , t2 , ✔
-    MArrowProd : ∀ {t1 t2} -> 
-      (TProd t1 t2) ▸TArrow THole , THole , ✖
-  
-  data _▸TProd_,_,_ : Type -> Type -> Type -> Mark -> Set where 
-    MProdBase :
-      TBase ▸TProd THole , THole , ✖
-    MProdHole :
-      THole ▸TProd THole , THole , ✔
-    MProdArrow : ∀ {t1 t2} -> 
-      (TArrow t1 t2) ▸TProd THole , THole , ✖
-    MProdProd : ∀ {t1 t2} -> 
-      (TProd t1 t2) ▸TProd t1 , t2 , ✔
-
-  data _,_▸TProj_,_ : Type -> ProdSide -> Type -> Mark -> Set where 
-    MProdFst : ∀ {t t-fst t-snd m} -> 
-      t ▸TProd t-fst , t-snd , m ->
-      t , Fst ▸TProj t-fst , m 
-    MProdSnd : ∀ {t t-fst t-snd m} ->
-      t ▸TProd t-fst , t-snd , m ->
-      t , Snd ▸TProj t-snd , m
-
-  data _~_,_ : Type -> Type -> Mark -> Set where 
-    ConsistHoleL : ∀ {t} -> THole ~ t , ✔
-    ConsistHoleR : ∀ {t} -> t ~ THole , ✔
-    ConsistBase : TBase ~ TBase , ✔
-    ConsistArr : ∀ {t1 t2 t3 t4 m1 m2} -> 
-      t1 ~ t3 , m1 -> 
-      t2 ~ t4 , m2 -> 
-      ((TArrow t1 t2) ~ (TArrow t3 t4) , (m1 ⊓M m2))
-    ConsistProd : ∀ {t1 t2 t3 t4 m1 m2} -> 
-      t1 ~ t3 , m1 -> 
-      t2 ~ t4 , m2 -> 
-      ((TProd t1 t2) ~ (TProd t3 t4) , (m1 ⊓M m2))
-    InconsistBaseArr : ∀ {t1 t2} ->
-      TBase ~ (TArrow t1 t2) , ✖
-    InconsistArrBase : ∀ {t1 t2} ->
-      (TArrow t1 t2) ~ TBase , ✖
-    InconsistBaseProd : ∀ {t1 t2} ->
-      TBase ~ (TProd t1 t2) , ✖
-    InconsistProdBase : ∀ {t1 t2} ->
-      (TProd t1 t2) ~ TBase , ✖
-    InconsistArrProd : ∀ {t1 t2 t3 t4} ->
-      (TArrow t1 t2) ~ (TProd t3 t4) , ✖
-    InconsistProdArr : ∀ {t1 t2 t3 t4} ->
-      (TProd t1 t2) ~ (TArrow t3 t4) , ✖
 
   data Data : Set where 
     □ : Data

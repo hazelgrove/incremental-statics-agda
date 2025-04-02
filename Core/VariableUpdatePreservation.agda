@@ -249,4 +249,4 @@ module Core.VariableUpdatePreservation where
     VariableUpdate? x t m e e' ->
     Γ L⊢ (e' [ m' ]⇐ ana)
   preservation-vars-unwrap {BHole} in-ctx ana refl = ana 
-  preservation-vars-unwrap {BVar x} in-ctx ana var-update = preservation-vars-unwrap-ana ana var-update (UnwrapInvInit in-ctx)
+  preservation-vars-unwrap {BVar x} in-ctx ana var-update = preservation-vars-unwrap-ana ana var-update (UnwrapInvInit in-ctx) 

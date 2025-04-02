@@ -117,7 +117,7 @@ module Core.Actions where
     ActWrapApOne : ∀ {Γ e t n} ->
       Γ ⊢ (WrapAp One) , (e ⇒ (t , n)) αU↦ ((EAp ((e ⇒ (t , ★)) [ ✔ ]⇐ (□ , ★)) ✔ ((EHole ⇒ (■ THole , •)) [ ✔ ]⇐ (□ , •))) ⇒ (□ , ★))
     ActWrapApTwo : ∀ {Γ e t n} ->
-      Γ ⊢ (WrapAp Two) , (e ⇒ (t , n)) αU↦ ((EAp ((EHole ⇒ (■ THole , •)) [ ✔ ]⇐ (□ , •)) ✔ ((e ⇒ (t , •)) [ ✔ ]⇐ (■ THole , ★))) ⇒ (■ THole , ★))
+      Γ ⊢ (WrapAp Two) , (e ⇒ (t , n)) αU↦ ((EAp ((EHole ⇒ (■ THole , ★)) [ ✔ ]⇐ (□ , •)) ✔ ((e ⇒ (t , •)) [ ✔ ]⇐ (□ , ★))) ⇒ (□ , ★))
     ActWrapPairOne : ∀ {Γ e t n} -> 
       Γ ⊢ (WrapPair One) , (e ⇒ (t , n)) αU↦ ((EPair ((e ⇒ (t , ★)) [ ✔ ]⇐ (□ , ★)) ((EHole ⇒ (■ THole , ★)) [ ✔ ]⇐ (□ , •)) ✔ ) ⇒ (□ , ★))
     ActWrapPairTwo : ∀ {Γ e t n} -> 

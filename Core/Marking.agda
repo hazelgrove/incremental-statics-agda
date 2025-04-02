@@ -3,6 +3,7 @@ open import Data.Product
 
 open import Prelude
 open import Core.Core
+open import Core.SideConditions
 
 module Core.Marking where
 

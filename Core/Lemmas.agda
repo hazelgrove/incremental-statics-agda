@@ -4,6 +4,7 @@ open import Relation.Binary.PropositionalEquality
 
 open import Prelude
 open import Core.Core
+open import Core.SideConditions
 open import Core.Environment
 open import Core.WellFormed
 open import Core.MarkingUnicity
@@ -53,13 +54,13 @@ module Core.Lemmas where
     ▶ (a , (n ⊓ ★)) a'
   ▶★-max-r {n = n} rewrite max-dirty n = ▶★
 
-  ▸TArrow-dec : 
-    (t : Type) -> 
-    ∃[ t-in ] ∃[ t-out ] ∃[ m ] t ▸TArrow t-in , t-out , m
-  ▸TArrow-dec TBase = THole , THole , ✖ , MArrowBase
-  ▸TArrow-dec THole = THole , THole , ✔ , MArrowHole
-  ▸TArrow-dec (TArrow t1 t2) = t1 , t2 , ✔ , MArrowArrow
-  ▸TArrow-dec (TProd t1 t2) = THole , THole , ✖ , MArrowProd
+  -- ▸TArrow-dec : 
+  --   (t : Type) -> 
+  --   ∃[ t-in ] ∃[ t-out ] ∃[ m ] t ▸TArrow t-in , t-out , m
+  -- ▸TArrow-dec TBase = THole , THole , ✖ , MArrowBase
+  -- ▸TArrow-dec THole = THole , THole , ✔ , MArrowHole
+  -- ▸TArrow-dec (TArrow t1 t2) = t1 , t2 , ✔ , MArrowArrow
+  -- ▸TArrow-dec (TProd t1 t2) = THole , THole , ✖ , MArrowProd
 
   ▸DTArrow-dec : 
     (t : Data) -> 
@@ -74,13 +75,13 @@ module Core.Lemmas where
   ▸NTArrow-dec (d , n) with ▸DTArrow-dec d 
   ... | t1 , t2 , m , match = (t1 , n) , (t2 , n) , (m , n) , NTArrowC match
 
-  ▸TProd-dec : 
-    (t : Type) -> 
-    ∃[ t-fst ] ∃[ t-snd ] ∃[ m ] t ▸TProd t-fst , t-snd , m
-  ▸TProd-dec TBase = THole , THole , ✖ , MProdBase
-  ▸TProd-dec THole = THole , THole , ✔ , MProdHole
-  ▸TProd-dec (TArrow t t₁) = THole , THole , ✖ , MProdArrow
-  ▸TProd-dec (TProd t t₁) = t , t₁ , ✔ , MProdProd
+  -- ▸TProd-dec : 
+  --   (t : Type) -> 
+  --   ∃[ t-fst ] ∃[ t-snd ] ∃[ m ] t ▸TProd t-fst , t-snd , m
+  -- ▸TProd-dec TBase = THole , THole , ✖ , MProdBase
+  -- ▸TProd-dec THole = THole , THole , ✔ , MProdHole
+  -- ▸TProd-dec (TArrow t t₁) = THole , THole , ✖ , MProdArrow
+  -- ▸TProd-dec (TProd t t₁) = t , t₁ , ✔ , MProdProd
 
   ▸DTProd-dec : 
     (t : Data) -> 
@@ -94,20 +95,19 @@ module Core.Lemmas where
     ∃[ t-in ] ∃[ t-out ] ∃[ m ] d ▸NTProd t-in , t-out , m
   ▸NTProd-dec (d , n) with ▸DTProd-dec d 
   ... | t1 , t2 , m , match = (t1 , n) , (t2 , n) , (m , n) , NTProdC match
-
   
-  ▸TProj-dec : 
-    (s : ProdSide) -> 
-    (t : Type) -> 
-    ∃[ t' ] ∃[ m ] t , s ▸TProj t' , m
-  ▸TProj-dec Fst TBase = THole , ✖ , MProdFst MProdBase
-  ▸TProj-dec Fst THole = THole , ✔ , MProdFst MProdHole
-  ▸TProj-dec Fst (TArrow t t₁) = THole , ✖ , MProdFst MProdArrow
-  ▸TProj-dec Fst (TProd t t₁) = t , ✔ , MProdFst MProdProd
-  ▸TProj-dec Snd TBase = THole , ✖ , MProdSnd MProdBase
-  ▸TProj-dec Snd THole = THole , ✔ , MProdSnd MProdHole
-  ▸TProj-dec Snd (TArrow t t₁) = THole , ✖ , MProdSnd MProdArrow
-  ▸TProj-dec Snd (TProd t t₁) = t₁ , ✔ , MProdSnd MProdProd
+  -- ▸TProj-dec : 
+  --   (s : ProdSide) -> 
+  --   (t : Type) -> 
+  --   ∃[ t' ] ∃[ m ] t , s ▸TProj t' , m
+  -- ▸TProj-dec Fst TBase = THole , ✖ , MProdFst MProdBase
+  -- ▸TProj-dec Fst THole = THole , ✔ , MProdFst MProdHole
+  -- ▸TProj-dec Fst (TArrow t t₁) = THole , ✖ , MProdFst MProdArrow
+  -- ▸TProj-dec Fst (TProd t t₁) = t , ✔ , MProdFst MProdProd
+  -- ▸TProj-dec Snd TBase = THole , ✖ , MProdSnd MProdBase
+  -- ▸TProj-dec Snd THole = THole , ✔ , MProdSnd MProdHole
+  -- ▸TProj-dec Snd (TArrow t t₁) = THole , ✖ , MProdSnd MProdArrow
+  -- ▸TProj-dec Snd (TProd t t₁) = t₁ , ✔ , MProdSnd MProdProd
 
   ▸DTProj-dec : 
     (s : ProdSide) -> 
@@ -124,22 +124,22 @@ module Core.Lemmas where
   ▸NTProj-dec s (d , n) with ▸DTProj-dec s d 
   ... | t , m , match = (t , n) , (m , n) , NTProjC match
 
-  ~-dec : 
-    (syn ana : Type) -> 
-    ∃[ m ] syn ~ ana , m 
-  ~-dec THole _ = ✔ , ConsistHoleL
-  ~-dec _ THole = ✔ , ConsistHoleR
-  ~-dec TBase TBase = ✔ , ConsistBase
-  ~-dec TBase (TArrow _ _) = ✖ , InconsistBaseArr
-  ~-dec TBase (TProd _ _) = ✖ , InconsistBaseProd
-  ~-dec (TArrow _ _) TBase = ✖ , InconsistArrBase
-  ~-dec (TArrow syn1 syn2) (TArrow ana1 ana2) with ~-dec syn1 ana1 | ~-dec syn2 ana2 
-  ... | m1 , consist1 | m2 , consist2 = (m1 ⊓M m2) , ConsistArr consist1 consist2
-  ~-dec (TArrow _ _) (TProd _ _ ) = ✖ , InconsistArrProd 
-  ~-dec (TProd t1 t2) TBase = ✖ , InconsistProdBase
-  ~-dec (TProd t1 t2) (TArrow t3 t4) = ✖ , InconsistProdArr
-  ~-dec (TProd t1 t2) (TProd t3 t4) with ~-dec t1 t3 | ~-dec t2 t4 
-  ... | m1 , consist1 | m2 , consist2 = (m1 ⊓M m2) , ConsistProd consist1 consist2
+  -- ~-dec : 
+  --   (syn ana : Type) -> 
+  --   ∃[ m ] syn ~ ana , m 
+  -- ~-dec THole _ = ✔ , ConsistHoleL
+  -- ~-dec _ THole = ✔ , ConsistHoleR
+  -- ~-dec TBase TBase = ✔ , ConsistBase
+  -- ~-dec TBase (TArrow _ _) = ✖ , InconsistBaseArr
+  -- ~-dec TBase (TProd _ _) = ✖ , InconsistBaseProd
+  -- ~-dec (TArrow _ _) TBase = ✖ , InconsistArrBase
+  -- ~-dec (TArrow syn1 syn2) (TArrow ana1 ana2) with ~-dec syn1 ana1 | ~-dec syn2 ana2 
+  -- ... | m1 , consist1 | m2 , consist2 = (m1 ⊓M m2) , ConsistArr consist1 consist2
+  -- ~-dec (TArrow _ _) (TProd _ _ ) = ✖ , InconsistArrProd 
+  -- ~-dec (TProd t1 t2) TBase = ✖ , InconsistProdBase
+  -- ~-dec (TProd t1 t2) (TArrow t3 t4) = ✖ , InconsistProdArr
+  -- ~-dec (TProd t1 t2) (TProd t3 t4) with ~-dec t1 t3 | ~-dec t2 t4 
+  -- ... | m1 , consist1 | m2 , consist2 = (m1 ⊓M m2) , ConsistProd consist1 consist2
 
   ~D-dec : 
     (syn ana : Data) -> 
