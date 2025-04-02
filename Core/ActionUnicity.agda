@@ -7,6 +7,36 @@ open import Core.Actions
 
 module Core.ActionUnicity where
 
+  αBT↦-unicity : ∀ {α t t' t''} ->
+    α , t αBT↦ t' ->
+    α , t αBT↦ t'' ->
+    t' ≡ t''
+  αBT↦-unicity ActInsertBase ActInsertBase = refl
+  αBT↦-unicity ActWrapArrowOne ActWrapArrowOne = refl
+  αBT↦-unicity ActWrapArrowTwo ActWrapArrowTwo = refl
+  αBT↦-unicity ActWrapProdOne ActWrapProdOne = refl
+  αBT↦-unicity ActWrapProdTwo ActWrapProdTwo = refl
+  αBT↦-unicity ActInsertTVar ActInsertTVar = refl
+  αBT↦-unicity ActWrapForall ActWrapForall = refl
+  αBT↦-unicity ActInsertBinder ActInsertBinder = refl
+
+  ABT↦-unicity : ∀ {A t t' t''} ->
+    A , t ABT↦ t' ->
+    A , t ABT↦ t'' -> 
+    t' ≡ t''
+  ABT↦-unicity (ATBareDone step1) (ATBareDone step2)
+    rewrite αBT↦-unicity step1 step2 = refl
+  ABT↦-unicity (ABareArrowOne step1) (ABareArrowOne step2)
+    rewrite ABT↦-unicity step1 step2 = refl
+  ABT↦-unicity (ABareArrowTwo step1) (ABareArrowTwo step2)
+    rewrite ABT↦-unicity step1 step2 = refl
+  ABT↦-unicity (ABareProdOne step1) (ABareProdOne step2)
+    rewrite ABT↦-unicity step1 step2 = refl
+  ABT↦-unicity (ABareProdTwo step1) (ABareProdTwo step2)
+    rewrite ABT↦-unicity step1 step2 = refl
+  ABT↦-unicity (ABareForall step1) (ABareForall step2)
+    rewrite ABT↦-unicity step1 step2 = refl
+
   αB↦-unicity : ∀ {α e e' e''} ->
     α , e αB↦ e' ->
     α , e αB↦ e'' ->
@@ -28,8 +58,6 @@ module Core.ActionUnicity where
   αB↦-unicity ActUnwrapPairOne ActUnwrapPairOne = refl
   αB↦-unicity ActUnwrapPairTwo ActUnwrapPairTwo = refl
   αB↦-unicity ActUnwrapProj ActUnwrapProj = refl
-  αB↦-unicity ActSetAsc ActSetAsc = refl
-  αB↦-unicity ActSetAnn ActSetAnn = refl
   αB↦-unicity ActDeleteBinder ActDeleteBinder = refl
   αB↦-unicity ActInsertBinder ActInsertBinder = refl
   
@@ -38,9 +66,13 @@ module Core.ActionUnicity where
     A , e AB↦ e'' -> 
     e' ≡ e''
   AB↦-unicity (ABareDone step1) (ABareDone step2) = αB↦-unicity step1 step2 
-  AB↦-unicity (ABareAsc step1) (ABareAsc step2) 
+  AB↦-unicity (ABareAscOne step1) (ABareAscOne step2) 
+    rewrite ABT↦-unicity step1 step2 = refl
+  AB↦-unicity (ABareAscTwo step1) (ABareAscTwo step2) 
     rewrite AB↦-unicity step1 step2 = refl
-  AB↦-unicity (ABareFun step1) (ABareFun step2) 
+  AB↦-unicity (ABareFunOne step1) (ABareFunOne step2) 
+    rewrite ABT↦-unicity step1 step2 = refl
+  AB↦-unicity (ABareFunTwo step1) (ABareFunTwo step2) 
     rewrite AB↦-unicity step1 step2 = refl
   AB↦-unicity (ABareApOne step1) (ABareApOne step2) 
     rewrite AB↦-unicity step1 step2 = refl

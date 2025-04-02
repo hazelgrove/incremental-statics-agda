@@ -8,6 +8,29 @@ open import Core.Actions
 open import Core.VariableUpdateErasure
 
 module Core.ActionErasure where
+
+
+  αT↦-erase : ∀ {Γ α t t'} ->
+    (Γ ⊢ α , t αT↦ t') ->
+    (α , (T◇ t) αBT↦ (T◇ t'))
+  αT↦-erase ActInsertBase = ActInsertBase
+  αT↦-erase ActWrapArrowOne = ActWrapArrowOne
+  αT↦-erase ActWrapArrowTwo = ActWrapArrowTwo
+  αT↦-erase ActWrapProdOne = ActWrapProdOne
+  αT↦-erase ActWrapProdTwo = ActWrapProdTwo
+  αT↦-erase (ActInsertTVar x) = ActInsertTVar
+  αT↦-erase ActWrapForall = ActWrapForall
+  αT↦-erase ActInsertBinder = ActInsertBinder
+  
+  AT↦-erase : ∀ {Γ A t t'} ->
+    (Γ ⊢ A , t AT↦ t') ->
+    (A , (T◇ t) ABT↦ (T◇ t'))
+  AT↦-erase (ATDone step) = ATBareDone (αT↦-erase step)
+  AT↦-erase (AArrowOne step) = ABareArrowOne (AT↦-erase step)
+  AT↦-erase (AArrowTwo step) = ABareArrowTwo (AT↦-erase step)
+  AT↦-erase (AProdOne step) = ABareProdOne (AT↦-erase step)
+  AT↦-erase (AProdTwo step) = ABareProdTwo (AT↦-erase step)
+  AT↦-erase (AForall step) = ABareForall (AT↦-erase step)
   
   αU↦-erase : ∀ {Γ α e e'} ->
     (Γ ⊢ α , e αU↦ e') ->
@@ -30,8 +53,6 @@ module Core.ActionErasure where
   αU↦-erase (ActInsertVar in-ctx) = ActInsertVar
   αU↦-erase (ActUnwrapFun x var-update) 
     rewrite var-update?-erase var-update = ActUnwrapFun
-  αU↦-erase ActSetAsc = ActSetAsc
-  αU↦-erase ActSetAnn = ActSetAnn
   αU↦-erase (ActDeleteBinder in-ctx var-update) 
     rewrite var-update?-erase var-update = ActDeleteBinder
   αU↦-erase (ActInsertBinder var-update)
@@ -51,8 +72,10 @@ module Core.ActionErasure where
     AM↦-erase : ∀ {Γ A e e'} ->
       (Γ ⊢ A , e AM↦ e') ->
       (A , (M◇ e) AB↦ (M◇ e'))
-    AM↦-erase (AMidAsc step) = ABareAsc (AL↦-erase step)
-    AM↦-erase (AMidFun step) = ABareFun (AL↦-erase step)
+    AM↦-erase (AMidAscOne step) = ABareAscOne (AT↦-erase step)
+    AM↦-erase (AMidAscTwo step) = ABareAscTwo (AL↦-erase step)
+    AM↦-erase (AMidFunOne step) = ABareFunOne (AT↦-erase step)
+    AM↦-erase (AMidFunTwo step) = ABareFunTwo (AL↦-erase step)
     AM↦-erase (AMidApOne step) = ABareApOne (AL↦-erase step)
     AM↦-erase (AMidApTwo step) = ABareApTwo (AL↦-erase step)
     AM↦-erase (AMidPairOne step) = ABarePairOne (AL↦-erase step)
@@ -63,7 +86,7 @@ module Core.ActionErasure where
       (Γ ⊢ A , e AL↦ e') ->
       (A , (L◇ e) AB↦ (L◇ e')) 
     AL↦-erase (ALowDone step) = ABareDone (αL↦-erase step)
-    AL↦-erase (ALowUp step) = AU↦-erase step
+    AL↦-erase (ALowUp step) = AU↦-erase step 
 
   AP↦-erase : ∀ {A p p'} -> 
     (A , p AP↦ p') ->

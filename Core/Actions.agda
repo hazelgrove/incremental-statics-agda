@@ -50,6 +50,8 @@ module Core.Actions where
       (InsertTVar x) , BareTHole αBT↦ (BareTVar x)
     ActWrapForall : ∀ {t} ->
       WrapForall , t αBT↦ (BareTForall BHole t)
+    ActInsertBinder : ∀ {x t} ->
+      InsertBinder x , (BareTForall BHole t) αBT↦ (BareTForall (BVar x) t)
 
   data _,_ABT↦_ : LocalizedAction -> BareType -> BareType -> Set where
     ATBareDone : ∀ {α t t'} ->
@@ -70,6 +72,14 @@ module Core.Actions where
     ABareForall : ∀ {α l x t t'} ->
       (α , l) , t ABT↦ t' ->
       (α , One ∷ l) , (BareTForall x t) ABT↦ (BareTForall x t')
+  
+  data _,_ABT↦*_ : (List LocalizedAction) -> BareType -> BareType -> Set where 
+    ABT*StepAct : ∀{A As e e' e''} ->
+      A , e ABT↦ e' -> 
+      As , e' ABT↦* e'' ->
+      (A ∷ As) , e ABT↦* e'' 
+    ABT*StepDone : ∀{e} ->
+      [] , e ABT↦* e
 
   data _,_αB↦_ : Action -> BareExp -> BareExp -> Set where
     ActInsertConst : 
@@ -167,6 +177,8 @@ module Core.Actions where
       Γ ⊢ (InsertTVar x) , THole αT↦ (TVar x m)
     ActWrapForall : ∀ {Γ t} ->
       Γ ⊢ WrapForall , t αT↦ (TForall BHole t)
+    ActInsertBinder : ∀ {Γ x t} ->
+      Γ ⊢ InsertBinder x , (TForall BHole t) αT↦ (TForall (BVar x) t)
 
   data _⊢_,_AT↦_ : (Γ : Ctx) -> (α : LocalizedAction) -> (t : Type) -> (t' : Type) -> Set where 
     ATDone : ∀ {Γ α t t'} ->
