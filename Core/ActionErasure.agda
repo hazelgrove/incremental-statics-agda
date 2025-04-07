@@ -6,6 +6,7 @@ open import Core.Core
 open import Core.Marking
 open import Core.Actions
 open import Core.VariableUpdateErasure
+open import Core.TypVariableUpdateErasure
 
 module Core.ActionErasure where
 
@@ -20,7 +21,10 @@ module Core.ActionErasure where
   αT↦-erase ActWrapProdTwo = ActWrapProdTwo
   αT↦-erase (ActInsertTVar x) = ActInsertTVar
   αT↦-erase ActWrapForall = ActWrapForall
-  αT↦-erase ActInsertBinder = ActInsertBinder
+  αT↦-erase (ActDeleteBinder in-ctx tvar-update) 
+    rewrite tvar-update?-erase tvar-update = ActDeleteBinder
+  αT↦-erase (ActInsertBinder tvar-update) 
+    rewrite tvar-update?-erase tvar-update = ActInsertBinder
   
   AT↦-erase : ∀ {Γ A t t'} ->
     (Γ ⊢ A , t AT↦ t') ->

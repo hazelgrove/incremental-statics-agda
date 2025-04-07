@@ -6,6 +6,7 @@ open import Prelude
 open import Core.Core
 open import Core.WellFormed
 open import Core.VariableUpdate
+open import Core.TypVariableUpdate
 
 module Core.Actions where
 
@@ -50,6 +51,8 @@ module Core.Actions where
       (InsertTVar x) , BareTHole αBT↦ (BareTVar x)
     ActWrapForall : ∀ {t} ->
       WrapForall , t αBT↦ (BareTForall BHole t)
+    ActDeleteBinder : ∀ {x? t} ->
+      DeleteBinder , (BareTForall x? t) αBT↦ (BareTForall BHole t)
     ActInsertBinder : ∀ {x t} ->
       InsertBinder x , (BareTForall BHole t) αBT↦ (BareTForall (BVar x) t)
 
@@ -177,8 +180,13 @@ module Core.Actions where
       Γ ⊢ (InsertTVar x) , THole αT↦ (TVar x m)
     ActWrapForall : ∀ {Γ t} ->
       Γ ⊢ WrapForall , t αT↦ (TForall BHole t)
-    ActInsertBinder : ∀ {Γ x t} ->
-      Γ ⊢ InsertBinder x , (TForall BHole t) αT↦ (TForall (BVar x) t)
+    ActDeleteBinder : ∀ {Γ x? m t t'} ->
+      x? T∈? Γ , m ->
+      TypVariableUpdate? x? m t t' ->
+      Γ ⊢ DeleteBinder , (TForall x? t) αT↦ (TForall BHole t')
+    ActInsertBinder : ∀ {Γ x t t'} ->
+      TypVariableUpdate x ✔ t t' ->
+      Γ ⊢ InsertBinder x , (TForall BHole t) αT↦ (TForall (BVar x) t')
 
   data _⊢_,_AT↦_ : (Γ : Ctx) -> (α : LocalizedAction) -> (t : Type) -> (t' : Type) -> Set where 
     ATDone : ∀ {Γ α t t'} ->
