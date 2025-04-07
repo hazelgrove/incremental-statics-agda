@@ -49,8 +49,6 @@ module Core.ActionPreservation where
   beyond-αU↦ ActUnwrapPairOne = =▷★
   beyond-αU↦ ActUnwrapPairTwo = =▷★
   beyond-αU↦ ActUnwrapProj = =▷★
-  beyond-αU↦ ActSetAsc = =▷Refl
-  beyond-αU↦ ActSetAnn = =▷Refl
   beyond-αU↦ (ActDeleteBinder _ _) = =▷Refl
   beyond-αU↦ (ActInsertBinder _) = =▷Refl
 
@@ -74,8 +72,10 @@ module Core.ActionPreservation where
     SubsumableMid e ->
     Γ ⊢ A , e AM↦ e' ->
     SubsumableMid e'
-  subsumable-AM↦ () (AMidFun x)
-  subsumable-AM↦ SubsumableAsc (AMidAsc x) = SubsumableAsc
+  subsumable-AM↦ () (AMidFunOne x)
+  subsumable-AM↦ () (AMidFunTwo x)
+  subsumable-AM↦ SubsumableAsc (AMidAscOne x) = SubsumableAsc
+  subsumable-AM↦ SubsumableAsc (AMidAscTwo x) = SubsumableAsc
   subsumable-AM↦ SubsumableAp (AMidApOne x) = SubsumableAp
   subsumable-AM↦ SubsumableAp (AMidApTwo x) = SubsumableAp
   subsumable-AM↦ SubsumableProj (AMidProj x) = SubsumableProj

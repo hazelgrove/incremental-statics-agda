@@ -309,6 +309,6 @@ module Core.Actions where
 
   data _,_AP↦_ : (α : LocalizedAction) -> (p p' : Program) -> Set where
     AStepProgram : ∀{α p p'} ->
-      (∅ (THole , •)) ⊢ α , (AnaExpOfProgram p) AL↦ (AnaExpOfProgram p') ->
+      ∅ ⊢ α , (AnaExpOfProgram p) AL↦ (AnaExpOfProgram p') ->
       α , p AP↦ p'
 

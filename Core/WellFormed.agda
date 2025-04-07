@@ -130,6 +130,26 @@ module Core.WellFormed where
   NProd : ○Data -> ○Data -> ○Data 
   NProd (d1 , n1) (d2 , n2) = (DProd d1 d2 , n1 ⊓ n2)
 
+  data _T⊢_ : (Γ : Ctx) (t : Type) -> Set where 
+    WFBase : ∀ {Γ} -> 
+      Γ T⊢ TBase
+    WFHole : ∀ {Γ} -> 
+      Γ T⊢ THole
+    WFArrow : ∀ {Γ t1 t2} -> 
+      Γ T⊢ t1 -> 
+      Γ T⊢ t2 -> 
+      Γ T⊢ TArrow t1 t2
+    WFProd : ∀ {Γ t1 t2} -> 
+      Γ T⊢ t1 -> 
+      Γ T⊢ t2 -> 
+      Γ T⊢ TProd t1 t2
+    WFTVar : ∀ {Γ x m} -> 
+      x T∈ Γ , m ->
+      Γ T⊢ TVar x m
+    WFForall : ∀ {Γ x t} -> 
+      (x T∷? Γ) T⊢ t ->
+      Γ T⊢ TForall x t
+
   mutual 
 
     data _S⊢_ : (Γ : Ctx) (e : SynExp) -> Set where 
@@ -152,6 +172,7 @@ module Core.WellFormed where
         ▷ t-var (syn-all , n-syn) ->
         Γ S⊢ ((EVar x m-var) ⇒ (■ syn-all , n-syn))
       WFAsc : ∀ {Γ e-body syn-all ana-body t-asc m-body n-syn n-ana} ->
+        Γ T⊢ (proj₁ t-asc) ->
         ▷ t-asc (syn-all , n-syn) -> 
         ▷ t-asc (ana-body , n-ana) -> 
         Γ L⊢ (e-body [ m-body ]⇐ (■ ana-body , n-ana)) ->
@@ -171,6 +192,7 @@ module Core.WellFormed where
         Γ S⊢ (e-all ⇒ syn-all) -> 
         Γ L⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all)
       WFFun : ∀ {Γ x e-body syn-all syn-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana m-all-ana} ->
+        Γ T⊢ (proj₁ t-asc) ->
         ana-all ▸NTArrow t-in-ana , t-out-ana , m-ana-ana -> 
         t-asc ■~N t-in-ana , m-asc-ana ->
         ▷ t-out-ana ana-body ->
@@ -195,5 +217,5 @@ module Core.WellFormed where
       
   data P⊢ : Program -> Set where 
     WFProgram : ∀ {p} ->
-      (∅ (THole , •)) L⊢ (AnaExpOfProgram p) ->
+      ∅ L⊢ (AnaExpOfProgram p) ->
       P⊢ p

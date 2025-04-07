@@ -138,3 +138,54 @@ module Core.SideConditions where
     --   (TArrow t1 t2) ~ (TProd t3 t4) , ✖
     -- InconsistProdArr : ∀ {t1 t2 t3 t4} ->
     --   (TProd t1 t2) ~ (TArrow t3 t4) , ✖
+      
+    -- ▸TArrow-unicity : ∀ {t t-in t-in' t-out t-out' m m'} ->
+    --   t ▸TArrow t-in , t-out , m -> 
+    --   t ▸TArrow t-in' , t-out' , m' -> 
+    --   (t-in ≡ t-in' × t-out ≡ t-out' × m ≡ m')
+    -- ▸TArrow-unicity MArrowBase MArrowBase = refl , refl , refl
+    -- ▸TArrow-unicity MArrowHole MArrowHole = refl , refl , refl
+    -- ▸TArrow-unicity MArrowArrow MArrowArrow = refl , refl , refl
+    -- ▸TArrow-unicity MArrowProd MArrowProd = refl , refl , refl
+    -- ▸TArrow-unicity MArrowVar MArrowVar = refl , refl , refl
+    -- ▸TArrow-unicity MArrowForall MArrowForall = refl , refl , refl
+
+    -- ▸TProd-unicity : ∀ {t t-fst t-fst' t-snd t-snd' m m'} ->
+    --   t ▸TProd t-fst , t-snd , m -> 
+    --   t ▸TProd t-fst' , t-snd' , m' ->
+    --   (t-fst ≡ t-fst' × t-snd ≡ t-snd' × m ≡ m')
+    -- ▸TProd-unicity MProdBase MProdBase = refl , refl , refl
+    -- ▸TProd-unicity MProdHole MProdHole = refl , refl , refl
+    -- ▸TProd-unicity MProdArrow MProdArrow = refl , refl , refl
+    -- ▸TProd-unicity MProdProd MProdProd = refl , refl , refl
+
+    -- ▸TProj-unicity : ∀ {t s t-side t-side' m m'} ->
+    --   t , s ▸TProj t-side , m -> 
+    --   t , s ▸TProj t-side' , m' -> 
+    --   (t-side ≡ t-side' × m ≡ m')
+    -- ▸TProj-unicity (MProdFst con) (MProdFst con') with ▸TProd-unicity con con' 
+    -- ... | refl , refl , refl = refl , refl  
+    -- ▸TProj-unicity (MProdSnd con) (MProdSnd con') with ▸TProd-unicity con con' 
+    -- ... | refl , refl , refl = refl , refl  
+
+    -- ~-unicity : ∀ {syn ana m m'} ->
+    --   syn ~ ana , m -> 
+    --   syn ~ ana , m' ->
+    --   m ≡ m'
+    -- ~-unicity ConsistBase ConsistBase = refl
+    -- ~-unicity ConsistHoleL ConsistHoleL = refl
+    -- ~-unicity ConsistHoleL ConsistHoleR = refl
+    -- ~-unicity ConsistHoleR ConsistHoleL = refl
+    -- ~-unicity ConsistHoleR ConsistHoleR = refl
+    -- ~-unicity (ConsistArr con1 con2) (ConsistArr con3 con4) 
+    --   rewrite ~-unicity con1 con3 
+    --   rewrite ~-unicity con2 con4 = refl
+    -- ~-unicity (ConsistProd con1 con2) (ConsistProd con3 con4)
+    --   rewrite ~-unicity con1 con3 
+    --   rewrite ~-unicity con2 con4 = refl
+    -- ~-unicity InconsistBaseArr InconsistBaseArr = refl
+    -- ~-unicity InconsistArrBase InconsistArrBase = refl
+    -- ~-unicity InconsistBaseProd InconsistBaseProd = refl
+    -- ~-unicity InconsistProdBase InconsistProdBase = refl
+    -- ~-unicity InconsistArrProd InconsistArrProd = refl
+    -- ~-unicity InconsistProdArr InconsistProdArr = refl

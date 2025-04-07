@@ -337,21 +337,21 @@ module Core.Lemmas where
   oldify-syn (WFHole (▷Pair consist)) = WFHole (▷Pair consist)
   oldify-syn (WFAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana) = WFAp marrow (▷Pair consist-syn) consist-ana consist-mark syn ana
   oldify-syn (WFVar in-ctx (▷Pair consist)) = WFVar in-ctx (▷Pair consist)
-  oldify-syn (WFAsc (▷Pair consist-syn) consist-ana ana) = WFAsc (▷Pair consist-syn) consist-ana ana
+  oldify-syn (WFAsc wf (▷Pair consist-syn) consist-ana ana) = WFAsc wf (▷Pair consist-syn) consist-ana ana
   oldify-syn (WFProj x (▷Pair x₁) x₂ x₃) = WFProj x (▷Pair x₁) x₂ x₃
 
   oldify-syn-inner : ∀ {Γ e t m n n'} ->
     Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ (□ , n')) ->
     Γ L⊢ ((e ⇒ (t , •)) [ ✔ ]⇐ (□ , n'))
   oldify-syn-inner (WFSubsume subsumable (~N-pair consist) consist-m syn) = WFSubsume subsumable (~N-pair ~DVoidR) ▶Same (oldify-syn syn)
-  oldify-syn-inner (WFFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ x₅ x₆ x₇ syn) = WFFun (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ (beyond-▷-contra ◁▷C x₅) (~N-pair ~DVoidR) ▶Same syn
+  oldify-syn-inner (WFFun wf (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ x₅ x₆ x₇ syn) = WFFun wf (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ (beyond-▷-contra ◁▷C x₅) (~N-pair ~DVoidR) ▶Same syn
   oldify-syn-inner (WFPair (NTProdC DTProdNone) (▷Pair x) (▷Pair x₁) x₃ x₄ x₅ x₆ w w₁) = WFPair (NTProdC DTProdNone) (▷Pair x) (▷Pair x₁) x₃ (beyond-▷-contra ◁▷C x₄) (~N-pair ~DVoidR) ▶Same w w₁
 
   dirty-syn-inner : ∀ {Γ e n m m' ana t} ->
     Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ ana) -> 
     Γ L⊢ ((e ⇒ (t , ★)) [ m' ]⇐ ana)
   dirty-syn-inner (WFSubsume x (~N-pair x₁) x₂ x₃) = WFSubsume x (~N-pair x₁) ▶★ (oldify-syn x₃)
-  dirty-syn-inner (WFFun x x₁ x₂ x₃ x₄ (▷Pair x₅) (~N-pair x₆) x₇ wt) = WFFun x x₁ x₂ x₃ x₄ (▷Pair x₅) (~N-pair x₆) ▶★ wt
+  dirty-syn-inner (WFFun wf x x₁ x₂ x₃ x₄ (▷Pair x₅) (~N-pair x₆) x₇ wt) = WFFun wf x x₁ x₂ x₃ x₄ (▷Pair x₅) (~N-pair x₆) ▶★ wt
   dirty-syn-inner (WFPair (NTProdC y) (▷Pair x) (▷Pair x₁) x₃ x₄ (~N-pair x₅) x₆ w w₁) = WFPair (NTProdC y) (▷Pair x) (▷Pair x₁) x₃ (beyond-▷-contra ◁▷C x₄) (~N-pair x₅) ▶★ w w₁
 
   dirty-ana : ∀ {Γ e n n' m m' ana t t'} ->
@@ -359,10 +359,10 @@ module Core.Lemmas where
     Γ L⊢ ((e ⇒ (t , n')) [ m' ]⇐ (t' , ★))
   dirty-ana {n' = n'} {t = t} {t' = t'} (WFSubsume {syn-all = syn-all} subsumable consist-t consist-m syn) with ~N-dec (t , n') (t' , ★)
   ... | _ , (~N-pair consist-t') = WFSubsume subsumable (~N-pair consist-t') ▶★-max-r (oldify-syn syn)
-  dirty-ana {t = t} {t' = t'} (WFFun {syn-all = syn-all} {syn-body = syn-body , n-body} {t-asc = t-asc , n-asc} (NTArrowC _) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ▸NTArrow-dec (t' , ★)
+  dirty-ana {t = t} {t' = t'} (WFFun {syn-all = syn-all} {syn-body = syn-body , n-body} {t-asc = t-asc , n-asc} wf (NTArrowC _) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ▸NTArrow-dec (t' , ★)
   ... | (t-in , ★) , (t-out , ★) , (m , ★) , NTArrowC marrow with ~N-dec (■ t-asc , n-asc) (t-in , ★) | ~N-dec (t , ★) (t' , ★)
   ... | m' , consist | _ , ~N-pair consist' with dirty-through-~N-left consist 
-  ... | _ , refl = WFFun (NTArrowC marrow) (■~N-pair consist) (▷Pair ▶★) ▶★ ▶★ NUnless-dirty-▷ (~N-pair consist') ▶★-max-r ana
+  ... | _ , refl = WFFun wf (NTArrowC marrow) (■~N-pair consist) (▷Pair ▶★) ▶★ ▶★ NUnless-dirty-▷ (~N-pair consist') ▶★-max-r ana
   dirty-ana {t = t} {t' = t'} (WFPair (NTProdC y) (▷Pair x) (▷Pair x₁) x₃ x₄ (~N-pair x₅) x₆ w w₁) with ▸NTProd-dec (t' , ★)
   ... | (t-fst , ★) , (t-snd , ★) , (m , ★) , NTProdC marrow with ~N-dec (t , ★) (t' , ★)
   ... | _ , ~N-pair consist' = WFPair (NTProdC marrow) (▷Pair ▶★) (▷Pair ▶★) ▶★ NUnless-dirty-▷ (~N-pair consist') ▶★-max-r w w₁
@@ -372,61 +372,95 @@ module Core.Lemmas where
     Γ L⊢ (e [ m' ]⇐ (t , ★))
   small-dirty-ana {e = e ⇒ (t , n)} ana = dirty-ana ana
 
+  data DirtierCtx : Ctx -> Ctx -> Set where  
+    DirtierCtxRefl : ∀{Γ} ->
+       DirtierCtx Γ Γ
+    DirtierCtxInit : ∀{x t t' Γ} ->
+       DirtierCtx (x ∶ (t' , ★) ∷ Γ) (x ∶ t ∷ Γ) 
+    DirtierCtxCons : ∀{x t Γ Γ'} ->
+       DirtierCtx Γ Γ' -> 
+       DirtierCtx (x ∶ t ∷ Γ) (x ∶ t ∷ Γ')
+    DirtierCtxTCons : ∀{x Γ Γ'} ->
+       DirtierCtx Γ Γ' -> 
+       DirtierCtx (x T∷ Γ) (x T∷ Γ')
 
-  data ★erCtx : Ctx -> Ctx -> Set where  
-    ★erCtxRefl : ∀{Γ} ->
-       ★erCtx Γ Γ
-    ★erCtxInit : ∀{x t t' Γ} ->
-       ★erCtx (x ∶ (t' , ★) ∷ Γ) (x ∶ t ∷ Γ) 
-    ★erCtxCons : ∀{x t Γ Γ'} ->
-       ★erCtx Γ Γ' -> 
-       ★erCtx (x ∶ t ∷ Γ) (x ∶ t ∷ Γ')
+  DirtierCtxInit? : ∀{x t t' Γ} ->
+    DirtierCtx (x ∶ (t' , ★) ∷? Γ) (x ∶ t ∷? Γ)  
+  DirtierCtxInit? {BHole} = DirtierCtxRefl
+  DirtierCtxInit? {BVar x} = DirtierCtxInit
 
-  ★erCtxInit? : ∀{x t t' Γ} ->
-    ★erCtx (x ∶ (t' , ★) ∷? Γ) (x ∶ t ∷? Γ)  
-  ★erCtxInit? {BHole} = ★erCtxRefl
-  ★erCtxInit? {BVar x} = ★erCtxInit
+  DirtierCtxCons? : ∀{x t Γ Γ'} ->
+    DirtierCtx Γ Γ' -> 
+    DirtierCtx (x ∶ t ∷? Γ) (x ∶ t ∷? Γ')
+  DirtierCtxCons? {BHole} dirtier = dirtier 
+  DirtierCtxCons? {BVar x} = DirtierCtxCons
 
-  ★erCtxCons? : ∀{x t Γ Γ'} ->
-    ★erCtx Γ Γ' -> 
-    ★erCtx (x ∶ t ∷? Γ) (x ∶ t ∷? Γ')
-  ★erCtxCons? {BHole} dirtyer = dirtyer 
-  ★erCtxCons? {BVar x} = ★erCtxCons
+  DirtierCtxTCons? : ∀{x Γ Γ'} ->
+    DirtierCtx Γ Γ' -> 
+    DirtierCtx (x T∷? Γ) (x T∷? Γ')
+  DirtierCtxTCons? {BHole} dirtier = dirtier 
+  DirtierCtxTCons? {BVar x} = DirtierCtxTCons
+
+  dirtier-ctx-tlookup : ∀{Γ Γ' x m} ->
+    DirtierCtx Γ Γ' -> 
+    x T∈ Γ' , m ->
+    (x T∈ Γ , m)
+  dirtier-ctx-tlookup DirtierCtxRefl InCtxEmpty = InCtxEmpty
+  dirtier-ctx-tlookup DirtierCtxRefl InCtxFound = InCtxFound
+  dirtier-ctx-tlookup DirtierCtxRefl (InCtxSkip in-ctx) = InCtxSkip in-ctx
+  dirtier-ctx-tlookup DirtierCtxInit (InCtxSkip in-ctx) = InCtxSkip in-ctx
+  dirtier-ctx-tlookup (DirtierCtxCons dirtier) (InCtxSkip in-ctx) = InCtxSkip (dirtier-ctx-tlookup dirtier in-ctx)
+  dirtier-ctx-tlookup DirtierCtxRefl (InCtxTSkip x in-ctx) = InCtxTSkip x in-ctx
+  dirtier-ctx-tlookup (DirtierCtxTCons dirtier) InCtxFound = InCtxFound
+  dirtier-ctx-tlookup (DirtierCtxTCons dirtier) (InCtxTSkip x in-ctx) = InCtxTSkip x (dirtier-ctx-tlookup dirtier in-ctx)
   
-  dirtyer-ctx-lookup : ∀{Γ Γ' x t m} ->
-    ★erCtx Γ Γ' -> 
-    x , t ∈N Γ' , m ->
-    ∃[ t' ] (x , t' ∈N Γ , m) × (=▷ t t')
-  dirtyer-ctx-lookup ★erCtxRefl in-ctx = _ , in-ctx , =▷Refl
-  dirtyer-ctx-lookup ★erCtxInit InCtxFound = _ , InCtxFound , =▷★
-  dirtyer-ctx-lookup ★erCtxInit (InCtxSkip x in-ctx) = _ , InCtxSkip x in-ctx , =▷Refl
-  dirtyer-ctx-lookup (★erCtxCons dirtyer) InCtxFound = _ , InCtxFound , =▷Refl
-  dirtyer-ctx-lookup (★erCtxCons dirtyer) (InCtxSkip x in-ctx) with dirtyer-ctx-lookup dirtyer in-ctx 
+  dirtier-ctx-lookup : ∀{Γ Γ' x t m} ->
+    DirtierCtx Γ Γ' -> 
+    x , t ∈ Γ' , m ->
+    ∃[ t' ] (x , t' ∈ Γ , m) × (=▷ t t')
+  dirtier-ctx-lookup DirtierCtxRefl in-ctx = _ , in-ctx , =▷Refl
+  dirtier-ctx-lookup DirtierCtxInit InCtxFound = _ , InCtxFound , =▷★
+  dirtier-ctx-lookup DirtierCtxInit (InCtxSkip x in-ctx) = _ , InCtxSkip x in-ctx , =▷Refl
+  dirtier-ctx-lookup (DirtierCtxCons dirtier) InCtxFound = _ , InCtxFound , =▷Refl
+  dirtier-ctx-lookup (DirtierCtxCons dirtier) (InCtxSkip x in-ctx) with dirtier-ctx-lookup dirtier in-ctx 
   ... | t' , in-ctx' , beyond = _ , InCtxSkip x in-ctx' , beyond
+  dirtier-ctx-lookup (DirtierCtxTCons dirtier) (InCtxTSkip in-ctx) with dirtier-ctx-lookup dirtier in-ctx 
+  ... | t' , in-ctx' , beyond = _ , InCtxTSkip in-ctx' , beyond
+
+  dirtier-ctx-t : ∀{Γ Γ' t} ->
+    DirtierCtx Γ Γ' -> 
+    Γ' T⊢ t ->
+    Γ T⊢ t
+  dirtier-ctx-t dirtier WFBase = WFBase
+  dirtier-ctx-t dirtier WFHole = WFHole
+  dirtier-ctx-t dirtier (WFArrow wf wf₁) = WFArrow (dirtier-ctx-t dirtier wf) (dirtier-ctx-t dirtier wf₁)
+  dirtier-ctx-t dirtier (WFProd wf wf₁) = WFProd (dirtier-ctx-t dirtier wf) (dirtier-ctx-t dirtier wf₁)
+  dirtier-ctx-t dirtier (WFTVar x) = WFTVar (dirtier-ctx-tlookup dirtier x)
+  dirtier-ctx-t dirtier (WFForall wf) = WFForall (dirtier-ctx-t (DirtierCtxTCons? dirtier) wf)
 
   mutual 
 
-    dirtyer-ctx-u : ∀{Γ Γ' e} ->
-      ★erCtx Γ Γ' -> 
+    dirtier-ctx-u : ∀{Γ Γ' e} ->
+      DirtierCtx Γ Γ' -> 
       Γ' S⊢ e ->
       Γ S⊢ e
-    dirtyer-ctx-u dirtyer (WFConst x) = WFConst x
-    dirtyer-ctx-u dirtyer (WFHole x) = WFHole x
-    dirtyer-ctx-u dirtyer (WFAp x x₁ x₂ x₃ x₄ x₅) = WFAp x x₁ x₂ x₃ (dirtyer-ctx-l dirtyer x₄) (dirtyer-ctx-l dirtyer x₅)
-    dirtyer-ctx-u dirtyer (WFAsc x x₁ x₂) = WFAsc x x₁ (dirtyer-ctx-l dirtyer x₂)
-    dirtyer-ctx-u dirtyer (WFVar x x₁) with dirtyer-ctx-lookup dirtyer x 
+    dirtier-ctx-u dirtier (WFConst x) = WFConst x
+    dirtier-ctx-u dirtier (WFHole x) = WFHole x
+    dirtier-ctx-u dirtier (WFAp x x₁ x₂ x₃ x₄ x₅) = WFAp x x₁ x₂ x₃ (dirtier-ctx-l dirtier x₄) (dirtier-ctx-l dirtier x₅)
+    dirtier-ctx-u dirtier (WFAsc wf x x₁ x₂) = WFAsc (dirtier-ctx-t dirtier wf) x x₁ (dirtier-ctx-l dirtier x₂)
+    dirtier-ctx-u dirtier (WFVar x x₁) with dirtier-ctx-lookup dirtier x 
     ... | t' , in-ctx' , beyond = WFVar in-ctx' (beyond-▷ beyond x₁)
-    dirtyer-ctx-u dirtyer (WFProj x x₁ x₂ x₃) = WFProj x x₁ x₂ (dirtyer-ctx-l dirtyer x₃)
+    dirtier-ctx-u dirtier (WFProj x x₁ x₂ x₃) = WFProj x x₁ x₂ (dirtier-ctx-l dirtier x₃)
 
-    dirtyer-ctx-l : ∀{Γ Γ' e} ->
-      ★erCtx Γ Γ' -> 
+    dirtier-ctx-l : ∀{Γ Γ' e} ->
+      DirtierCtx Γ Γ' -> 
       Γ' L⊢ e ->
       Γ L⊢ e
-    dirtyer-ctx-l dirtyer (WFSubsume x x₁ x₂ x₃) = WFSubsume x x₁ x₂ (dirtyer-ctx-u dirtyer x₃)
-    dirtyer-ctx-l dirtyer (WFFun {x = x} x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ wt) = WFFun x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ (dirtyer-ctx-l (★erCtxCons? {x} dirtyer) wt)
-    dirtyer-ctx-l dirtyer (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) = WFPair x x₁ x₂ x₃ x₄ x₅ x₆ (dirtyer-ctx-l dirtyer wt) (dirtyer-ctx-l dirtyer wt₁)
+    dirtier-ctx-l dirtier (WFSubsume x x₁ x₂ x₃) = WFSubsume x x₁ x₂ (dirtier-ctx-u dirtier x₃)
+    dirtier-ctx-l dirtier (WFFun {x = x} wf x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ wt) = WFFun (dirtier-ctx-t dirtier wf) x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ (dirtier-ctx-l (DirtierCtxCons? {x} dirtier) wt)
+    dirtier-ctx-l dirtier (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) = WFPair x x₁ x₂ x₃ x₄ x₅ x₆ (dirtier-ctx-l dirtier wt) (dirtier-ctx-l dirtier wt₁)
  
   dirty-ctx : ∀{Γ x t t' e} ->  
     (x ∶ t ∷? Γ) L⊢ e ->  
     (x ∶ (t' , ★) ∷? Γ) L⊢ e        
-  dirty-ctx {x = x} = dirtyer-ctx-l (★erCtxInit? {x})
+  dirty-ctx {x = x} = dirtier-ctx-l (DirtierCtxInit? {x})

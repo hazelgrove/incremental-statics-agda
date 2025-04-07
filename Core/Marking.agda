@@ -37,7 +37,7 @@ module Core.Marking where
   P◇ p = L◇ (AnaExpOfProgram p) 
 
   Γ◇ : Ctx -> BareCtx 
-  Γ◇ (∅ (t , _)) = ∅ t
+  Γ◇ ∅ = ∅
   Γ◇ (x ∶ t , _ ∷ Γ) = x ∶ t ∷ Γ◇ Γ
   Γ◇ (x T∷ Γ) = x T∷ Γ◇ Γ
 
@@ -113,5 +113,5 @@ module Core.Marking where
 
   data _~>_ : BareExp -> Program -> Set where 
     MarkProgram : ∀ {b e t} ->
-      (∅ THole) ⊢ b ~> e ⇒ t -> 
+      ∅ ⊢ b ~> e ⇒ t -> 
       b ~> (Root e •) 

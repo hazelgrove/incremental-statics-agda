@@ -121,22 +121,22 @@ module Core.Core where
   Subsumable : SynExp -> Set 
   Subsumable (mid ⇒ _) = SubsumableMid mid
 
-  data Context (A : Set) : Set where 
-    ∅ : A -> Context A -- stores default lookup value (e.g. THole)
-    _∶_∷_ : Var -> A -> Context A -> Context A
-    _T∷_ : Var -> Context A -> Context A
+  data Context (A : Set) (free : A) : Set where 
+    ∅ : Context A free
+    _∶_∷_ : Var -> A -> Context A free -> Context A free
+    _T∷_ : Var -> Context A free -> Context A free
 
-  _∶_∷?_ : {A : Set} -> Binding -> A -> Context A -> Context A
+  _∶_∷?_ : {A : Set} -> {free : A} -> Binding -> A -> Context A free -> Context A free
   BHole ∶ t ∷? Γ = Γ
   BVar x ∶ t ∷? Γ = x ∶ t ∷ Γ
 
-  _T∷?_ : {A : Set} -> Binding -> Context A -> Context A
+  _T∷?_ : {A : Set} -> {free : A} -> Binding -> Context A free -> Context A free
   BHole T∷? Γ = Γ
   BVar x T∷? Γ = x T∷ Γ
 
-  data _,_∈_,_ {A : Set} : Var -> A -> Context A -> Mark -> Set where 
-    InCtxEmpty : ∀ {x a} ->
-      x , a ∈ (∅ a) , ✖ 
+  data _,_∈_,_ {A : Set} {free : A} : Var -> A -> Context A free -> Mark -> Set where 
+    InCtxEmpty : ∀ {x} ->
+      x , free ∈ ∅ , ✖ 
     InCtxFound : ∀ {Γ x a} ->
       x , a ∈ (x ∶ a ∷ Γ) , ✔
     InCtxSkip : ∀ {Γ a a' x x' m} -> 
@@ -147,13 +147,13 @@ module Core.Core where
       (x , a ∈ Γ , m) -> 
       (x , a ∈ (x' T∷ Γ) , m)
 
-  _,_∈?_,_ : {A : Set} -> Binding -> A -> Context A -> Mark -> Set
+  _,_∈?_,_ : {A : Set} -> {free : A} -> Binding -> A -> Context A free -> Mark -> Set
   BHole , a ∈? Γ , m = ⊤
   BVar x , a ∈? Γ , m = x , a ∈ Γ , m
 
-  data _T∈_,_  {A : Set} : Var -> Context A -> Mark -> Set where 
-    InCtxEmpty : ∀ {x a} ->
-      x T∈ (∅ a) , ✖
+  data _T∈_,_  {A : Set} {free : A} : Var -> Context A free -> Mark -> Set where 
+    InCtxEmpty : ∀ {x} ->
+      x T∈ ∅ , ✖
     InCtxFound : ∀ {Γ x} ->
       x T∈ (x T∷ Γ) , ✔
     InCtxSkip : ∀ {Γ a x x' m} -> 
@@ -164,12 +164,12 @@ module Core.Core where
       (x T∈ Γ , m) -> 
       (x T∈ (x' T∷ Γ) , m)
 
-  _T∈?_,_ : {A : Set} -> Binding -> Context A -> Mark -> Set
+  _T∈?_,_ : {A : Set} {free : A} -> Binding -> Context A free -> Mark -> Set
   BHole T∈? Γ , m = ⊤
   BVar x T∈? Γ , m = x T∈ Γ , m
     
   BareCtx : Set 
-  BareCtx = Context Type
+  BareCtx = Context Type THole
 
   Ctx : Set 
-  Ctx = Context ○Type
+  Ctx = Context ○Type (THole , •)

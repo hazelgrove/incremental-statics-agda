@@ -65,7 +65,7 @@ module Core.VariableUpdatePreservation where
 
   ctx-inv-access-eq : ∀ {x t n Γ Γ'} ->
     CtxInv x t n Γ Γ' ->
-    x , (t , n) ∈N Γ' , ✔
+    x , (t , n) ∈ Γ' , ✔
   ctx-inv-access-eq CtxInvInit = InCtxFound
   ctx-inv-access-eq CtxInvInit2 = InCtxFound
   ctx-inv-access-eq (CtxInvNeq neq inv) = InCtxSkip neq (ctx-inv-access-eq inv)
@@ -73,8 +73,8 @@ module Core.VariableUpdatePreservation where
   ctx-inv-access-neq : ∀ {x x' t t' n m Γ Γ'} ->
     CtxInv x t n Γ Γ' ->
     ¬ x' ≡ x ->
-    x' , t' ∈N Γ , m ->
-    x' , t' ∈N Γ' , m
+    x' , t' ∈ Γ , m ->
+    x' , t' ∈ Γ' , m
   ctx-inv-access-neq CtxInvInit neq in-ctx = InCtxSkip neq in-ctx
   ctx-inv-access-neq CtxInvInit2 neq InCtxFound = ⊥-elim (neq refl)
   ctx-inv-access-neq CtxInvInit2 neq (InCtxSkip x in-ctx) = InCtxSkip neq in-ctx
@@ -83,7 +83,7 @@ module Core.VariableUpdatePreservation where
 
   data UnwrapInv : Var -> Type -> Mark -> Ctx -> Ctx -> Set where 
     UnwrapInvInit : ∀ {Γ x n t t' m} ->
-      (x , (t , n) ∈N Γ , m) -> 
+      (x , (t , n) ∈ Γ , m) -> 
       UnwrapInv x t m (x ∶ t' ∷ Γ) Γ
     UnwrapInvCons : ∀ {Γ Γ' x x' t t' m} ->
       ¬(x ≡ x') ->
@@ -99,15 +99,15 @@ module Core.VariableUpdatePreservation where
 
   unwrap-inv-access-eq : ∀ {x t m Γ Γ'} ->
     UnwrapInv x t m Γ Γ' ->
-    ∃[ n ] (x , (t , n) ∈N Γ' , m)
+    ∃[ n ] (x , (t , n) ∈ Γ' , m)
   unwrap-inv-access-eq (UnwrapInvInit in-ctx) = _ , in-ctx
   unwrap-inv-access-eq (UnwrapInvCons x inv) = _ , InCtxSkip x (proj₂ (unwrap-inv-access-eq inv))
 
   unwrap-inv-access-neq : ∀ {x x' t t' m m' Γ Γ'} ->
     UnwrapInv x t m Γ Γ' ->
     ¬ (x ≡ x') ->
-    x' , t' ∈N Γ , m' ->
-    x' , t' ∈N Γ' , m'
+    x' , t' ∈ Γ , m' ->
+    x' , t' ∈ Γ' , m'
   unwrap-inv-access-neq (UnwrapInvInit x) neq InCtxFound = ⊥-elim (neq refl)
   unwrap-inv-access-neq (UnwrapInvInit x) neq (InCtxSkip x₁ in-ctx) = in-ctx
   unwrap-inv-access-neq (UnwrapInvCons x inv) neq InCtxFound = InCtxFound
@@ -132,8 +132,8 @@ module Core.VariableUpdatePreservation where
 
   ctx-equiv-access : ∀ {x t Γ Γ' m} ->
     CtxEquiv Γ Γ' ->
-    x , t ∈N Γ , m  ->
-    x , t ∈N Γ' , m
+    x , t ∈ Γ , m  ->
+    x , t ∈ Γ' , m
   ctx-equiv-access (CtxEquivInit x) InCtxFound = InCtxFound
   ctx-equiv-access (CtxEquivInit x) (InCtxSkip x₁ in-ctx) = InCtxSkip x₁ (ctx-inv-access-neq x x₁ in-ctx)
   ctx-equiv-access (CtxEquivUnwrapInit x) InCtxFound = InCtxFound
@@ -244,7 +244,7 @@ module Core.VariableUpdatePreservation where
     
   preservation-vars-unwrap : 
     ∀ {x Γ t t-old e e' m m' ana n} ->
-    (x , (t , n) ∈N? Γ , m) -> 
+    (x , (t , n) ∈? Γ , m) -> 
     (x ∶ t-old ∷? Γ) L⊢ (e [ m' ]⇐ ana) ->
     VariableUpdate? x t m e e' ->
     Γ L⊢ (e' [ m' ]⇐ ana)
