@@ -61,7 +61,7 @@ module Core.MarkingUnicity where
   -- ~-unicity InconsistArrProd InconsistArrProd = refl
   -- ~-unicity InconsistProdArr InconsistProdArr = refl
 
-  ∈-unicity : ∀ {x t t' Γ m m'} ->
+  ∈-unicity : ∀ {A x t' Γ m m'} -> {t : A} ->
     x , t ∈ Γ , m ->
     x , t' ∈ Γ , m' ->
     (t ≡ t' × m ≡ m')
@@ -70,6 +70,35 @@ module Core.MarkingUnicity where
   ∈-unicity InCtxFound (InCtxSkip neq _) = ⊥-elim (neq refl)
   ∈-unicity (InCtxSkip neq _) InCtxFound = ⊥-elim (neq refl)
   ∈-unicity (InCtxSkip neq in-ctx) (InCtxSkip neq' in-ctx') = ∈-unicity in-ctx in-ctx'
+  ∈-unicity (InCtxTSkip in-ctx) (InCtxTSkip in-ctx') = ∈-unicity in-ctx in-ctx'
+
+  T∈-unicity : ∀ {A x m m'} -> {Γ : Context A} ->
+    x T∈ Γ , m ->
+    x T∈ Γ , m' ->
+    m ≡ m'
+  T∈-unicity InCtxEmpty InCtxEmpty = refl
+  T∈-unicity InCtxFound InCtxFound = refl
+  T∈-unicity InCtxFound (InCtxTSkip neq in-ctx2) = ⊥-elim (neq refl)
+  T∈-unicity (InCtxSkip in-ctx1) (InCtxSkip in-ctx2) = T∈-unicity in-ctx1 in-ctx2
+  T∈-unicity (InCtxTSkip neq in-ctx1) InCtxFound = ⊥-elim (neq refl)
+  T∈-unicity (InCtxTSkip neq1 in-ctx1) (InCtxTSkip neq2 in-ctx2) = T∈-unicity in-ctx1 in-ctx2
+
+  marking-unicity-typ : ∀{Γ b t t'} ->
+      Γ ⊢ b T~> t ->
+      Γ ⊢ b T~> t' ->
+      t ≡ t'
+  marking-unicity-typ MarkBase MarkBase = refl
+  marking-unicity-typ MarkHole MarkHole = refl
+  marking-unicity-typ (MarkArrow typ1 typ2) (MarkArrow typ3 typ4) 
+    rewrite marking-unicity-typ typ1 typ3
+    rewrite marking-unicity-typ typ2 typ4 = refl
+  marking-unicity-typ (MarkProd typ1 typ2) (MarkProd typ3 typ4)
+    rewrite marking-unicity-typ typ1 typ3
+    rewrite marking-unicity-typ typ2 typ4 = refl
+  marking-unicity-typ (MarkTVar in-ctx1) (MarkTVar in-ctx2) 
+    rewrite T∈-unicity in-ctx1 in-ctx2 = refl
+  marking-unicity-typ (MarkForall typ1) (MarkForall typ2)
+    rewrite marking-unicity-typ typ1 typ2 = refl
 
   mutual 
 
@@ -82,9 +111,11 @@ module Core.MarkingUnicity where
     marking-unicity-syn (MarkVar in-ctx1) (MarkVar in-ctx2) 
       with ∈-unicity in-ctx1 in-ctx2 
     ... | refl , refl = refl , refl
-    marking-unicity-syn (MarkAsc ana1) (MarkAsc ana2) 
+    marking-unicity-syn (MarkAsc typ1 ana1) (MarkAsc typ2 ana2) 
+      rewrite marking-unicity-typ typ1 typ2
       rewrite marking-unicity-ana ana1 ana2 = refl , refl
-    marking-unicity-syn (MarkSynFun syn1) (MarkSynFun syn2) 
+    marking-unicity-syn (MarkSynFun typ1 syn1) (MarkSynFun typ2 syn2)
+      rewrite marking-unicity-typ typ1 typ2
       with marking-unicity-syn syn1 syn2
     ... | refl , refl = refl , refl
     marking-unicity-syn (MarkAp syn1 marrow1 ana1) (MarkAp syn2 marrow2 ana2) 
@@ -108,9 +139,10 @@ module Core.MarkingUnicity where
       with marking-unicity-syn syn1 syn2
     ... | refl , refl 
       rewrite ~-unicity consist1 consist2 = refl
-    marking-unicity-ana (MarkAnaFun marrow1 ana1 consist1) (MarkAnaFun marrow2 ana2 consist2) 
+    marking-unicity-ana (MarkAnaFun typ1 marrow1 ana1 consist1) (MarkAnaFun typ2 marrow2 ana2 consist2) 
       with ▸TArrow-unicity marrow1 marrow2 
     ... | refl , refl , refl 
+      rewrite marking-unicity-typ typ1 typ2
       rewrite marking-unicity-ana ana1 ana2 
       rewrite ~-unicity consist1 consist2 = refl
     marking-unicity-ana (MarkAnaPair mprod1 ana1 ana2) (MarkAnaPair mprod2 ana3 ana4)
