@@ -24,7 +24,7 @@ module Core.TypVariableUpdate where
     TVUVarEq : ∀ {x m m'} ->
       TypVariableUpdate x m (TVar x m') (TVar x m)
     TVUVarNeq : ∀ {x m x' m'} ->
-      ¬(x ≡ x') -> 
+      ¬(x' ≡ x) -> 
       TypVariableUpdate x m (TVar x' m') (TVar x' m')
     TVUForallEq : ∀ {x m t} ->
       TypVariableUpdate x m (TForall (BVar x) t) (TForall (BVar x) t)

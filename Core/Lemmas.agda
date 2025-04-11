@@ -287,6 +287,12 @@ module Core.Lemmas where
   consist-unless-prod {d = □} = ▷Pair ▶Same
   consist-unless-prod {d = ■ d} = ▷Pair ▶•
 
+  consist-unless-new : ∀ {t t1 t2 t3} ->
+    ▷ (NUnless t1 t2) t3 ->
+    ▷ (NUnless (t , ★) t2) t3
+  consist-unless-new {t2 = □ , snd} con = ▷Pair ▶★
+  consist-unless-new {t2 = ■ x , snd} (▷Pair con) = ▷Pair con
+
   preservation-pair-lemma : ∀ {syn1 syn1' syn2 syn2' ana syn-all} ->
     =▷ syn1 syn1' ->
     =▷ syn2 syn2' ->

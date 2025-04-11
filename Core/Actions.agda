@@ -51,6 +51,8 @@ module Core.Actions where
       (InsertTVar x) , BareTHole αBT↦ (BareTVar x)
     ActWrapForall : ∀ {t} ->
       WrapForall , t αBT↦ (BareTForall BHole t)
+    ActDelete : ∀ {t} ->
+      Delete , t αBT↦ BareTHole
     ActDeleteBinder : ∀ {x? t} ->
       DeleteBinder , (BareTForall x? t) αBT↦ (BareTForall BHole t)
     ActInsertBinder : ∀ {x t} ->
@@ -180,6 +182,8 @@ module Core.Actions where
       Γ ⊢ (InsertTVar x) , THole αT↦ (TVar x m)
     ActWrapForall : ∀ {Γ t} ->
       Γ ⊢ WrapForall , t αT↦ (TForall BHole t)
+    ActDelete : ∀ {Γ t} ->
+      Γ ⊢ Delete , t αT↦ THole
     ActDeleteBinder : ∀ {Γ x? m t t'} ->
       x? T∈? Γ , m ->
       TypVariableUpdate? x? m t t' ->

@@ -21,6 +21,7 @@ module Core.ActionErasure where
   αT↦-erase ActWrapProdTwo = ActWrapProdTwo
   αT↦-erase (ActInsertTVar x) = ActInsertTVar
   αT↦-erase ActWrapForall = ActWrapForall
+  αT↦-erase ActDelete = ActDelete
   αT↦-erase (ActDeleteBinder in-ctx tvar-update) 
     rewrite tvar-update?-erase tvar-update = ActDeleteBinder
   αT↦-erase (ActInsertBinder tvar-update) 
