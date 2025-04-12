@@ -18,6 +18,7 @@ module Core.ActionUnicity where
   αBT↦-unicity ActWrapProdTwo ActWrapProdTwo = refl
   αBT↦-unicity ActInsertTVar ActInsertTVar = refl
   αBT↦-unicity ActWrapForall ActWrapForall = refl
+  αBT↦-unicity ActDelete ActDelete = refl
   αBT↦-unicity ActDeleteBinder ActDeleteBinder = refl
   αBT↦-unicity ActInsertBinder ActInsertBinder = refl
 
