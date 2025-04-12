@@ -15,9 +15,15 @@ module Core.SideConditions where
 
     _,_▸TProj_,_ : Type -> ProdSide -> Type -> Mark -> Set 
 
+    -- outputs whatever binder is found (used in TypAp)
     _▸TForall_,_,_ : Type -> Binding -> Type -> Mark -> Set 
 
+    -- takes as input a specific binder to use (used in analytic TypFun)
+    _,_▸TForallBind_,_ : Type -> Binding -> Type -> Mark -> Set 
+
     _~_,_ : Type -> Type -> Mark -> Set 
+
+    Sub : Type -> Binding -> Type -> Type -> Set
 
     ▸TArrow-unicity : ∀ {t t-in t-in' t-out t-out' m m'} ->
       t ▸TArrow t-in , t-out , m -> 

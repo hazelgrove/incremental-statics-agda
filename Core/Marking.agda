@@ -23,12 +23,14 @@ module Core.Marking where
     M◇ : ConExp -> BareExp 
     M◇ EConst = BareEConst
     M◇ EHole = BareEHole
-    M◇ (EVar x m) = (BareEVar x)
-    M◇ (EAsc (asc , n) e) = (BareEAsc (T◇ asc) (L◇ e))
-    M◇ (EFun x (ann , n) m1 m2 e) = (BareEFun x (T◇ ann) (L◇ e))
-    M◇ (EAp e1 m2 e2) = (BareEAp (L◇ e1) (L◇ e2))
-    M◇ (EPair e1 e2 m) = (BareEPair (L◇ e1) (L◇ e2))
-    M◇ (EProj s e m) = (BareEProj s (L◇ e))
+    M◇ (EVar x _) = (BareEVar x)
+    M◇ (EAsc (t , _) e) = (BareEAsc (T◇ t) (L◇ e))
+    M◇ (EFun x (t , _) _ _ e) = (BareEFun x (T◇ t) (L◇ e))
+    M◇ (EAp e1 _ e2) = (BareEAp (L◇ e1) (L◇ e2))
+    M◇ (EPair e1 e2 _) = (BareEPair (L◇ e1) (L◇ e2))
+    M◇ (EProj s e _) = (BareEProj s (L◇ e))
+    M◇ (ETypFun x _ e) = BareETypFun x (L◇ e)
+    M◇ (ETypAp e _ (t , _)) = BareETypAp (L◇ e) (T◇ t)
     
     L◇ : AnaExp -> BareExp
     L◇ (e [ m ]⇐ ana) = U◇ e
@@ -71,7 +73,7 @@ module Core.Marking where
       MarkSynFun : ∀ {Γ x b-body e-body b-ann t-ann t-body} ->
         Γ ⊢ b-ann T~> t-ann ->
         (x ∶ t-ann ∷? Γ) ⊢ b-body ~> e-body ⇒ t-body ->
-        Γ ⊢ (BareEFun x b-ann b-body) ~> ((EFun x (t-ann , •) (✔) (✔) (e-body [ ✔ ]⇐ (□ , •))) ⇒ ((■ (TArrow t-ann t-body) , •))) ⇒ (TArrow t-ann t-body)
+        Γ ⊢ (BareEFun x b-ann b-body) ~> ((EFun x (t-ann , •) ✔ ✔ (e-body [ ✔ ]⇐ (□ , •))) ⇒ ((■ (TArrow t-ann t-body) , •))) ⇒ (TArrow t-ann t-body)
       MarkAp : ∀ {Γ b-fun b-arg e-fun e-arg t-fun t-in-fun t-out-fun m-fun} ->
         Γ ⊢ b-fun ~> e-fun ⇒ t-fun ->
         t-fun ▸TArrow t-in-fun , t-out-fun , m-fun ->
@@ -92,6 +94,15 @@ module Core.Marking where
         Γ ⊢ b ~> e ⇒ t ->
         t , s ▸TProj t-side , m ->
         Γ ⊢ (BareEProj s b) ~> ((EProj s (e [ ✔ ]⇐ (□ , •)) m) ⇒ ((■ t-side , •))) ⇒ t-side
+      MarkSynTypFun : ∀ {Γ x b-body e-body t-body} ->
+        (x T∷? Γ) ⊢ b-body ~> e-body ⇒ t-body ->
+        Γ ⊢ (BareETypFun x b-body) ~> ((ETypFun x ✔ (e-body [ ✔ ]⇐ (□ , •))) ⇒ ((■ (TForall x t-body) , •))) ⇒ (TForall x t-body)
+      MarkTypAp : ∀ {Γ b-fun b-arg e-fun t-arg t-fun t-fun-body m-fun x t-syn} ->
+        Γ ⊢ b-fun ~> e-fun ⇒ t-fun ->
+        t-fun ▸TForall x , t-fun-body , m-fun ->
+        Γ ⊢ b-arg T~> t-arg ->
+        Sub t-arg x t-fun-body t-syn ->
+        Γ ⊢ (BareETypAp b-fun b-arg) ~> ((ETypAp (e-fun [ ✔ ]⇐ (□ , •)) m-fun (t-arg , •)) ⇒ ((■ t-syn , •))) ⇒ t-syn
 
     data _⊢_~>_⇐_ : (Γ : BareCtx) (b : BareExp) (e : AnaExp) (t : Type) → Set where  
       MarkSubsume : ∀ {Γ b-all e-all t-syn t-ana m-all} ->
@@ -104,12 +115,16 @@ module Core.Marking where
         t-ana ▸TArrow t-in-ana , t-out-ana , m-ana ->
         (x ∶ t-ann ∷? Γ) ⊢ b-body ~> e-body ⇐ t-out-ana ->
         t-ann ~ t-in-ana , m-ann ->
-        Γ ⊢ (BareEFun x b-ann b-body) ~> (((EFun x (t-ann , •) (m-ana) (m-ann) e-body) ⇒ (□ , •)) [ ✔ ]⇐ ((■ t-ana , •))) ⇐ t-ana
+        Γ ⊢ (BareEFun x b-ann b-body) ~> (((EFun x (t-ann , •) m-ana m-ann e-body) ⇒ (□ , •)) [ ✔ ]⇐ ((■ t-ana , •))) ⇐ t-ana
       MarkAnaPair : ∀ {Γ b1 b2 e1 e2 t-fst t-snd t-ana m-ana} ->
         t-ana ▸TProd t-fst , t-snd , m-ana ->
         Γ ⊢ b1 ~> e1 ⇐ t-fst ->
         Γ ⊢ b2 ~> e2 ⇐ t-snd ->
         Γ ⊢ (BareEPair b1 b2) ~> (((EPair e1 e2 m-ana) ⇒ (□ , •)) [ ✔ ]⇐ ((■ t-ana , •))) ⇐ t-ana
+      MarkAnaTypFun : ∀ {Γ x b-body e-body t-ana t-body-ana m-ana} ->
+        t-ana , x ▸TForallBind t-body-ana , m-ana ->
+        (x T∷? Γ) ⊢ b-body ~> e-body ⇐ t-body-ana ->
+        Γ ⊢ (BareETypFun x b-body) ~> (((ETypFun x m-ana e-body) ⇒ (□ , •)) [ ✔ ]⇐ ((■ t-ana , •))) ⇐ t-ana
 
   data _~>_ : BareExp -> Program -> Set where 
     MarkProgram : ∀ {b e t} ->

@@ -37,6 +37,8 @@ module Core.Core where
     BareEAsc : BareType -> BareExp -> BareExp 
     BareEPair : BareExp -> BareExp -> BareExp 
     BareEProj : ProdSide -> BareExp -> BareExp
+    BareETypFun : Binding -> BareExp -> BareExp 
+    BareETypAp : BareExp -> BareType -> BareExp
 
   data BareSubsumable : BareExp -> Set where 
     BareSubsumableConst : BareSubsumable BareEConst
@@ -100,6 +102,8 @@ module Core.Core where
       EAsc : ○Type -> AnaExp -> ConExp 
       EPair : AnaExp -> AnaExp -> Mark -> ConExp
       EProj : ProdSide -> AnaExp -> Mark -> ConExp
+      ETypFun : Binding -> Mark -> AnaExp -> ConExp 
+      ETypAp : AnaExp -> Mark -> ○Type -> ConExp
 
     data AnaExp : Set where 
       _[_]⇐_ : SynExp -> Mark -> ○Data -> AnaExp
@@ -117,6 +121,7 @@ module Core.Core where
     SubsumableVar : ∀ {x m} -> SubsumableMid (EVar x m) 
     SubsumableAsc : ∀ {t e} -> SubsumableMid (EAsc t e) 
     SubsumableProj : ∀ {s e m} -> SubsumableMid (EProj s e m) 
+    SubsumableTypAp : ∀ {e m t} -> SubsumableMid (ETypAp e m t) 
 
   Subsumable : SynExp -> Set 
   Subsumable (mid ⇒ _) = SubsumableMid mid
