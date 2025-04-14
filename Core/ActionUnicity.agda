@@ -62,6 +62,10 @@ module Core.ActionUnicity where
   αB↦-unicity ActUnwrapProj ActUnwrapProj = refl
   αB↦-unicity ActDeleteBinder ActDeleteBinder = refl
   αB↦-unicity ActInsertBinder ActInsertBinder = refl
+  αB↦-unicity ActWrapTypFun ActWrapTypFun = refl
+  αB↦-unicity ActWrapTypAp ActWrapTypAp = refl
+  αB↦-unicity ActUnwrapTypFun ActUnwrapTypFun = refl
+  αB↦-unicity ActUnwrapTypAp ActUnwrapTypAp = refl
   
   AB↦-unicity : ∀ {A e e' e''} ->
     A , e AB↦ e' ->
@@ -86,3 +90,9 @@ module Core.ActionUnicity where
     rewrite AB↦-unicity step1 step2 = refl
   AB↦-unicity (ABareProj step1) (ABareProj step2) 
     rewrite AB↦-unicity step1 step2 = refl
+  AB↦-unicity (ABareTypFun step1) (ABareTypFun step2) 
+    rewrite AB↦-unicity step1 step2 = refl
+  AB↦-unicity (ABareTypApOne step1) (ABareTypApOne step2) 
+    rewrite AB↦-unicity step1 step2 = refl
+  AB↦-unicity (ABareTypApTwo step1) (ABareTypApTwo step2) 
+    rewrite ABT↦-unicity step1 step2 = refl

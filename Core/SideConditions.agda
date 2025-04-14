@@ -45,10 +45,20 @@ module Core.SideConditions where
       t ▸TForall x' , t-body' , m' -> 
       (x ≡ x' × t-body ≡ t-body' × m ≡ m')
 
+    ▸TForallBind-unicity : ∀ {t x t-body t-body' m m'} ->
+      t , x ▸TForallBind t-body , m -> 
+      t , x ▸TForallBind t-body' , m' -> 
+      (t-body ≡ t-body' × m ≡ m')
+
     ~-unicity : ∀ {syn ana m m'} ->
       syn ~ ana , m -> 
       syn ~ ana , m' ->
       m ≡ m'
+
+    sub-unicity : ∀ {t1 x t2 t t'} ->
+      Sub t1 x t2 t -> 
+      Sub t1 x t2 t' ->
+      t ≡ t'
 
     ▸TArrow-dec : 
       (t : Type) -> 

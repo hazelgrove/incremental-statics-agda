@@ -22,6 +22,8 @@ module Core.Actions where
     WrapAsc : Action
     WrapPair : Child -> Action
     WrapProj : ProdSide -> Action
+    WrapTypFun : Action
+    WrapTypAp : Action
     Delete : Action 
     Unwrap : Child -> Action
     InsertBase : Action
@@ -51,6 +53,7 @@ module Core.Actions where
       (InsertTVar x) , BareTHole αBT↦ (BareTVar x)
     ActWrapForall : ∀ {t} ->
       WrapForall , t αBT↦ (BareTForall BHole t)
+    -- TODO: unwrap
     ActDelete : ∀ {t} ->
       Delete , t αBT↦ BareTHole
     ActDeleteBinder : ∀ {x? t} ->
@@ -105,6 +108,10 @@ module Core.Actions where
       (WrapPair Two) , e αB↦ (BareEPair BareEHole e)
     ActWrapProj : ∀ {s e} -> 
       (WrapProj s) , e αB↦ (BareEProj s e)
+    ActWrapTypFun : ∀ {e} ->
+      WrapTypFun , e αB↦ (BareETypFun BHole e)
+    ActWrapTypAp : ∀ {e} ->
+      WrapTypAp , e αB↦ (BareETypAp e BareTHole)
     ActDelete : ∀ {e} ->
       Delete , e αB↦ BareEHole
     ActUnwrapFun : ∀ {x asc e} ->
@@ -121,6 +128,10 @@ module Core.Actions where
       (Unwrap Two) , (BareEPair e-fun e) αB↦ e
     ActUnwrapProj : ∀ {s e} ->
       (Unwrap One) , (BareEProj s e) αB↦ e
+    ActUnwrapTypFun : ∀ {x e} ->
+      (Unwrap One) , (BareETypFun x e) αB↦ e
+    ActUnwrapTypAp : ∀ {e t-arg} ->
+      (Unwrap One) , (BareETypAp e t-arg) αB↦ e
     ActDeleteBinder : ∀ {x e t} ->
       DeleteBinder , (BareEFun x t e) αB↦ (BareEFun BHole t e)
     ActInsertBinder : ∀ {x e t} ->
@@ -157,6 +168,15 @@ module Core.Actions where
     ABareProj : ∀ {α l e e' s} ->
       (α , l) , e AB↦ e' ->
       (α , One ∷ l) , (BareEProj s e) AB↦ (BareEProj s e')
+    ABareTypFun : ∀ {α l e e' a1} ->
+      (α , l) , e AB↦ e' ->
+      (α , One ∷ l) , (BareETypFun a1 e) AB↦ (BareETypFun a1 e')
+    ABareTypApOne : ∀ {α l e e' a1} ->
+      (α , l) , e AB↦ e' ->
+      (α , One ∷ l) , (BareETypAp e a1) AB↦ (BareETypAp e' a1)
+    ABareTypApTwo : ∀ {α l t t' a1} ->
+      (α , l) , t ABT↦ t' ->
+      (α , Two ∷ l) , (BareETypAp a1 t) AB↦ (BareETypAp a1 t')
   
   data _,_AB↦*_ : (List LocalizedAction) -> BareExp -> BareExp -> Set where 
     AB*StepAct : ∀{A As e e' e''} ->
@@ -227,6 +247,10 @@ module Core.Actions where
       Γ ⊢ (WrapPair Two) , (e ⇒ (t , n)) αU↦ ((EPair ((EHole ⇒ (■ THole , ★)) [ ✔ ]⇐ (□ , •)) ((e ⇒ (t , ★)) [ ✔ ]⇐ (□ , ★)) ✔ ) ⇒ (□ , ★))
     ActWrapProj : ∀ {Γ s e t n} -> 
       Γ ⊢ (WrapProj s) , (e ⇒ (t , n)) αU↦ ((EProj s ((e ⇒ (t , ★)) [ ✔ ]⇐ (□ , ★)) ✔) ⇒ (□ , ★))
+    ActWrapTypFun : ∀ {Γ e t n} ->
+      Γ ⊢ WrapTypFun , (e ⇒ (t , n)) αU↦ ((ETypFun BHole ✔ ((e ⇒ (t , ★)) [ ✔ ]⇐ (□ , ★))) ⇒ (□ , ★))
+    ActWrapTypAp : ∀ {Γ e t n} ->
+      Γ ⊢ WrapTypAp , (e ⇒ (t , n)) αU↦ ((ETypAp ((e ⇒ (t , ★)) [ ✔ ]⇐ (□ , ★)) ✔ (THole , •)) ⇒ (□ , ★))
     ActInsertVar : ∀ {Γ syn x n t m} ->
       x , (t , n) ∈ Γ , m ->
       Γ ⊢ (InsertVar x) , (EHole ⇒ syn) αU↦ ((EVar x m) ⇒ (■ t , ★))
@@ -250,6 +274,12 @@ module Core.Actions where
       Γ ⊢ (Unwrap Two) , ((EPair e-fst ((e ⇒ (t , n)) [ m ]⇐ ana) m') ⇒ syn) αU↦ (e ⇒ (t , ★))
     ActUnwrapProj : ∀ {Γ e t s n m ana syn m'} ->
       Γ ⊢ (Unwrap One) , ((EProj s ((e ⇒ (t , n)) [ m ]⇐ ana) m') ⇒ syn) αU↦ (e ⇒ (t , ★))
+    ActUnwrapTypFun : ∀ {Γ x m-ana e e' t' n' m m-body ana syn} ->
+      x T∈? Γ , m ->
+      ExpTypVariableUpdate? x m e (e' ⇒ (t' , n')) ->
+      Γ ⊢ (Unwrap One) , ((ETypFun x m-ana (e [ m-body ]⇐ ana)) ⇒ syn) αU↦ (e' ⇒ (t' , ★))
+    ActUnwrapTypAp : ∀ {Γ e t n m ana t-arg syn m'} ->
+      Γ ⊢ (Unwrap One) , ((ETypAp ((e ⇒ (t , n)) [ m ]⇐ ana) m' t-arg) ⇒ syn) αU↦ (e ⇒ (t , ★))
     -- ActSetAsc : ∀ {Γ asc e t syn} ->
     --   Γ ⊢ (SetAsc t) , ((EAsc asc e) ⇒ syn) αU↦ ((EAsc (t , ★) e) ⇒ syn)
     -- ActSetAnn : ∀ {Γ x e t ann m1 m2 syn} ->

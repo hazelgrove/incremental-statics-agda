@@ -79,6 +79,15 @@ module Core.MarkingUnicity where
       with marking-unicity-syn syn1 syn2
     ... | refl , refl with ▸TProj-unicity marrow1 marrow2
     ... | refl , refl = refl , refl
+    marking-unicity-syn (MarkSynTypFun syn1) (MarkSynTypFun syn2) 
+      with marking-unicity-syn syn1 syn2
+    ... | refl , refl = refl , refl
+    marking-unicity-syn (MarkTypAp syn1 mforall1 typ1 sub1) (MarkTypAp syn2 mforall2 typ2 sub2) 
+      with marking-unicity-syn syn1 syn2
+    ... | refl , refl with ▸TForall-unicity mforall1 mforall2 
+    ... | refl , refl , refl 
+      rewrite marking-unicity-typ typ1 typ2
+      rewrite sub-unicity sub1 sub2 = refl , refl
 
     marking-unicity-ana : ∀{Γ b e e' t} ->
       Γ ⊢ b ~> e ⇐ t ->
@@ -99,6 +108,10 @@ module Core.MarkingUnicity where
     ... | refl , refl , refl 
       rewrite marking-unicity-ana ana1 ana3 
       rewrite marking-unicity-ana ana2 ana4 = refl 
+    marking-unicity-ana (MarkAnaTypFun mforall1 ana1) (MarkAnaTypFun mforall2 ana2) 
+      with ▸TForallBind-unicity mforall1 mforall2 
+    ... | refl , refl 
+      rewrite marking-unicity-ana ana1 ana2 = refl
 
   marking-unicity : ∀ {p p' p''} ->
     p ~> p' ->
