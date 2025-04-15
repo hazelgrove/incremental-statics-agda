@@ -138,10 +138,10 @@ module Core.WellFormed where
       Sub t x t1 t2 -> 
       DSub t x (■ t1) (■ t2)
     
-  data NSub : Type -> Binding -> ○Data -> ○Data -> Set where 
-    NSub-pair : ∀ {t x d1 d2 n} ->
+  data NSub : ○Type -> Binding -> ○Data -> ○Data -> Set where 
+    NSub-pair : ∀ {t x d1 d2 n1 n2} ->
       DSub t x d1 d2 -> 
-      NSub t x (d1 , n) (d2 , n)
+      NSub (t , n1) x (d1 , n2) (d2 , n1 ⊓ n2)
 
   DUnless : Data -> Data -> Data 
   DUnless d □ = d
@@ -230,7 +230,7 @@ module Core.WellFormed where
         Γ T⊢ t-arg ->
         syn-fun ▸NTForall x , t-body-fun , m-fun -> 
         ▶ m-fun m-all -> 
-        NSub t-arg x t-body-fun t-syn ->
+        NSub (t-arg , n-arg) x t-body-fun t-syn ->
         ▷ t-syn syn-all -> 
         Γ L⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) ->
         Γ S⊢ ((ETypAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) m-all (t-arg , n-arg)) ⇒ syn-all)

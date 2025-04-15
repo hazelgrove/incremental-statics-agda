@@ -244,7 +244,8 @@ module Core.VariableUpdatePreservation where
       Γ' L⊢ e
     ctx-inv-ana equiv (WFSubsume x x₁ x₂ x₃) = WFSubsume x x₁ x₂ (ctx-inv-syn equiv x₃)
     ctx-inv-ana equiv (WFFun wf x x₁ x₂ x₃ x₄ x₅ x₆ x₇ ana) = WFFun (ctx-equiv-t equiv wf) x x₁ x₂ x₃ x₄ x₅ x₆ x₇ (ctx-inv-ana (CtxEquivCons? equiv) ana)
-    ctx-inv-ana equiv (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) = WFPair x x₁ x₂ x₃ x₄ x₅ x₆ (ctx-inv-ana equiv wt) (ctx-inv-ana equiv wt₁)
+    ctx-inv-ana equiv (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wf wf₁) = WFPair x x₁ x₂ x₃ x₄ x₅ x₆ (ctx-inv-ana equiv wf) (ctx-inv-ana equiv wf₁)
+    ctx-inv-ana equiv (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) = WFTypFun x x₁ x₂ x₃ x₄ x₅ (ctx-inv-ana (CtxEquivTCons? equiv) wf)
 
     ctx-inv-syn : ∀ {Γ Γ' e} ->
       CtxEquiv Γ Γ' ->
@@ -256,6 +257,7 @@ module Core.VariableUpdatePreservation where
     ctx-inv-syn equiv (WFVar x x₁) = WFVar (ctx-equiv-access equiv x) x₁
     ctx-inv-syn equiv (WFAsc wf x x₁ x₂) = WFAsc (ctx-equiv-t equiv wf) x x₁ (ctx-inv-ana equiv x₂)
     ctx-inv-syn equiv (WFProj x x₁ x₂ x₃) = WFProj x x₁ x₂ (ctx-inv-ana equiv x₃)
+    ctx-inv-syn equiv (WFTypAp x x₁ x₂ x₃ x₄ x₅) = WFTypAp (ctx-equiv-t equiv x) x₁ x₂ x₃ x₄ (ctx-inv-ana equiv x₅)
 
   mutual 
 
@@ -269,7 +271,7 @@ module Core.VariableUpdatePreservation where
     ... | m-consist' , consist-t' = WFSubsume (var-update-subsumable var-update subsumable) consist-t' (beyond-▶ (beyond-through-~N (var-update-beyond var-update) consist-t consist-t') consist-m) (preservation-var-update syn var-update ctx-inv)
     preservation-vars-ana (WFFun {t-asc = t-asc} wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunNeq {e-body' = e-body' ⇒ syn-body'} neq var-update) ctx-inv = WFFun (ctx-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma {t = t-asc} (var-update?-beyond var-update) consist-syn) consist-all consist-m-all (preservation-vars-ana ana var-update (CtxInvNeq? neq ctx-inv))    
     preservation-vars-ana (WFFun wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunEq) ctx-inv = WFFun (ctx-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all (ctx-inv-ana (CtxEquivInit ctx-inv) ana)
-    preservation-vars-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (VSPair {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} vs vs₁) ctx-inv = WFPair x x₁ x₂ x₃ (preservation-pair-lemma (var-update?-beyond vs) (var-update?-beyond vs₁) x₄) x₅ x₆ (preservation-vars-ana wt vs ctx-inv) (preservation-vars-ana wt₁ vs₁ ctx-inv)
+    preservation-vars-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wf wf₁) (VSPair {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} vs vs₁) ctx-inv = WFPair x x₁ x₂ x₃ (preservation-pair-lemma (var-update?-beyond vs) (var-update?-beyond vs₁) x₄) x₅ x₆ (preservation-vars-ana wf vs ctx-inv) (preservation-vars-ana wf₁ vs₁ ctx-inv)
 
     preservation-var-update :
       ∀ {Γ Γ' x t n e e'} ->
@@ -317,7 +319,7 @@ module Core.VariableUpdatePreservation where
     ... | m-consist' , consist-t' = WFSubsume (var-update-subsumable var-update subsumable) consist-t' (beyond-▶ (beyond-through-~N (var-update-beyond var-update) consist-t consist-t') consist-m) (preservation-vars-unwrap-syn syn var-update ctx-inv)
     preservation-vars-unwrap-ana (WFFun {t-asc = t-asc} wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunNeq {e-body' = e-body' ⇒ syn-body'} neq var-update) ctx-inv = WFFun (unwrap-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma {t = t-asc} (var-update?-beyond var-update) consist-syn) consist-all consist-m-all (preservation-vars-unwrap-ana ana var-update (UnwrapInvCons? neq ctx-inv))    
     preservation-vars-unwrap-ana (WFFun wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunEq) ctx-inv = WFFun (unwrap-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all (ctx-inv-ana (CtxEquivUnwrapInit ctx-inv) ana)
-    preservation-vars-unwrap-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (VSPair {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} vs vs₁) ctx-inv = WFPair x x₁ x₂ x₃ (preservation-pair-lemma (var-update?-beyond vs) (var-update?-beyond vs₁) x₄) x₅ x₆ (preservation-vars-unwrap-ana wt vs ctx-inv) (preservation-vars-unwrap-ana wt₁ vs₁ ctx-inv)
+    preservation-vars-unwrap-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wf wf₁) (VSPair {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} vs vs₁) ctx-inv = WFPair x x₁ x₂ x₃ (preservation-pair-lemma (var-update?-beyond vs) (var-update?-beyond vs₁) x₄) x₅ x₆ (preservation-vars-unwrap-ana wf vs ctx-inv) (preservation-vars-unwrap-ana wf₁ vs₁ ctx-inv)
 
     preservation-vars-unwrap-syn :
       ∀ {Γ Γ' x t m e e'} ->

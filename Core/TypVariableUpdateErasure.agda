@@ -51,6 +51,12 @@ module Core.TypVariableUpdateErasure where
     rewrite exp-tvar-update-erase etvu2 = refl
   exp-tvar-update-erase (ETVUProj etvu)
     rewrite exp-tvar-update-erase etvu = refl
+  exp-tvar-update-erase ETVUTypFunEq = refl
+  exp-tvar-update-erase (ETVUTypFunNeq _ etvu)
+    rewrite exp-tvar-update-erase etvu = refl
+  exp-tvar-update-erase (ETVUTypAp etvu tvu)
+    rewrite exp-tvar-update-erase etvu
+    rewrite tvar-update-erase tvu = refl
     
   exp-tvar-update?-erase : ∀{x m e e'} ->
     ExpTypVariableUpdate? x m e e' ->

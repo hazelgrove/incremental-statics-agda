@@ -111,6 +111,13 @@ module Core.Lemmas where
   ▸NTProj-dec s (d , n) with ▸DTProj-dec s d 
   ... | t , m , match = (t , n) , (m , n) , NTProjC match
 
+  ▸DTForall-dec : 
+    (d : Data) -> 
+    ∃[ x ] ∃[ t ] ∃[ m ] d ▸DTForall x , t , m
+  ▸DTForall-dec □ = BHole , □ , ✔ , DTForallNone
+  ▸DTForall-dec (■ t) with ▸TForall-dec t
+  ... | x , t' , m , match = x , ■ t' , m , DTForallSome match
+
   ▸DTForallBind-dec : 
     (d : Data) -> 
     (x : Binding) ->
@@ -149,6 +156,16 @@ module Core.Lemmas where
     ∃[ m ] syn ~N ana , m 
   ~N-dec (syn-d , syn-n) (ana-d , ana-n) with ~D-dec syn-d ana-d
   ... | m , consist = (m , (syn-n ⊓ ana-n)) , ~N-pair consist
+
+  DSub-dec : 
+    (t : Type) -> 
+    (x : Binding) ->
+    (d1 : Data) ->
+    ∃[ d2 ] DSub t x d1 d2 
+  DSub-dec t x □ = □ , NSubVoid
+  DSub-dec t x (■ t1) with Sub-dec t x t1 
+  ... | t2 , sub = ■ t2 , NSubSome sub
+
   
   ▸DTArrow-unicity : ∀ {d t-in t-in' t-out t-out' m m'} ->
     d ▸DTArrow t-in , t-out , m -> 
@@ -179,6 +196,13 @@ module Core.Lemmas where
     (t ≡ t' × m ≡ m')
   ▸DTProj-unicity DTProjNone DTProjNone = refl , refl
   ▸DTProj-unicity (DTProjSome match1) (DTProjSome match2) with ▸TProj-unicity match1 match2
+  ... | refl , refl = refl , refl
+
+  ▸NTProj-unicity : ∀ {d s t t' m m'} ->
+    d , s ▸NTProj t , m -> 
+    d , s ▸NTProj t' , m' -> 
+    (t ≡ t' × m ≡ m')
+  ▸NTProj-unicity (NTProjC match1) (NTProjC match2) with ▸DTProj-unicity match1 match2 
   ... | refl , refl = refl , refl
 
   ~D-unicity : ∀ {syn ana m m'} ->

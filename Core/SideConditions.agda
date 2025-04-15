@@ -82,6 +82,12 @@ module Core.SideConditions where
       (x : Binding) ->
       ∃[ t-body ] ∃[ m ] t , x ▸TForallBind t-body , m
 
+    Sub-dec : 
+      (t1 : Type) -> 
+      (x : Binding) ->
+      (t2 : Type) ->
+      ∃[ t3 ] Sub t1 x t2 t3
+
     ~-dec : 
       (syn ana : Type) -> 
       ∃[ m ] syn ~ ana , m 

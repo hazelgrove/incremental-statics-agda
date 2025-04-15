@@ -63,7 +63,17 @@ module Core.TypVariableUpdate where
     ETVUProj : ∀ {x s m syn e e' ana m' m''} ->
       ExpTypVariableUpdate x m e e' ->
       ExpTypVariableUpdate x m ((EProj s (e [ m' ]⇐ ana) m'') ⇒ syn) ((EProj s (e' [ m' ]⇐ ana) m'') ⇒ syn) 
+    ETVUTypFunEq : ∀ {x syn e ana m m' m''} ->
+      ExpTypVariableUpdate x m ((ETypFun (BVar x) m' (e [ m'' ]⇐ ana)) ⇒ syn) ((ETypFun (BVar x) m' (e [ m'' ]⇐ ana)) ⇒ syn) 
+    ETVUTypFunNeq : ∀ {x x' m syn e e' ana m' m''} ->
+      ¬((BVar x) ≡ x') ->
+      ExpTypVariableUpdate x m e e' ->
+      ExpTypVariableUpdate x m ((ETypFun x' m' (e [ m'' ]⇐ ana)) ⇒ syn) ((ETypFun x' m' (e' [ m'' ]⇐ ana)) ⇒ syn) 
+    ETVUTypAp : ∀ {x m syn t t' n e e' ana m' m''} ->
+      ExpTypVariableUpdate x m e e' ->
+      TypVariableUpdate x m t t' ->
+      ExpTypVariableUpdate x m ((ETypAp (e [ m' ]⇐ ana) m'' (t , n)) ⇒ syn) ((ETypAp (e' [ m' ]⇐ ana) m'' (t' , ★)) ⇒ syn)
 
   ExpTypVariableUpdate? : Binding -> Mark -> SynExp -> SynExp -> Set
   ExpTypVariableUpdate? BHole m e1 e2 = e1 ≡ e2
-  ExpTypVariableUpdate? (BVar x) m e1 e2 = ExpTypVariableUpdate x m e1 e2
+  ExpTypVariableUpdate? (BVar x) m e1 e2 = ExpTypVariableUpdate x m e1 e2 
