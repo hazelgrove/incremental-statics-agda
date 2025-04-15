@@ -45,7 +45,7 @@ module Core.TypVariableUpdate where
     ETVUFun : ∀ {x m x' ann ann' n-ann m-ana m-asc e-body e-body' m-body syn-all ana-body} ->
       TypVariableUpdate x m ann ann' ->
       ExpTypVariableUpdate x m e-body e-body' ->
-      ExpTypVariableUpdate x m ((EFun x' (ann , n-ann) m-ana m-asc (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all) ((EFun x' (ann , ★) m-ana m-asc (e-body' [ m-body ]⇐ ana-body)) ⇒ syn-all)
+      ExpTypVariableUpdate x m ((EFun x' (ann , n-ann) m-ana m-asc (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all) ((EFun x' (ann' , ★) m-ana m-asc (e-body' [ m-body ]⇐ ana-body)) ⇒ syn-all)
     ETVUAp : ∀ {x m syn e1 e2 e1' e2' ana1 ana2 m1 m2 m3} ->
       ExpTypVariableUpdate x m e1 e1' ->
       ExpTypVariableUpdate x m e2 e2' ->

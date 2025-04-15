@@ -19,6 +19,10 @@ module Core.TypVariableUpdatePreservation where
       CtxTInv x Γ Γ' ->
       ¬(x ≡ x') ->
       CtxTInv x (x' T∷ Γ) (x' T∷ Γ')
+    CVCons : ∀ {x x' t Γ Γ'} ->
+      CtxTInv x Γ Γ' ->
+      ¬(x ≡ x') ->
+      CtxTInv x (x' ∶ t ∷ Γ) (x' ∶ t ∷ Γ')
 
   CCons? : ∀ {x' x Γ Γ'} ->
     CtxTInv x Γ Γ' ->
@@ -32,6 +36,7 @@ module Core.TypVariableUpdatePreservation where
     x T∈ Γ' , ✔
   ctx-tinv-inctx-eq CInit = InCtxFound
   ctx-tinv-inctx-eq (CCons inv neq) = InCtxTSkip neq (ctx-tinv-inctx-eq inv)
+  ctx-tinv-inctx-eq (CVCons inv x) = InCtxSkip (ctx-tinv-inctx-eq inv)
 
   ctx-tinv-inctx-neq : ∀ {x x' Γ Γ' m} ->
     CtxTInv x' Γ Γ' ->
@@ -41,6 +46,7 @@ module Core.TypVariableUpdatePreservation where
   ctx-tinv-inctx-neq CInit inctx neq = InCtxTSkip neq inctx
   ctx-tinv-inctx-neq (CCons inv _) InCtxFound neq = InCtxFound
   ctx-tinv-inctx-neq (CCons inv _) (InCtxTSkip x inctx) neq = InCtxTSkip x (ctx-tinv-inctx-neq inv inctx neq)
+  ctx-tinv-inctx-neq (CVCons inv x) (InCtxSkip inctx) neq = InCtxSkip (ctx-tinv-inctx-neq inv inctx neq)
 
   ctx-tinv-inctxR-neq : ∀ {x x' Γ Γ' m} ->
     CtxTInv x' Γ' Γ ->
@@ -51,13 +57,16 @@ module Core.TypVariableUpdatePreservation where
   ctx-tinv-inctxR-neq CInit (InCtxTSkip x inctx) neq = inctx
   ctx-tinv-inctxR-neq (CCons inv x) InCtxFound neq = InCtxFound
   ctx-tinv-inctxR-neq (CCons inv x) (InCtxTSkip x₁ inctx) neq = InCtxTSkip x₁ (ctx-tinv-inctxR-neq inv inctx neq)
+  ctx-tinv-inctxR-neq (CVCons inv x) (InCtxSkip inctx) neq = InCtxSkip (ctx-tinv-inctxR-neq inv inctx neq)
 
   ctx-tinv-inctx-var : ∀ {x x' t Γ Γ' m} ->
     CtxTInv x' Γ' Γ ->
     x , t ∈ Γ , m ->
     x , t ∈ Γ' , m
-  ctx-tinv-inctx-var CInit (InCtxTSkip invtx) = invtx
-  ctx-tinv-inctx-var (CCons inv x) (InCtxTSkip invtx) = InCtxTSkip (ctx-tinv-inctx-var inv invtx)
+  ctx-tinv-inctx-var CInit (InCtxTSkip inctx) = inctx
+  ctx-tinv-inctx-var (CCons inv x) (InCtxTSkip inctx) = InCtxTSkip (ctx-tinv-inctx-var inv inctx)
+  ctx-tinv-inctx-var (CVCons inv x) InCtxFound = InCtxFound
+  ctx-tinv-inctx-var (CVCons inv x) (InCtxSkip x₁ inctx) = InCtxSkip x₁ (ctx-tinv-inctx-var inv inctx)
 
   data CtxTEquiv : Ctx -> Ctx -> Set where 
     CEInit : ∀ {x Γ Γ'} ->
@@ -160,6 +169,22 @@ module Core.TypVariableUpdatePreservation where
   preservation-vars-unwrap-t? {BHole} wf _ refl = wf
   preservation-vars-unwrap-t? {BVar x} wf inctx update = preservation-vars-unwrap-t wf inctx update CInit
 
+  tvar-update-subsumable : ∀ {x m e e' syn syn'} ->
+    ExpTypVariableUpdate x m (e ⇒ syn) (e' ⇒ syn') -> 
+    SubsumableMid e ->
+    SubsumableMid e'
+  tvar-update-subsumable ETVUConst SubsumableConst = SubsumableConst
+  tvar-update-subsumable ETVUHole SubsumableHole = SubsumableHole
+  tvar-update-subsumable (ETVUFun x etvu) ()
+  tvar-update-subsumable (ETVUAp etvu etvu₁) SubsumableAp = SubsumableAp
+  tvar-update-subsumable ETVUVar SubsumableVar = SubsumableVar
+  tvar-update-subsumable (ETVUAsc x etvu) SubsumableAsc = SubsumableAsc
+  tvar-update-subsumable (ETVUPair etvu etvu₁) ()
+  tvar-update-subsumable (ETVUProj etvu) SubsumableProj = SubsumableProj
+  tvar-update-subsumable ETVUTypFunEq ()
+  tvar-update-subsumable (ETVUTypFunNeq x etvu) ()
+  tvar-update-subsumable (ETVUTypAp etvu x) SubsumableTypAp = SubsumableTypAp
+
   tvar-update-syn : ∀ {x t e syn e' syn'} ->
     ExpTypVariableUpdate x t (e ⇒ syn) (e' ⇒ syn') -> 
     syn ≡ syn' 
@@ -184,10 +209,11 @@ module Core.TypVariableUpdatePreservation where
       ExpTypVariableUpdate x m e e' ->
       CtxTInv x Γ Γ' ->
       Γ L⊢ (e' [ m' ]⇐ ana)
-    preservation-vars-unwrap-exp-t-ana (WFSubsume x x₁ x₂ x₃) = {!   !}
-    preservation-vars-unwrap-exp-t-ana (WFFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ x₈ wf) = {!   !}
-    preservation-vars-unwrap-exp-t-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wf wf₁) = {!   !}
-    preservation-vars-unwrap-exp-t-ana (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) = {!   !}
+    preservation-vars-unwrap-exp-t-ana {e' = e' ⇒ syn'} (WFSubsume x x₁ x₂ syn) inctx etvu inv with tvar-update-syn etvu 
+    ... | refl = WFSubsume (tvar-update-subsumable etvu x) x₁ x₂ (preservation-vars-unwrap-exp-t-syn syn inctx etvu inv)
+    preservation-vars-unwrap-exp-t-ana (WFFun typ x₁ x₂ x₃ x₄ x₅ x₆ x₇ x₈ ana) inctx (ETVUFun {e-body' = e' ⇒ syn'} tvu etvu) inv = WFFun (preservation-vars-unwrap-t typ inctx tvu inv) x₁ (■~N-pair (~N-pair {! preservation-vars-unwrap-exp-t-ana ana ?  !})) x₃ x₄ ▶★ {!   !} x₇ x₈ (preservation-vars-unwrap-exp-t-ana ana {! inctx  !} etvu {! CVCons  !})
+    preservation-vars-unwrap-exp-t-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ ana1 ana2) inctx etvu inv = {!   !}
+    preservation-vars-unwrap-exp-t-ana (WFTypFun x x₁ x₂ x₃ x₄ x₅ ana) inctx etvu inv = {!   !}
 
     preservation-vars-unwrap-exp-t-syn :
       ∀ {x Γ Γ' e e' m} ->
