@@ -21,6 +21,11 @@ module Core.ActionErasure where
   αT↦-erase ActWrapProdTwo = ActWrapProdTwo
   αT↦-erase (ActInsertTVar x) = ActInsertTVar
   αT↦-erase ActWrapForall = ActWrapForall
+  αT↦-erase ActUnwrapArrowOne = ActUnwrapArrowOne
+  αT↦-erase ActUnwrapArrowTwo = ActUnwrapArrowTwo
+  αT↦-erase ActUnwrapProdOne = ActUnwrapProdOne
+  αT↦-erase ActUnwrapProdTwo = ActUnwrapProdTwo
+  αT↦-erase ActUnwrapForall = ActUnwrapForall
   αT↦-erase ActDelete = ActDelete
   αT↦-erase (ActDeleteBinder in-ctx tvar-update) 
     rewrite tvar-update?-erase tvar-update = ActDeleteBinder
@@ -67,6 +72,10 @@ module Core.ActionErasure where
     rewrite var-update?-erase var-update = ActDeleteBinder
   αU↦-erase (ActInsertBinder var-update)
     rewrite var-update?-erase var-update = ActInsertBinder
+  αU↦-erase (ActDeleteTypBinder in-ctx update)
+    rewrite exp-tvar-update?-erase update = ActDeleteTypBinder
+  αU↦-erase (ActInsertTypBinder update)
+    rewrite exp-tvar-update?-erase update = ActInsertTypBinder
 
   αL↦-erase : ∀ {Γ α e e'} ->
     (Γ ⊢ α , e αL↦ e') ->

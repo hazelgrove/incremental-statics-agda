@@ -62,6 +62,30 @@ module Core.WellFormed where
       d , s ▸DTProj t , m ->
       (d , n) , s ▸NTProj (t , n) , (m , n)
 
+  data _,_▸DTForallBind_,_ : Data -> Binding -> Data -> Mark -> Set where 
+    DTForallBindSome : ∀ {t t1 x m} ->
+      t , x ▸TForallBind t1 , m ->
+      (■ t) , x ▸DTForallBind (■ t1) , m
+    DTForallBindNone : ∀ {x} ->
+      □ , x ▸DTForallBind □ , ✔
+
+  data _,_▸NTForallBind_,_ : ○Data -> Binding -> ○Data -> ○Mark -> Set where 
+    NTForallBindC : ∀ {d n x t m} ->
+      d , x ▸DTForallBind t , m ->
+      (d , n) , x ▸NTForallBind (t , n) , (m , n)
+
+  data _▸DTForall_,_,_ : Data -> Binding -> Data -> Mark -> Set where 
+    DTForallSome : ∀ {t t1 x m} ->
+      t ▸TForall x , t1 , m ->
+      (■ t) ▸DTForall x , (■ t1) , m
+    DTForallNone :
+      □ ▸DTForall BHole , □ , ✔
+
+  data _▸NTForall_,_,_ : ○Data -> Binding -> ○Data -> ○Mark -> Set where 
+    NTForallC : ∀ {d n x t m} ->
+      d ▸DTForall x , t , m ->
+      (d , n) ▸NTForall x , (t , n) , (m , n)
+
   -- data _,_∈N_,_ : Var -> ○Type -> Ctx -> Mark -> Set where 
   --   InCtxEmpty : ∀ {x} ->
   --     x ,  (THole , •) ∈N ∅ , ✖ 
@@ -107,6 +131,18 @@ module Core.WellFormed where
       (■ t , n) ~N d , m ->
       (t , n) ■~N d , m
 
+  data DSub : Type -> Binding -> Data -> Data -> Set where 
+    NSubVoid : ∀ {t x} -> 
+      DSub t x □ □
+    NSubSome : ∀ {t x t1 t2} -> 
+      Sub t x t1 t2 -> 
+      DSub t x (■ t1) (■ t2)
+    
+  data NSub : Type -> Binding -> ○Data -> ○Data -> Set where 
+    NSub-pair : ∀ {t x d1 d2 n} ->
+      DSub t x d1 d2 -> 
+      NSub t x (d1 , n) (d2 , n)
+
   DUnless : Data -> Data -> Data 
   DUnless d □ = d
   DUnless d (■ t) = □
@@ -129,6 +165,13 @@ module Core.WellFormed where
 
   NProd : ○Data -> ○Data -> ○Data 
   NProd (d1 , n1) (d2 , n2) = (DProd d1 d2 , n1 ⊓ n2)
+
+  DForall : Binding -> Data -> Data
+  DForall x □ = □
+  DForall x (■ t) = ■ (TForall x t)
+
+  NForall : Binding -> ○Data -> ○Data 
+  NForall x (d , n) = (DForall x d , n)
 
   data _T⊢_ : (Γ : Ctx) (t : Type) -> Set where 
     WFBase : ∀ {Γ} -> 
@@ -183,6 +226,14 @@ module Core.WellFormed where
         ▶ m-body m-all -> 
         Γ L⊢ ((e-body ⇒ syn-body) [ ✔ ]⇐ (□ , n)) ->
         Γ S⊢ ((EProj s ((e-body ⇒ syn-body) [ ✔ ]⇐ (□ , n)) m-all) ⇒ syn-all)
+      WFTypAp : ∀ {Γ x e-fun t-arg syn-all syn-fun t-syn t-body-fun m-all m-fun n-arg n} ->
+        Γ T⊢ t-arg ->
+        syn-fun ▸NTForall x , t-body-fun , m-fun -> 
+        ▶ m-fun m-all -> 
+        NSub t-arg x t-body-fun t-syn ->
+        ▷ t-syn syn-all -> 
+        Γ L⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) ->
+        Γ S⊢ ((ETypAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) m-all (t-arg , n-arg)) ⇒ syn-all)
 
     data _L⊢_ : (Γ : Ctx) (e : AnaExp) -> Set where 
       WFSubsume : ∀ {Γ e-all syn-all ana-all m-all m-consist} ->
@@ -214,8 +265,19 @@ module Core.WellFormed where
         Γ L⊢ ((e-fst ⇒ syn-fst) [ m-fst ]⇐ ana-fst) ->
         Γ L⊢ ((e-snd ⇒ syn-snd) [ m-snd ]⇐ ana-snd) ->
         Γ L⊢ (((EPair ((e-fst ⇒ syn-fst) [ m-fst ]⇐ ana-fst) ((e-snd ⇒ syn-snd) [ m-snd ]⇐ ana-snd) m-ana) ⇒ syn-all) [ m-all ]⇐ ana-all)  
+      WFTypFun : ∀ {Γ x e-body syn-all syn-body ana-all ana-body t-body-ana m-ana m-all m-body m-ana-ana m-all-ana} ->
+        ana-all , x ▸NTForallBind t-body-ana , m-ana-ana -> 
+        ▷ t-body-ana ana-body ->
+        ▶ m-ana-ana m-ana -> 
+        ▷ (NUnless (NForall x syn-body) ana-all) syn-all ->
+        syn-all ~N ana-all , m-all-ana ->
+        ▶ m-all-ana m-all -> 
+        (x T∷? Γ) L⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ->
+        Γ L⊢ (((ETypFun x m-ana ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all)  
       
+
+
   data P⊢ : Program -> Set where 
     WFProgram : ∀ {p} ->
       ∅ L⊢ (AnaExpOfProgram p) ->
-      P⊢ p
+      P⊢ p 

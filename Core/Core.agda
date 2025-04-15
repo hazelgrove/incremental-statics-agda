@@ -47,6 +47,7 @@ module Core.Core where
     BareSubsumableVar : ∀ {x} -> BareSubsumable (BareEVar x) 
     BareSubsumableAsc : ∀ {t e} -> BareSubsumable (BareEAsc t e) 
     BareSubsumableProj : ∀ {s e} -> BareSubsumable (BareEProj s e) 
+    BareSubsumableTypAp : ∀ {e t} -> BareSubsumable (BareETypAp e t) 
     
   data Mark : Set where 
     ✖ : Mark

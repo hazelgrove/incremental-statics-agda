@@ -37,6 +37,12 @@ mutual
     QuiescentProj : ∀ {s e m} ->
       e L̸↦ -> 
       ((EProj s e m)) M̸↦
+    QuiescentTypFun : ∀ {x m e} ->
+      e L̸↦ ->
+      ((ETypFun x m e)) M̸↦
+    QuiescentTypAp : ∀ {m e t} ->
+      e L̸↦ -> 
+      ((ETypAp e m (t , •))) M̸↦
 
   data _L̸↦ : AnaExp -> Set where 
     QuiescentLow : ∀ {t e m} ->

@@ -77,6 +77,11 @@ module Core.SideConditions where
       (t : Type) -> 
       ∃[ x ] ∃[ t-body ] ∃[ m ] t ▸TForall x , t-body , m
 
+    ▸TForallBind-dec : 
+      (t : Type) -> 
+      (x : Binding) ->
+      ∃[ t-body ] ∃[ m ] t , x ▸TForallBind t-body , m
+
     ~-dec : 
       (syn ana : Type) -> 
       ∃[ m ] syn ~ ana , m 
@@ -154,6 +159,19 @@ module Core.SideConditions where
     --   (TArrow t1 t2) ~ (TProd t3 t4) , ✖
     -- InconsistProdArr : ∀ {t1 t2 t3 t4} ->
     --   (TProd t1 t2) ~ (TArrow t3 t4) , ✖
+    
+    -- ▸TProj-dec : 
+    --   (s : ProdSide) -> 
+    --   (t : Type) -> 
+    --   ∃[ t' ] ∃[ m ] t , s ▸TProj t' , m
+    -- ▸TProj-dec Fst TBase = THole , ✖ , MProdFst MProdBase
+    -- ▸TProj-dec Fst THole = THole , ✔ , MProdFst MProdHole
+    -- ▸TProj-dec Fst (TArrow t t₁) = THole , ✖ , MProdFst MProdArrow
+    -- ▸TProj-dec Fst (TProd t t₁) = t , ✔ , MProdFst MProdProd
+    -- ▸TProj-dec Snd TBase = THole , ✖ , MProdSnd MProdBase
+    -- ▸TProj-dec Snd THole = THole , ✔ , MProdSnd MProdHole
+    -- ▸TProj-dec Snd (TArrow t t₁) = THole , ✖ , MProdSnd MProdArrow
+    -- ▸TProj-dec Snd (TProd t t₁) = t₁ , ✔ , MProdSnd MProdProd
       
     -- ▸TArrow-unicity : ∀ {t t-in t-in' t-out t-out' m m'} ->
     --   t ▸TArrow t-in , t-out , m -> 

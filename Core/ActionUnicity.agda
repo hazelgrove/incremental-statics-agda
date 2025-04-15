@@ -18,6 +18,11 @@ module Core.ActionUnicity where
   αBT↦-unicity ActWrapProdTwo ActWrapProdTwo = refl
   αBT↦-unicity ActInsertTVar ActInsertTVar = refl
   αBT↦-unicity ActWrapForall ActWrapForall = refl
+  αBT↦-unicity ActUnwrapArrowOne ActUnwrapArrowOne = refl
+  αBT↦-unicity ActUnwrapArrowTwo ActUnwrapArrowTwo = refl
+  αBT↦-unicity ActUnwrapProdOne ActUnwrapProdOne = refl
+  αBT↦-unicity ActUnwrapProdTwo ActUnwrapProdTwo = refl
+  αBT↦-unicity ActUnwrapForall ActUnwrapForall = refl
   αBT↦-unicity ActDelete ActDelete = refl
   αBT↦-unicity ActDeleteBinder ActDeleteBinder = refl
   αBT↦-unicity ActInsertBinder ActInsertBinder = refl
@@ -52,6 +57,8 @@ module Core.ActionUnicity where
   αB↦-unicity ActWrapPairOne ActWrapPairOne = refl
   αB↦-unicity ActWrapPairTwo ActWrapPairTwo = refl
   αB↦-unicity ActWrapProj ActWrapProj = refl
+  αB↦-unicity ActWrapTypFun ActWrapTypFun = refl
+  αB↦-unicity ActWrapTypAp ActWrapTypAp = refl
   αB↦-unicity ActDelete ActDelete = refl
   αB↦-unicity ActUnwrapFun ActUnwrapFun = refl
   αB↦-unicity ActUnwrapApOne ActUnwrapApOne = refl
@@ -60,12 +67,12 @@ module Core.ActionUnicity where
   αB↦-unicity ActUnwrapPairOne ActUnwrapPairOne = refl
   αB↦-unicity ActUnwrapPairTwo ActUnwrapPairTwo = refl
   αB↦-unicity ActUnwrapProj ActUnwrapProj = refl
-  αB↦-unicity ActDeleteBinder ActDeleteBinder = refl
-  αB↦-unicity ActInsertBinder ActInsertBinder = refl
-  αB↦-unicity ActWrapTypFun ActWrapTypFun = refl
-  αB↦-unicity ActWrapTypAp ActWrapTypAp = refl
   αB↦-unicity ActUnwrapTypFun ActUnwrapTypFun = refl
   αB↦-unicity ActUnwrapTypAp ActUnwrapTypAp = refl
+  αB↦-unicity ActDeleteBinder ActDeleteBinder = refl
+  αB↦-unicity ActInsertBinder ActInsertBinder = refl
+  αB↦-unicity ActDeleteTypBinder ActDeleteTypBinder = refl
+  αB↦-unicity ActInsertTypBinder ActInsertTypBinder = refl
   
   AB↦-unicity : ∀ {A e e' e''} ->
     A , e AB↦ e' ->

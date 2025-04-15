@@ -82,6 +82,12 @@ module Core.ActionCompleteness where
   act-in-asc (ABT*StepAct x steps) = AB*StepAct (ABareAscOne x) (act-in-asc steps)
   act-in-asc ABT*StepDone = AB*StepDone
 
+  act-in-typ-ap : ∀{As t t' e} ->
+    As , t ABT↦* t' ->
+    map nest-action As , BareETypAp e t AB↦* BareETypAp e t' 
+  act-in-typ-ap (ABT*StepAct x steps) = AB*StepAct (ABareTypApTwo x) (act-in-typ-ap steps)
+  act-in-typ-ap ABT*StepDone = AB*StepDone
+
   action-construction :
     (e : BareExp) -> 
     ∃[ As ] As , BareEHole AB↦* e
@@ -101,9 +107,12 @@ module Core.ActionCompleteness where
   ... | _ , steps1 | _ , steps2 = _ , AB*StepActAppend steps1 (AB*StepAct (ABareDone ActWrapPairOne) (act-in-pair steps2))
   action-construction (BareEProj s e) with action-construction e 
   ... | _ , steps = _ , AB*StepActAppend steps (AB*StepAct (ABareDone ActWrapProj) AB*StepDone)
-  action-construction (BareETypFun x e) with action-construction e 
-  ... | _ , steps = _ , AB*StepActAppend steps (AB*StepActAppend (AB*StepAct (ABareDone ActWrapTypFun) AB*StepDone) {! AB*StepAct (ABareDone ActInsertBinder) AB*StepDone  !})
-  action-construction (BareETypAp e x) = {!   !}
+  action-construction (BareETypFun BHole e) with action-construction e 
+  ... | _ , steps = _ , AB*StepActAppend steps (AB*StepAct (ABareDone ActWrapTypFun) AB*StepDone)
+  action-construction (BareETypFun (BVar x) e) with action-construction e 
+  ... | _ , steps = _ , AB*StepActAppend steps (AB*StepActAppend (AB*StepAct (ABareDone ActWrapTypFun) AB*StepDone) (AB*StepAct (ABareDone ActInsertTypBinder) AB*StepDone))
+  action-construction (BareETypAp e t) with action-construction e | action-type-construction t
+  ... | _ , steps1 | _ , steps2 = _ , AB*StepActAppend steps1 (AB*StepAct (ABareDone ActWrapTypAp) (act-in-typ-ap steps2))
    
   action-completeness :
     (e1 e2 : BareExp) -> 

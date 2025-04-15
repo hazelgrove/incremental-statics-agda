@@ -16,12 +16,21 @@ module Core.QuiescentValidity where
     Cons• : ∀ {x t Γ} -> 
       Ctx• Γ -> 
       Ctx• (x ∶ (t , •) ∷ Γ)
+    TCons• : ∀ {x Γ} -> 
+      Ctx• Γ -> 
+      Ctx• (x T∷ Γ)
   
   Cons•? : ∀ {x t Γ} -> 
     Ctx• Γ -> 
     Ctx• (x ∶ (t , •) ∷? Γ)
   Cons•? {BHole} ctx-old = ctx-old
   Cons•? {BVar x} ctx-old = Cons• ctx-old
+  
+  TCons•? : ∀ {x Γ} -> 
+    Ctx• Γ -> 
+    Ctx• (x T∷? Γ)
+  TCons•? {BHole} ctx-old = ctx-old
+  TCons•? {BVar x} ctx-old = TCons• ctx-old
 
   ◇T∷? : ∀{x Γ} ->
     Γ◇ (x T∷? Γ) ≡ x T∷? (Γ◇ Γ)
@@ -56,6 +65,7 @@ module Core.QuiescentValidity where
   all-old-lookup InCtxEmpty ctx-old = THole , refl
   all-old-lookup InCtxFound (Cons• ctx-old) = _ , refl
   all-old-lookup (InCtxSkip neq in-ctx) (Cons• ctx-old) = all-old-lookup in-ctx ctx-old
+  all-old-lookup (InCtxTSkip in-ctx) (TCons• ctx-old) = all-old-lookup in-ctx ctx-old
 
   barren-subsumable : ∀ {e} ->
     SubsumableMid e ->
@@ -66,13 +76,15 @@ module Core.QuiescentValidity where
   barren-subsumable SubsumableVar = BareSubsumableVar
   barren-subsumable SubsumableAsc = BareSubsumableAsc
   barren-subsumable SubsumableProj = BareSubsumableProj
+  barren-subsumable SubsumableTypAp = BareSubsumableTypAp
 
-  ana-edge-wt : ∀ {Γ e m t} ->
-    Γ L⊢ ((e ⇒ (■ t , •)) [ m ]⇐ (□ , •)) -> 
-    m ≡ ✔
-  ana-edge-wt (WFSubsume _ (~N-pair ~DVoidR) ▶• _) = refl
-  ana-edge-wt (WFFun _ _ _ _ _ _ _ (~N-pair ~DVoidR) ▶• _) = refl
-  ana-edge-wt (WFPair _ _ _ _ _ (~N-pair ~DVoidR) ▶• _ _) = refl
+  -- ana-edge-wt : ∀ {Γ e m t} ->
+  --   Γ L⊢ ((e ⇒ (■ t , •)) [ m ]⇐ (□ , •)) -> 
+  --   m ≡ ✔
+  -- ana-edge-wt (WFSubsume _ (~N-pair ~DVoidR) ▶• _) = refl
+  -- ana-edge-wt (WFFun _ _ _ _ _ _ _ (~N-pair ~DVoidR) ▶• _) = refl
+  -- ana-edge-wt (WFPair _ _ _ _ _ (~N-pair ~DVoidR) ▶• _ _) = refl
+  -- ana-edge-wt wf = ?
 
   data QuiescentValidityUp : BareCtx -> BareExp -> SynExp -> Set where 
     QuiescentValidityUpSyn : ∀ {Γ b e t} ->
@@ -118,6 +130,9 @@ module Core.QuiescentValidity where
     quiescent-validity-up (WFProj (NTProjC mprod) (▷Pair c1) c2 syn) (QuiescentUp (QuiescentProj (QuiescentLow settled))) ctx-old with quiescent-validity-low syn (QuiescentLow settled) ctx-old 
     ... | QuiescentValidityLowSyn syn' with mprod | c1 | c2 
     ... | DTProjSome x | ▶• | ▶• = QuiescentValidityUpSyn (MarkProj syn' x)
+    quiescent-validity-up (WFTypAp typ mforall c1 sub c2 syn) (QuiescentUp (QuiescentTypAp q)) ctx-old with quiescent-validity-low syn q ctx-old 
+    ... | QuiescentValidityLowSyn syn' with mforall | sub | c1 | c2 
+    ... | NTForallC (DTForallSome mforall) | NSub-pair (NSubSome sub) | ▶• | ▷Pair ▶• = QuiescentValidityUpSyn (MarkTypAp syn' mforall (validity-typ typ) sub)
 
     quiescent-validity-low : ∀ {Γ e} ->
       Γ L⊢ e ->
@@ -146,6 +161,12 @@ module Core.QuiescentValidity where
       with quiescent-validity-low ana1 settled1 ctx-old | quiescent-validity-low ana2 settled2 ctx-old
     ... | QuiescentValidityLowAna x₁ | QuiescentValidityLowAna x₂ with x | x₄ 
     ... | ~DVoidL | ▷Pair ▶• = QuiescentValidityLowAna (MarkAnaPair mprod x₁ x₂) 
+    quiescent-validity-low {Γ} (WFTypFun {x = x} {ana-all = □ , .•} (NTForallBindC mforall) (▷Pair ▶•) ▶• (▷Pair c1) (~N-pair con) ▶• ana) (QuiescentLow (QuiescentUp (QuiescentTypFun q))) ctx-old 
+      with quiescent-validity-low ana q (TCons•? ctx-old) | mforall | c1 | con 
+    ... | QuiescentValidityLowSyn syn' | DTForallBindNone | ▶• | ~DVoidR rewrite ◇T∷? {x} {Γ} = QuiescentValidityLowSyn (MarkSynTypFun syn')
+    quiescent-validity-low {Γ} (WFTypFun {x = x} {ana-all =  ■ t , .•} (NTForallBindC mforall) (▷Pair ▶•) ▶• (▷Pair c1) (~N-pair con) ▶• ana) (QuiescentLow (QuiescentUp (QuiescentTypFun q))) ctx-old 
+      with quiescent-validity-low ana q (TCons•? ctx-old) | mforall | c1 | con 
+    ... | QuiescentValidityLowAna ana' | DTForallBindSome mforall | ▶• | ~DVoidL rewrite ◇T∷? {x} {Γ} = QuiescentValidityLowAna (MarkAnaTypFun mforall ana') 
 
   quiescent-validity : ∀ {p} ->
     P⊢ p ->
@@ -153,4 +174,4 @@ module Core.QuiescentValidity where
     ((P◇ p) ~> p)
   quiescent-validity {p = Root e n} (WFProgram ana) (QuiescentProgram settled) with quiescent-validity-low ana settled Empty• 
   ... | QuiescentValidityLowSyn syn = MarkProgram syn
-  
+     

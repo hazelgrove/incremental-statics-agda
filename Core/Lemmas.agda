@@ -95,19 +95,6 @@ module Core.Lemmas where
     ∃[ t-in ] ∃[ t-out ] ∃[ m ] d ▸NTProd t-in , t-out , m
   ▸NTProd-dec (d , n) with ▸DTProd-dec d 
   ... | t1 , t2 , m , match = (t1 , n) , (t2 , n) , (m , n) , NTProdC match
-  
-  -- ▸TProj-dec : 
-  --   (s : ProdSide) -> 
-  --   (t : Type) -> 
-  --   ∃[ t' ] ∃[ m ] t , s ▸TProj t' , m
-  -- ▸TProj-dec Fst TBase = THole , ✖ , MProdFst MProdBase
-  -- ▸TProj-dec Fst THole = THole , ✔ , MProdFst MProdHole
-  -- ▸TProj-dec Fst (TArrow t t₁) = THole , ✖ , MProdFst MProdArrow
-  -- ▸TProj-dec Fst (TProd t t₁) = t , ✔ , MProdFst MProdProd
-  -- ▸TProj-dec Snd TBase = THole , ✖ , MProdSnd MProdBase
-  -- ▸TProj-dec Snd THole = THole , ✔ , MProdSnd MProdHole
-  -- ▸TProj-dec Snd (TArrow t t₁) = THole , ✖ , MProdSnd MProdArrow
-  -- ▸TProj-dec Snd (TProd t t₁) = t₁ , ✔ , MProdSnd MProdProd
 
   ▸DTProj-dec : 
     (s : ProdSide) -> 
@@ -123,6 +110,14 @@ module Core.Lemmas where
     ∃[ t ] ∃[ m ] d , s ▸NTProj t , m
   ▸NTProj-dec s (d , n) with ▸DTProj-dec s d 
   ... | t , m , match = (t , n) , (m , n) , NTProjC match
+
+  ▸DTForallBind-dec : 
+    (d : Data) -> 
+    (x : Binding) ->
+    ∃[ t ] ∃[ m ] d , x ▸DTForallBind t , m
+  ▸DTForallBind-dec □ x = □ , ✔ , DTForallBindNone
+  ▸DTForallBind-dec (■ t) x with ▸TForallBind-dec t x
+  ... | t' , m , match = ■ t' , m , DTForallBindSome match
 
   -- ~-dec : 
   --   (syn ana : Type) -> 
@@ -324,6 +319,10 @@ module Core.Lemmas where
   l-env-subsumable (FillAnaEnvAp2 _) (FillAnaEnvAp2 _) SubsumableAp = SubsumableAp
   l-env-subsumable (FillAnaEnvAsc _) (FillAnaEnvAsc _) SubsumableAsc = SubsumableAsc
   l-env-subsumable (FillAnaEnvProj _) (FillAnaEnvProj _) SubsumableProj = SubsumableProj
+  l-env-subsumable (FillAnaEnvPair1 x) (FillAnaEnvPair1 x₁) ()
+  l-env-subsumable (FillAnaEnvPair2 x) (FillAnaEnvPair2 x₁) ()
+  l-env-subsumable (FillAnaEnvTypFun x) (FillAnaEnvTypFun x₁) ()
+  l-env-subsumable (FillAnaEnvTypAp x) (FillAnaEnvTypAp x₁) SubsumableTypAp = SubsumableTypAp
 
   u-env-subsumable : ∀ {ε e e' e-in e-in'} -> 
     ε S⟦ e-in ⟧C≡ e ->
@@ -335,6 +334,10 @@ module Core.Lemmas where
   u-env-subsumable (FillSynEnvAp2 _) (FillSynEnvAp2 _) SubsumableAp = SubsumableAp
   u-env-subsumable (FillSynEnvAsc _) (FillSynEnvAsc _) SubsumableAsc = SubsumableAsc
   u-env-subsumable (FillSynEnvProj _) (FillSynEnvProj _) SubsumableProj = SubsumableProj
+  u-env-subsumable (FillSynEnvPair1 x) (FillSynEnvPair1 x₁) ()
+  u-env-subsumable (FillSynEnvPair2 x) (FillSynEnvPair2 x₁) ()
+  u-env-subsumable (FillSynEnvTypFun x) (FillSynEnvTypFun x₁) ()
+  u-env-subsumable (FillSynEnvTypAp x) (FillSynEnvTypAp x₁) SubsumableTypAp = SubsumableTypAp
 
   oldify-syn : ∀ {Γ e t n n'} ->
     Γ S⊢ (e ⇒ (t , n)) ->
@@ -345,6 +348,7 @@ module Core.Lemmas where
   oldify-syn (WFVar in-ctx (▷Pair consist)) = WFVar in-ctx (▷Pair consist)
   oldify-syn (WFAsc wf (▷Pair consist-syn) consist-ana ana) = WFAsc wf (▷Pair consist-syn) consist-ana ana
   oldify-syn (WFProj x (▷Pair x₁) x₂ x₃) = WFProj x (▷Pair x₁) x₂ x₃
+  oldify-syn (WFTypAp x x₁ x₂ x₃ (▷Pair x₄) x₅) = WFTypAp x x₁ x₂ x₃ (▷Pair x₄) x₅
 
   oldify-syn-inner : ∀ {Γ e t m n n'} ->
     Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ (□ , n')) ->
@@ -352,6 +356,7 @@ module Core.Lemmas where
   oldify-syn-inner (WFSubsume subsumable (~N-pair consist) consist-m syn) = WFSubsume subsumable (~N-pair ~DVoidR) ▶Same (oldify-syn syn)
   oldify-syn-inner (WFFun wf (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ x₅ x₆ x₇ syn) = WFFun wf (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ (beyond-▷-contra ◁▷C x₅) (~N-pair ~DVoidR) ▶Same syn
   oldify-syn-inner (WFPair (NTProdC DTProdNone) (▷Pair x) (▷Pair x₁) x₃ x₄ x₅ x₆ w w₁) = WFPair (NTProdC DTProdNone) (▷Pair x) (▷Pair x₁) x₃ (beyond-▷-contra ◁▷C x₄) (~N-pair ~DVoidR) ▶Same w w₁
+  oldify-syn-inner (WFTypFun (NTForallBindC DTForallBindNone) (▷Pair x) x₂ (▷Pair x₁) x₄ x₅ wf) = WFTypFun (NTForallBindC DTForallBindNone) (▷Pair x) x₂ (▷Pair x₁) (~N-pair ~DVoidR) ▶Same wf
 
   dirty-syn-inner : ∀ {Γ e n m m' ana t} ->
     Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ ana) -> 
@@ -359,6 +364,7 @@ module Core.Lemmas where
   dirty-syn-inner (WFSubsume x (~N-pair x₁) x₂ x₃) = WFSubsume x (~N-pair x₁) ▶★ (oldify-syn x₃)
   dirty-syn-inner (WFFun wf x x₁ x₂ x₃ x₄ (▷Pair x₅) (~N-pair x₆) x₇ wt) = WFFun wf x x₁ x₂ x₃ x₄ (▷Pair x₅) (~N-pair x₆) ▶★ wt
   dirty-syn-inner (WFPair (NTProdC y) (▷Pair x) (▷Pair x₁) x₃ x₄ (~N-pair x₅) x₆ w w₁) = WFPair (NTProdC y) (▷Pair x) (▷Pair x₁) x₃ (beyond-▷-contra ◁▷C x₄) (~N-pair x₅) ▶★ w w₁
+  dirty-syn-inner (WFTypFun (NTForallBindC x) (▷Pair x₁) x₂ (▷Pair x₃) (~N-pair x₄) x₅ wf) = WFTypFun (NTForallBindC x) (▷Pair x₁) x₂ (▷Pair x₃) (~N-pair x₄) ▶★ wf
 
   dirty-ana : ∀ {Γ e n n' m m' ana t t'} ->
     Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ ana) -> 
@@ -372,6 +378,7 @@ module Core.Lemmas where
   dirty-ana {t = t} {t' = t'} (WFPair (NTProdC y) (▷Pair x) (▷Pair x₁) x₃ x₄ (~N-pair x₅) x₆ w w₁) with ▸NTProd-dec (t' , ★)
   ... | (t-fst , ★) , (t-snd , ★) , (m , ★) , NTProdC marrow with ~N-dec (t , ★) (t' , ★)
   ... | _ , ~N-pair consist' = WFPair (NTProdC marrow) (▷Pair ▶★) (▷Pair ▶★) ▶★ NUnless-dirty-▷ (~N-pair consist') ▶★-max-r w w₁
+  dirty-ana {t = t} {t' = t'} (WFTypFun (NTForallBindC x) (▷Pair x₁) x₂ (▷Pair x₃) (~N-pair x₄) x₅ wf) = WFTypFun (NTForallBindC (proj₂ (proj₂ (▸DTForallBind-dec _ _)))) (▷Pair ▶★) ▶★ NUnless-dirty-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶★-max-r wf
 
   small-dirty-ana : ∀ {Γ e m m' ana t} ->
     Γ L⊢ (e [ m ]⇐ ana) -> 
@@ -457,6 +464,7 @@ module Core.Lemmas where
     dirtier-ctx-u dirtier (WFVar x x₁) with dirtier-ctx-lookup dirtier x 
     ... | t' , in-ctx' , beyond = WFVar in-ctx' (beyond-▷ beyond x₁)
     dirtier-ctx-u dirtier (WFProj x x₁ x₂ x₃) = WFProj x x₁ x₂ (dirtier-ctx-l dirtier x₃)
+    dirtier-ctx-u dirtier (WFTypAp x x₁ x₂ x₃ x₄ x₅) = WFTypAp (dirtier-ctx-t (DirtierCtxTCons? dirtier) x) x₁ x₂ x₃ x₄ (dirtier-ctx-l dirtier x₅)
 
     dirtier-ctx-l : ∀{Γ Γ' e} ->
       DirtierCtx Γ Γ' -> 
@@ -465,8 +473,9 @@ module Core.Lemmas where
     dirtier-ctx-l dirtier (WFSubsume x x₁ x₂ x₃) = WFSubsume x x₁ x₂ (dirtier-ctx-u dirtier x₃)
     dirtier-ctx-l dirtier (WFFun {x = x} wf x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ wt) = WFFun (dirtier-ctx-t dirtier wf) x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ (dirtier-ctx-l (DirtierCtxCons? {x} dirtier) wt)
     dirtier-ctx-l dirtier (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) = WFPair x x₁ x₂ x₃ x₄ x₅ x₆ (dirtier-ctx-l dirtier wt) (dirtier-ctx-l dirtier wt₁)
- 
+    dirtier-ctx-l dirtier (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) = WFTypFun x x₁ x₂ x₃ x₄ x₅ (dirtier-ctx-l (DirtierCtxTCons? dirtier) wf)
+
   dirty-ctx : ∀{Γ x t t' e} ->  
     (x ∶ t ∷? Γ) L⊢ e ->  
     (x ∶ (t' , ★) ∷? Γ) L⊢ e        
-  dirty-ctx {x = x} = dirtier-ctx-l (DirtierCtxInit? {x})
+  dirty-ctx {x = x} = dirtier-ctx-l (DirtierCtxInit? {x})  

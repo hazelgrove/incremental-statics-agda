@@ -17,6 +17,8 @@ module Core.Environment where
       AnaEnvPair1 : AnaEnvAna -> AnaExp -> Mark -> AnaEnvCon
       AnaEnvPair2 : AnaExp -> AnaEnvAna -> Mark -> AnaEnvCon
       AnaEnvProj : ProdSide -> AnaEnvAna -> Mark -> AnaEnvCon
+      AnaEnvTypFun : Binding -> Mark -> AnaEnvAna -> AnaEnvCon 
+      AnaEnvTypAp : AnaEnvAna -> Mark -> ○Type -> AnaEnvCon 
 
     data AnaEnvAna : Set where 
       A⊙ : AnaEnvAna
@@ -36,6 +38,8 @@ module Core.Environment where
       SynEnvPair1 : SynEnvAna -> AnaExp -> Mark -> SynEnvCon
       SynEnvPair2 : AnaExp -> SynEnvAna -> Mark -> SynEnvCon
       SynEnvProj : ProdSide -> SynEnvAna -> Mark -> SynEnvCon
+      SynEnvTypFun : Binding -> Mark -> SynEnvAna -> SynEnvCon 
+      SynEnvTypAp : SynEnvAna -> Mark -> ○Type -> SynEnvCon 
 
     data SynEnvAna : Set where 
       SynEnvAnaRec : SynEnvSyn -> Mark -> ○Data -> SynEnvAna 
@@ -68,6 +72,12 @@ module Core.Environment where
       FillAnaEnvProj : ∀ {e ε e' s m} ->
         ε A⟦ e ⟧A≡ e' ->
         (AnaEnvProj s ε m) A⟦ e ⟧C≡ (EProj s e' m)
+      FillAnaEnvTypFun : ∀ {e ε e' x m} ->
+        ε A⟦ e ⟧A≡ e' ->
+        (AnaEnvTypFun x m ε) A⟦ e ⟧C≡ (ETypFun x m e')
+      FillAnaEnvTypAp : ∀ {e ε e' t m} ->
+        ε A⟦ e ⟧A≡ e' ->
+        (AnaEnvTypAp ε m t) A⟦ e ⟧C≡ (ETypAp e' m t)
 
     data _A⟦_⟧A≡_ : (ε : AnaEnvAna) (e : AnaExp) (e' : AnaExp)  -> Set where
       FillA⊙ : ∀ {e} ->
@@ -106,6 +116,12 @@ module Core.Environment where
       FillSynEnvProj : ∀ {e ε e' s m} ->
         ε S⟦ e ⟧A≡ e' ->
         (SynEnvProj s ε m) S⟦ e ⟧C≡ (EProj s e' m)
+      FillSynEnvTypFun : ∀ {e ε e' x m} ->
+        ε S⟦ e ⟧A≡ e' ->
+        (SynEnvTypFun x m ε) S⟦ e ⟧C≡ (ETypFun x m e')
+      FillSynEnvTypAp : ∀ {e ε e' t m} ->
+        ε S⟦ e ⟧A≡ e' ->
+        (SynEnvTypAp ε m t) S⟦ e ⟧C≡ (ETypAp e' m t)
 
     data _S⟦_⟧A≡_ : (ε : SynEnvAna) (e : SynExp) (e' : AnaExp)  -> Set where
       FillSynEnvAnaRec : ∀ {e e' ana m ε} ->
@@ -125,7 +141,8 @@ module Core.Environment where
     ComposeULM ε1 (AnaEnvPair1 ε2 e2 m) = SynEnvPair1 (ComposeULL ε1 ε2) e2 m
     ComposeULM ε1 (AnaEnvPair2 e1 ε2 m) = SynEnvPair2 e1 (ComposeULL ε1 ε2) m
     ComposeULM ε1 (AnaEnvProj s ε2 m) = SynEnvProj s (ComposeULL ε1 ε2) m
-
+    ComposeULM ε1 (AnaEnvTypFun x m ε2) = SynEnvTypFun x m (ComposeULL ε1 ε2)
+    ComposeULM ε1 (AnaEnvTypAp ε2 m t) = SynEnvTypAp (ComposeULL ε1 ε2) m t
 
     ComposeULL : SynEnvAna -> AnaEnvAna -> SynEnvAna 
     ComposeULL ε1 A⊙ = ε1
@@ -144,6 +161,8 @@ module Core.Environment where
     ComposeLLM ε1 (AnaEnvPair1 ε2 e2 m) = AnaEnvPair1 (ComposeLLL ε1 ε2) e2 m
     ComposeLLM ε1 (AnaEnvPair2 e1 ε2 m) = AnaEnvPair2 e1 (ComposeLLL ε1 ε2) m
     ComposeLLM ε1 (AnaEnvProj s ε2 m) = AnaEnvProj s (ComposeLLL ε1 ε2) m
+    ComposeLLM ε1 (AnaEnvTypFun x m ε2) = AnaEnvTypFun x m (ComposeLLL ε1 ε2)
+    ComposeLLM ε1 (AnaEnvTypAp ε2 m t) = AnaEnvTypAp (ComposeLLL ε1 ε2) m t
 
     ComposeLLL : AnaEnvAna -> AnaEnvAna -> AnaEnvAna 
     ComposeLLL ε1 A⊙ = ε1
@@ -163,6 +182,8 @@ module Core.Environment where
     ComposeUUM ε1 (SynEnvPair1 ε2 e2 m) = SynEnvPair1 (ComposeUUL ε1 ε2) e2 m
     ComposeUUM ε1 (SynEnvPair2 e1 ε2 m) = SynEnvPair2 e1 (ComposeUUL ε1 ε2) m
     ComposeUUM ε1 (SynEnvProj s ε2 m) = SynEnvProj s (ComposeUUL ε1 ε2) m
+    ComposeUUM ε1 (SynEnvTypFun x m ε2) = SynEnvTypFun x m (ComposeUUL ε1 ε2)
+    ComposeUUM ε1 (SynEnvTypAp ε2 m t) = SynEnvTypAp (ComposeUUL ε1 ε2) m t
 
     ComposeUUL : SynEnvSyn -> SynEnvAna -> SynEnvAna 
     ComposeUUL ε1 (SynEnvAnaRec ε2 m ana) = SynEnvAnaRec (ComposeUUU ε1 ε2) m ana
@@ -181,6 +202,8 @@ module Core.Environment where
     ComposeLUM ε1 (SynEnvPair1 ε2 e2 m) = AnaEnvPair1 (ComposeLUL ε1 ε2) e2 m
     ComposeLUM ε1 (SynEnvPair2 e1 ε2 m) = AnaEnvPair2 e1 (ComposeLUL ε1 ε2) m
     ComposeLUM ε1 (SynEnvProj s ε2 m) = AnaEnvProj s (ComposeLUL ε1 ε2) m
+    ComposeLUM ε1 (SynEnvTypFun x m ε2) = AnaEnvTypFun x m (ComposeLUL ε1 ε2)
+    ComposeLUM ε1 (SynEnvTypAp ε2 m e2) = AnaEnvTypAp (ComposeLUL ε1 ε2) m e2
 
     ComposeLUL : AnaEnvSyn -> SynEnvAna -> AnaEnvAna 
     ComposeLUL ε1 (SynEnvAnaRec ε2 m ana) = AnaEnvAnaRec (ComposeLUU ε1 ε2) m ana
@@ -204,6 +227,8 @@ module Core.Environment where
     FillULM fill1 (FillAnaEnvPair1 fill2) = FillSynEnvPair1 (FillULL fill1 fill2)
     FillULM fill1 (FillAnaEnvPair2 fill2) = FillSynEnvPair2 (FillULL fill1 fill2)
     FillULM fill1 (FillAnaEnvProj fill2) = FillSynEnvProj (FillULL fill1 fill2)
+    FillULM fill1 (FillAnaEnvTypFun fill2) = FillSynEnvTypFun (FillULL fill1 fill2)
+    FillULM fill1 (FillAnaEnvTypAp fill2) = FillSynEnvTypAp (FillULL fill1 fill2)
 
     FillULL : ∀ {ε1 ε2 e1 e2 e3} ->
       ε1 S⟦ e1 ⟧A≡ e2 -> 
@@ -231,6 +256,8 @@ module Core.Environment where
     FillLLM fill1 (FillAnaEnvPair1 fill2) = FillAnaEnvPair1 (FillLLL fill1 fill2)
     FillLLM fill1 (FillAnaEnvPair2 fill2) = FillAnaEnvPair2 (FillLLL fill1 fill2)
     FillLLM fill1 (FillAnaEnvProj fill2) = FillAnaEnvProj (FillLLL fill1 fill2)
+    FillLLM fill1 (FillAnaEnvTypFun fill2) = FillAnaEnvTypFun (FillLLL fill1 fill2)
+    FillLLM fill1 (FillAnaEnvTypAp fill2) = FillAnaEnvTypAp (FillLLL fill1 fill2)
 
     FillLLL : ∀ {ε1 ε2 e1 e2 e3} ->
       ε1 A⟦ e1 ⟧A≡ e2 -> 
@@ -259,6 +286,8 @@ module Core.Environment where
     FillUUM fill1 (FillSynEnvPair1 fill2) = FillSynEnvPair1 (FillUUL fill1 fill2)
     FillUUM fill1 (FillSynEnvPair2 fill2) = FillSynEnvPair2 (FillUUL fill1 fill2)
     FillUUM fill1 (FillSynEnvProj fill2) = FillSynEnvProj (FillUUL fill1 fill2)
+    FillUUM fill1 (FillSynEnvTypFun fill2) = FillSynEnvTypFun (FillUUL fill1 fill2)
+    FillUUM fill1 (FillSynEnvTypAp fill2) = FillSynEnvTypAp (FillUUL fill1 fill2)
 
     FillUUL : ∀ {ε1 ε2 e1 e2 e3} ->
       ε1 S⟦ e1 ⟧S≡ e2 -> 
@@ -286,6 +315,8 @@ module Core.Environment where
     FillLUM fill1 (FillSynEnvPair1 fill2) = FillAnaEnvPair1 (FillLUL fill1 fill2)
     FillLUM fill1 (FillSynEnvPair2 fill2) = FillAnaEnvPair2 (FillLUL fill1 fill2)
     FillLUM fill1 (FillSynEnvProj fill2) = FillAnaEnvProj (FillLUL fill1 fill2)
+    FillLUM fill1 (FillSynEnvTypFun fill2) = FillAnaEnvTypFun (FillLUL fill1 fill2)
+    FillLUM fill1 (FillSynEnvTypAp fill2) = FillAnaEnvTypAp (FillLUL fill1 fill2)
 
     FillLUL : ∀ {ε1 ε2 e1 e2 e3} ->
       ε1 A⟦ e1 ⟧S≡ e2 -> 
