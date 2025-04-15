@@ -101,6 +101,9 @@ module Core.ActionCompleteness where
   ... | _ , steps1 | _ , steps2 = _ , AB*StepActAppend steps1 (AB*StepAct (ABareDone ActWrapPairOne) (act-in-pair steps2))
   action-construction (BareEProj s e) with action-construction e 
   ... | _ , steps = _ , AB*StepActAppend steps (AB*StepAct (ABareDone ActWrapProj) AB*StepDone)
+  action-construction (BareETypFun x e) with action-construction e 
+  ... | _ , steps = _ , AB*StepActAppend steps (AB*StepActAppend (AB*StepAct (ABareDone ActWrapTypFun) AB*StepDone) {! AB*StepAct (ABareDone ActInsertBinder) AB*StepDone  !})
+  action-construction (BareETypAp e x) = {!   !}
    
   action-completeness :
     (e1 e2 : BareExp) -> 

@@ -48,6 +48,8 @@ module Core.ActionErasure where
   αU↦-erase ActWrapPairOne = ActWrapPairOne
   αU↦-erase ActWrapPairTwo = ActWrapPairTwo
   αU↦-erase ActWrapProj = ActWrapProj
+  αU↦-erase ActWrapTypFun = ActWrapTypFun
+  αU↦-erase ActWrapTypAp = ActWrapTypAp
   αU↦-erase ActDelete = ActDelete
   αU↦-erase ActUnwrapApOne = ActUnwrapApOne
   αU↦-erase ActUnwrapApTwo = ActUnwrapApTwo
@@ -55,6 +57,9 @@ module Core.ActionErasure where
   αU↦-erase ActUnwrapPairOne = ActUnwrapPairOne
   αU↦-erase ActUnwrapPairTwo = ActUnwrapPairTwo
   αU↦-erase ActUnwrapProj = ActUnwrapProj
+  αU↦-erase (ActUnwrapTypFun in-ctx update) 
+    rewrite exp-tvar-update?-erase update = ActUnwrapTypFun
+  αU↦-erase ActUnwrapTypAp = ActUnwrapTypAp
   αU↦-erase (ActInsertVar in-ctx) = ActInsertVar
   αU↦-erase (ActUnwrapFun x var-update) 
     rewrite var-update?-erase var-update = ActUnwrapFun

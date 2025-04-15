@@ -53,7 +53,16 @@ module Core.Actions where
       (InsertTVar x) , BareTHole αBT↦ (BareTVar x)
     ActWrapForall : ∀ {t} ->
       WrapForall , t αBT↦ (BareTForall BHole t)
-    -- TODO: unwrap
+    ActUnwrapArrowOne : ∀ {t} ->
+      (Unwrap One) , (BareTArrow t BareTHole) αBT↦ t
+    ActUnwrapArrowTwo : ∀ {t} ->
+      (Unwrap Two) , (BareTArrow BareTHole t) αBT↦ t
+    ActUnwrapProdOne : ∀ {t} ->
+      (Unwrap One) , (BareTProd t BareTHole) αBT↦ t
+    ActUnwrapProdTwo : ∀ {t} ->
+      (Unwrap Two) , (BareTProd BareTHole t) αBT↦ t
+    ActUnwrapForall : ∀ {t} ->
+      (Unwrap One) , (BareTForall BHole t) αBT↦ t
     ActDelete : ∀ {t} ->
       Delete , t αBT↦ BareTHole
     ActDeleteBinder : ∀ {x? t} ->
@@ -136,6 +145,10 @@ module Core.Actions where
       DeleteBinder , (BareEFun x t e) αB↦ (BareEFun BHole t e)
     ActInsertBinder : ∀ {x e t} ->
       InsertBinder x , (BareEFun BHole t e) αB↦ (BareEFun (BVar x) t e)
+    ActDeleteTypBinder : ∀ {x e} ->
+      DeleteBinder , (BareETypFun x e) αB↦ (BareETypFun BHole e)
+    ActInsertTypBinder : ∀ {x e} ->
+      InsertBinder x , (BareETypFun BHole e) αB↦ (BareETypFun (BVar x) e)
 
   data _,_AB↦_ : LocalizedAction -> BareExp -> BareExp -> Set where
     ABareDone : ∀ {α e e'} ->
@@ -202,6 +215,16 @@ module Core.Actions where
       Γ ⊢ (InsertTVar x) , THole αT↦ (TVar x m)
     ActWrapForall : ∀ {Γ t} ->
       Γ ⊢ WrapForall , t αT↦ (TForall BHole t)
+    ActUnwrapArrowOne : ∀ {Γ t} ->
+      Γ ⊢ (Unwrap One) , (TArrow t THole) αT↦ t
+    ActUnwrapArrowTwo : ∀ {Γ t} ->
+      Γ ⊢ (Unwrap Two) , (TArrow THole t) αT↦ t
+    ActUnwrapProdOne : ∀ {Γ t} ->
+      Γ ⊢ (Unwrap One) , (TProd t THole) αT↦ t
+    ActUnwrapProdTwo : ∀ {Γ t} ->
+      Γ ⊢ (Unwrap Two) , (TProd THole t) αT↦ t
+    ActUnwrapForall : ∀ {Γ t} ->
+      Γ ⊢ (Unwrap One) , (TForall BHole t) αT↦ t
     ActDelete : ∀ {Γ t} ->
       Γ ⊢ Delete , t αT↦ THole
     ActDeleteBinder : ∀ {Γ x? m t t'} ->
@@ -291,6 +314,13 @@ module Core.Actions where
     ActInsertBinder : ∀ {Γ x ann n-ann m1 m2 e e' t' n' syn m ana} ->
       VariableUpdate x ann ✔ e (e' ⇒ (t' , n')) ->
       Γ ⊢ InsertBinder x , ((EFun BHole (ann , n-ann) m1 m2 (e [ m ]⇐ ana)) ⇒ syn) αU↦ ((EFun (BVar x) (ann , n-ann) m1 m2 ((e' ⇒ (t' , ★)) [ m ]⇐ ana)) ⇒ syn)
+    ActDeleteTypBinder : ∀ {Γ x m m1 e e' t' n' syn ana} ->
+      x T∈? Γ , m ->
+      ExpTypVariableUpdate? x m e (e' ⇒ (t' , n')) ->
+      Γ ⊢ DeleteBinder , ((ETypFun x m1 (e [ m ]⇐ ana)) ⇒ syn) αU↦ ((ETypFun BHole m1 ((e' ⇒ (t' , ★)) [ m ]⇐ ana)) ⇒ syn)
+    ActInsertTypBinder : ∀ {Γ x m1 e e' t' n' syn m ana} ->
+      ExpTypVariableUpdate x ✔ e (e' ⇒ (t' , n')) ->
+      Γ ⊢ InsertBinder x , ((ETypFun BHole m1 (e [ m ]⇐ ana)) ⇒ syn) αU↦ ((ETypFun (BVar x) m1 ((e' ⇒ (t' , ★)) [ m ]⇐ ana)) ⇒ syn)
 
   data _⊢_,_αL↦_ : Ctx -> Action -> AnaExp -> AnaExp -> Set where 
     ALC : ∀ {Γ α e e' m t n} ->
