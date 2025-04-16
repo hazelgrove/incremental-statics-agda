@@ -54,6 +54,16 @@ module Core.Lemmas where
     ▶ (a , (n ⊓ ★)) a'
   ▶★-max-r {n = n} rewrite max-dirty n = ▶★
 
+  -- not true lol
+  -- ▷-trans : ∀ {a b c} ->
+  --   ▷ a b -> 
+  --   ▷ b c -> 
+  --   ▷ a c 
+  -- ▷-trans (▷Pair ▶★) (▷Pair ▶★) = ▷Pair ▶★
+  -- ▷-trans (▷Pair ▶★) (▷Pair ▶•) = ▷Pair ▶★
+  -- ▷-trans (▷Pair ▶•) (▷Pair ▶★) = {!   !}
+  -- ▷-trans (▷Pair ▶•) (▷Pair ▶•) = {!   !}
+
   -- ▸TArrow-dec : 
   --   (t : Type) -> 
   --   ∃[ t-in ] ∃[ t-out ] ∃[ m ] t ▸TArrow t-in , t-out , m
