@@ -119,8 +119,8 @@ module Core.ActionPreservation where
   PreservationTypStep wf (ActInsertTVar x) = WFTVar x
   PreservationTypStep wf ActWrapForall = WFForall wf
   PreservationTypStep wf ActDelete = WFHole
-  PreservationTypStep (WFForall wf) (ActDeleteBinder x x₁) = WFForall (preservation-vars-unwrap-t? wf x x₁)
-  PreservationTypStep (WFForall wf) (ActInsertBinder x) = WFForall (preservation-vars-t? wf x)
+  PreservationTypStep (WFForall wf) (ActDeleteBinder x x₁) = WFForall (preservation-tvu-unwrap? wf x x₁)
+  PreservationTypStep (WFForall wf) (ActInsertBinder x) = WFForall (preservation-tvu-wrap? wf x)
   PreservationTypStep (WFArrow wf _) ActUnwrapArrowOne = wf
   PreservationTypStep (WFArrow _ wf) ActUnwrapArrowTwo = wf
   PreservationTypStep (WFProd wf _) ActUnwrapProdOne = wf
@@ -148,14 +148,14 @@ module Core.ActionPreservation where
   PreservationStep wt (ALC ActWrapPairOne) = WFPair (NTProdC (proj₂ (proj₂ (proj₂ (▸DTProd-dec _))))) (▷Pair ▶★) (▷Pair ▶★) ▶★ NUnless-dirty-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶★ (dirty-ana {m = ✔} (dirty-syn-inner wt)) (WFSubsume SubsumableHole (~N-pair ~DVoidR) ▶★ (WFHole (▷Pair ▶•)))
   PreservationStep wt (ALC ActWrapPairTwo) = WFPair (NTProdC (proj₂ (proj₂ (proj₂ (▸DTProd-dec _))))) (▷Pair ▶★) (▷Pair ▶★) ▶★ NUnless-dirty-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶★ (WFSubsume SubsumableHole (~N-pair ~DVoidR) ▶★ (WFHole (▷Pair ▶•))) (dirty-ana wt) 
   PreservationStep wt (ALC ActWrapProj) = WFSubsume SubsumableProj (~N-pair (proj₂ (~D-dec _ _))) ▶★ (WFProj (proj₂ (proj₂ (▸NTProj-dec _ _))) (▷Pair ▶★) ▶★ (dirty-ana wt))
-  PreservationStep wf (ALC ActWrapTypFun) = {!   !}
+  PreservationStep wf (ALC ActWrapTypFun) = WFTypFun (NTForallBindC (proj₂ (proj₂ (▸DTForallBind-dec _ _)))) (▷Pair ▶★) ▶★ NUnless-dirty-▷ (~N-pair ~DVoidL) ▶★ (dirty-ana wf)
   PreservationStep wf (ALC ActWrapTypAp) = WFSubsume SubsumableTypAp (~N-pair ~DVoidL) ▶★ (WFTypAp WFHole (NTForallC (proj₂ (proj₂ (proj₂ (▸DTForall-dec _))))) ▶★ (NSub-pair (proj₂ (DSub-dec _ _ _))) (▷Pair ▶★) (dirty-ana wf))
 
   PreservationStep (WFSubsume subsumable consist-t consist-m (WFAsc wf consist-syn consist-ana ana)) (ALC ActUnwrapAsc) = dirty-ana ana
   PreservationStep (WFSubsume subsumable consist-t consist-m (WFAp marrow consist-syn consist-ana consist-mark syn ana)) (ALC ActUnwrapApOne) = dirty-ana syn
   PreservationStep (WFSubsume subsumable consist-t consist-m (WFAp marrow consist-syn consist-ana consist-mark syn ana)) (ALC ActUnwrapApTwo) = dirty-ana ana
   PreservationStep (WFSubsume subsumable consist-t consist-m (WFProj x x₁ x₂ wt)) (ALC ActUnwrapProj) = dirty-ana wt
-  PreservationStep (WFSubsume subsumable consist-t consist-m x₃) (ALC ActUnwrapTypAp) = {!   !}
+  PreservationStep (WFSubsume subsumable consist-t consist-m (WFTypAp x x₁ x₂ x₃ x₄ wf)) (ALC ActUnwrapTypAp) = dirty-ana wf
   PreservationStep (WFFun wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (ALC (ActUnwrapFun in-ctx var-update)) = dirty-ana (preservation-vars-unwrap in-ctx ana var-update)
   -- PreservationStep (WFSubsume SubsumableAsc (~N-pair consist-t) consist-m (WFAsc {syn-all = syn-all} {n-syn = n-syn} consist-syn consist-ana ana)) (ALC {t = t} ActSetAsc) = WFSubsume SubsumableAsc (~N-pair consist-t) ▶★-max-r (WFAsc (▷Pair ▶★) (▷Pair ▶★) ana)
   -- PreservationStep (WFFun {x = x} marrow consist consist-ana consist-asc consist-body consist-syn (~N-pair consist-all) consist-m-all ana) (ALC {t = t} (ActSetAnn {t = t'})) with ▸NTArrow-dec (t , ★)
@@ -168,7 +168,7 @@ module Core.ActionPreservation where
   PreservationStep (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (ALC ActUnwrapPairOne) = dirty-ana wt
   PreservationStep (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (ALC ActUnwrapPairTwo) = dirty-ana wt₁
   
-  PreservationStep (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (ALC (ActUnwrapTypFun x₆ x₇)) = dirty-ana {!   !}
+  PreservationStep (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (ALC (ActUnwrapTypFun x₆ x₇)) = {!   !}
   PreservationStep (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (ALC (ActDeleteTypBinder x₆ x₇)) = {!   !}
   PreservationStep (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (ALC (ActInsertTypBinder x₆)) = {!   !}
 
