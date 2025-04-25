@@ -168,8 +168,9 @@ module Core.ActionPreservation where
   PreservationStep (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (ALC ActUnwrapPairOne) = dirty-ana wt
   PreservationStep (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) (ALC ActUnwrapPairTwo) = dirty-ana wt₁
   
-  PreservationStep (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (ALC (ActUnwrapTypFun x₆ x₇)) = {!   !}
-  PreservationStep (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (ALC (ActDeleteTypBinder x₆ x₇)) = {!   !}
+  PreservationStep (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (ALC (ActUnwrapTypFun x₆ x₇)) = dirty-ana (preservation-etvu-unwrap-ana? wf x₆ x₇)
+  PreservationStep (WFTypFun (NTForallBindC x) x₁ x₂ x₃ x₄ x₅ wf) (ALC (ActDeleteTypBinder x₆ x₇)) = 
+    WFTypFun (NTForallBindC (proj₂ (proj₂ (▸DTForallBind-dec _ _)))) (▷Pair ▶★) ▶★ NUnless-dirty-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶★-max-r (dirty-syn-inner (preservation-etvu-unwrap-ana? wf x₆ x₇))
   PreservationStep (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (ALC (ActInsertTypBinder x₆)) = {!   !}
 
 
@@ -224,4 +225,4 @@ module Core.ActionPreservation where
   --   (P⊢ p) ->   
   --   (A , p AP↦ p') ->        
   --   (P⊢ p')              
-  -- PreservationProgram (WFProgram ana) (AStepProgram step) = WFProgram (PreservationAna ana step)     
+  -- PreservationProgram (WFProgram ana) (AStepProgram step) = WFProgram (PreservationAna ana step)      
