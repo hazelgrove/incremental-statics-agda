@@ -134,6 +134,7 @@ module Core.UpdatePreservation where
   ... | refl , refl , refl = WFPair (NTProdC mprod) (▷Pair ▶•) (▷Pair ▶•) ▶• (consist-unless-prod {n1 = n-fst}) (~N-pair (proj₂ (~D-dec _ _))) ▶★ (dirty-ana wt1) (dirty-ana wt2)
   PreservationStepAna (WFPair mprod con1 con2 con3 con4 consist con5 wt1 wt2) StepSynPairFst = WFPair mprod con1 con2 con3 random-helper-prod (~N-pair (proj₂ (~D-dec _ _))) ▶★ (oldify-syn-inner wt1) wt2
   PreservationStepAna (WFPair mprod con1 con2 con3 con4 consist con5 wt1 wt2) StepSynPairSnd = WFPair mprod con1 con2 con3 random-helper-prod (~N-pair (proj₂ (~D-dec _ _))) ▶★ wt1 (oldify-syn-inner wt2)
+  PreservationStepAna (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (StepSyn x₆) = {!   !}
 
   mutual 
 
@@ -173,7 +174,7 @@ module Core.UpdatePreservation where
     ... | t-side-body' , m-body' , mproj' with beyond-▸NTProj (beyond-l↦-inner step) mproj mproj' 
     ... | t-side-beyond , m-beyond with void-ana-step-same step 
     ... | refl , refl = WFProj mproj' (beyond-▷ t-side-beyond con1) (beyond-▶ m-beyond con2) (PreservationAna wt (StepLow FillA⊙ step FillA⊙))
-
+    PreservationWF wf step = {!   !}
 
     PreservationAna :  
       ∀ {Γ e e'} -> 
@@ -204,6 +205,7 @@ module Core.UpdatePreservation where
     PreservationAna (WFPair {ana-all = ■ ana-all , •} mprod con1 con2 con3 con4 consist con5 wt1 wt2) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair2 fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair2 {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2)))) = WFPair mprod con1 (beyond-▷-contra (beyond-l↦-env step fill1 fill2) con2) con3 con4 consist con5 wt1 (PreservationAna wt2 (StepLow fill1 step fill2))
     PreservationAna (WFPair {syn-fst = syn-fst} {ana-all = □ , •} (NTProdC DTProdNone) (▷Pair ▶•) (▷Pair ▶•) ▶• con4 (~N-pair consist) con5 wt1 wt2) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair2 fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair2 {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2)))) rewrite ~DVoid-right consist = 
       WFPair (NTProdC DTProdNone) (▷Pair ▶•) (beyond-▷-contra (beyond-l↦-env step fill1 fill2) (▷Pair ▶•)) ▶• (preservation-pair-lemma {syn1 = syn-fst} {ana = □ , •} =▷Refl (beyond-l↦-env-inner step fill1 fill2) con4) (~N-pair ~DVoidR) con5 wt1 (PreservationAna wt2 (StepLow fill1 step fill2))
+    PreservationAna wf step = {!   !}
 
   PreservationProgram :  
     ∀ {p p'} ->

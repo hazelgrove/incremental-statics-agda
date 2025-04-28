@@ -3,6 +3,7 @@ open import Data.Product
 
 open import Prelude
 open import Core.Core
+open import Core.SideConditions
 open import Core.Environment
 open import Core.WellFormed
 open import Core.VariableUpdate
@@ -44,6 +45,13 @@ module Core.Update where
     StepSynPairSnd : ∀ {e-fst e-snd t-fst t-snd n-fst ana-fst n-snd m-fst m-snd m-ana m-all syn-all ana-all n-ana} ->
       (((EPair ((e-fst ⇒ (t-fst , n-fst)) [ m-fst ]⇐ ana-fst) ((e-snd ⇒ (t-snd , ★)) [ m-snd ]⇐ (□ , n-snd)) m-ana) ⇒ syn-all) [ m-all ]⇐ (ana-all , n-ana)) l↦
       (((EPair ((e-fst ⇒ (t-fst , n-fst)) [ m-fst ]⇐ ana-fst) ((e-snd ⇒ (t-snd , •)) [ ✔ ]⇐ (□ , n-snd)) m-ana) ⇒ (DUnless (DProd t-fst t-snd) ana-all , ★)) [ m-all ]⇐ (ana-all , n-ana))
+    StepAnaTypFun : ∀ {x e-body syn-all ana-body t-ana t-body-ana t-body n-body m-ana m-body m-all m-ana'} ->
+      t-ana , x ▸DTForallBind t-body-ana , m-ana' ->
+      ((ETypFun x m-ana ((e-body ⇒ (t-body , n-body)) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ (t-ana , ★) l↦
+      ((ETypFun x m-ana' ((e-body ⇒ (t-body , n-body)) [ m-body ]⇐ (t-body-ana , ★))) ⇒ ((DUnless (DForall x t-body) t-ana) , ★)) [ ✔ ]⇐ (t-ana , •)
+    StepSynTypFun : ∀ {x e-body t-body m-body syn-all ana-all m1 m2 n-ana n-body} ->
+      (((ETypFun x m1 ((e-body ⇒ (t-body , ★)) [ m-body ]⇐ (□ , n-body))) ⇒ syn-all) [ m2 ]⇐ (ana-all , n-ana)) l↦
+      (((ETypFun x m1 ((e-body ⇒ (t-body , •)) [ ✔ ]⇐ (□ , n-body) )) ⇒ (DUnless (DForall x t-body) ana-all , ★)) [ m2 ]⇐ (ana-all , n-ana))
 
   data _u↦_ : SynExp -> SynExp -> Set where 
     StepAp : ∀ {e-fun e-arg t-fun t-in-fun t-out-fun m-all m-arg m m-fun n-fun syn-all ana-fun ana-arg} ->
@@ -57,6 +65,16 @@ module Core.Update where
       t-body , s ▸DTProj t-side-body , m-all-body -> 
       (EProj s ((e-body ⇒ (t-body , ★)) [ m-body ]⇐ ana-body) m-all) ⇒ syn-all u↦
       (EProj s ((e-body ⇒ (t-body , •)) [ m-body ]⇐ ana-body) m-all-body) ⇒ (t-side-body , ★)
+    StepTypApFun : ∀ {e-fun m ana-fun t-fun n-fun m-fun m-all x t-fun-body t-arg n-arg t-syn syn-all} ->
+      t-fun ▸DTForall x , t-fun-body , m-fun ->
+      DSub t-arg x t-fun-body t-syn ->
+      (ETypAp ((e-fun ⇒ (t-fun , ★)) [ m ]⇐ (ana-fun , n-fun)) m-all (t-arg , n-arg)) ⇒ syn-all u↦
+      (ETypAp ((e-fun ⇒ (t-fun , •)) [ m ]⇐ (ana-fun , n-fun)) m-fun (t-arg , n-arg)) ⇒ (t-syn , ★)
+    StepTypApArg : ∀ {e-fun m ana-fun t-fun n-fun n-ana-fun m-fun m-all x t-fun-body t-arg t-syn syn-all} ->
+      t-fun ▸DTForall x , t-fun-body , m-fun ->
+      DSub t-arg x t-fun-body t-syn ->
+      (ETypAp ((e-fun ⇒ (t-fun , n-fun)) [ m ]⇐ (ana-fun , n-ana-fun)) m-all (t-arg , ★)) ⇒ syn-all u↦
+      (ETypAp ((e-fun ⇒ (t-fun , n-fun)) [ m ]⇐ (ana-fun , n-ana-fun)) m-fun (t-arg , •)) ⇒ (t-syn , ★)
 
   data _U↦_ : (e e' : SynExp) -> Set where
     StepUp : ∀{ε e e' e-in e-in'} ->
