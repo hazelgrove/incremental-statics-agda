@@ -423,8 +423,8 @@ module Core.TypVariableUpdatePreservation where
 
   
   data etvu-unwrap-inv : Var -> Ctx -> Ctx -> Set where 
-    ETVUUInit : ∀ {x Γ Γ'} ->
-      etvu-unwrap-inv x (x T∷ Γ) Γ'
+    ETVUUInit : ∀ {x Γ} ->
+      etvu-unwrap-inv x (x T∷ Γ) Γ
     ETVUUCons : ∀ {x x' Γ Γ'} ->
       etvu-unwrap-inv x Γ Γ' ->
       ¬(x ≡ x') ->
@@ -448,6 +448,128 @@ module Core.TypVariableUpdatePreservation where
   ETVUUVCons? {BHole} inv tvu = inv
   ETVUUVCons? {BVar x} inv tvu = ETVUUVCons inv tvu
 
+  etvu-unwrap-inctx : ∀ {x x' Γ Γ' m} ->
+    etvu-unwrap-inv x' Γ Γ' ->
+    x T∈ Γ , m ->
+    ¬(x ≡ x') ->
+    x T∈ Γ' , m
+  etvu-unwrap-inctx ETVUUInit InCtxFound neq = ⊥-elim (neq refl)
+  etvu-unwrap-inctx ETVUUInit (InCtxTSkip x inctx) neq = inctx
+  etvu-unwrap-inctx (ETVUUCons inv x) InCtxFound neq = InCtxFound
+  etvu-unwrap-inctx (ETVUUCons inv x) (InCtxTSkip neq1 inctx) neq2 = InCtxTSkip neq1 (etvu-unwrap-inctx inv inctx neq2)
+  etvu-unwrap-inctx (ETVUUVCons inv x) (InCtxSkip inctx) neq = InCtxSkip (etvu-unwrap-inctx inv inctx neq)
+
+  etvu-unwrap-inctx-var : ∀ {x x' t Γ Γ' m} ->
+    etvu-unwrap-inv x' Γ Γ' ->
+    x , t ∈ Γ , m ->
+    ∃[ t' ] (x , t' ∈ Γ' , m) × (=▷ t t')
+  etvu-unwrap-inctx-var ETVUUInit (InCtxTSkip inctx) = _ , inctx , =▷Refl
+  etvu-unwrap-inctx-var (ETVUUCons inv x) (InCtxTSkip inctx) with etvu-unwrap-inctx-var inv inctx
+  ... | _ , inctx , beyond = _ , InCtxTSkip inctx , beyond
+  etvu-unwrap-inctx-var (ETVUUVCons inv x) InCtxFound = _ , InCtxFound , =▷★
+  etvu-unwrap-inctx-var (ETVUUVCons inv x) (InCtxSkip neq inctx) with etvu-unwrap-inctx-var inv inctx
+  ... | _ , inctx , beyond = _ , InCtxSkip neq inctx , beyond
+
+  data etvu-unwrap-equiv : Ctx -> Ctx -> Set where 
+    ETVUUEInit : ∀ {x Γ Γ'} ->
+      etvu-unwrap-inv x Γ Γ' ->
+      etvu-unwrap-equiv (x T∷ Γ) (x T∷ Γ')
+    ETVUUECons : ∀ {x Γ Γ'} ->
+      etvu-unwrap-equiv Γ Γ' ->
+      etvu-unwrap-equiv (x T∷ Γ) (x T∷ Γ')
+    ETVUUEVCons : ∀ {x t Γ Γ'} ->
+      etvu-unwrap-equiv Γ Γ' ->
+      etvu-unwrap-equiv (x ∶ t ∷ Γ) (x ∶ t ∷ Γ')
+  
+  ETVUUECons? : ∀ {x Γ Γ'} ->
+    etvu-unwrap-equiv Γ Γ' ->
+    etvu-unwrap-equiv (x T∷? Γ) (x T∷? Γ')
+  ETVUUECons? {BHole} equiv = equiv
+  ETVUUECons? {BVar x} equiv = ETVUUECons equiv
+
+  ETVUUEVCons? : ∀ {x t Γ Γ'} ->
+    etvu-unwrap-equiv Γ Γ' ->
+    etvu-unwrap-equiv (x ∶ t ∷? Γ) (x ∶ t ∷? Γ')
+  ETVUUEVCons? {BHole} equiv = equiv
+  ETVUUEVCons? {BVar x} equiv = ETVUUEVCons equiv
+
+  etvu-unwrap-equiv-inctx : ∀ {x Γ Γ' m} ->
+    x T∈ Γ , m ->
+    etvu-unwrap-equiv Γ Γ' ->
+    x T∈ Γ' , m
+  etvu-unwrap-equiv-inctx InCtxFound (ETVUUEInit x) = InCtxFound
+  etvu-unwrap-equiv-inctx InCtxFound (ETVUUECons equiv) = InCtxFound
+  etvu-unwrap-equiv-inctx (InCtxSkip inctx) (ETVUUEVCons equiv) = InCtxSkip (etvu-unwrap-equiv-inctx inctx equiv)
+  etvu-unwrap-equiv-inctx (InCtxTSkip neq inctx) (ETVUUEInit inv) = InCtxTSkip neq (etvu-unwrap-inctx inv inctx neq)
+  etvu-unwrap-equiv-inctx (InCtxTSkip neq inctx) (ETVUUECons equiv) = InCtxTSkip neq (etvu-unwrap-equiv-inctx inctx equiv)
+
+  etvu-unwrap-equiv-inctx-var : ∀ {x t Γ Γ' m} ->
+    etvu-unwrap-equiv Γ Γ' ->
+    x , t ∈ Γ , m ->
+    ∃[ t' ] (x , t' ∈ Γ' , m) × (=▷ t t')
+  etvu-unwrap-equiv-inctx-var (ETVUUEInit inv) (InCtxTSkip inctx) with etvu-unwrap-inctx-var inv inctx 
+  ... | _ , inctx' , beyond = _ , InCtxTSkip inctx' , beyond
+  etvu-unwrap-equiv-inctx-var (ETVUUECons equiv) (InCtxTSkip inctx) with etvu-unwrap-equiv-inctx-var equiv inctx 
+  ... | _ , inctx' , beyond = _ , InCtxTSkip inctx' , beyond
+  etvu-unwrap-equiv-inctx-var (ETVUUEVCons equiv) InCtxFound = _ , InCtxFound , =▷Refl
+  etvu-unwrap-equiv-inctx-var (ETVUUEVCons equiv) (InCtxSkip neq inctx) with etvu-unwrap-equiv-inctx-var equiv inctx 
+  ... | _ , inctx' , beyond = _ , InCtxSkip neq inctx' , beyond
+
+  preservation-etvu-unwrap-equiv : ∀ {Γ Γ' t} ->
+    Γ T⊢ t ->
+    etvu-unwrap-equiv Γ Γ' ->
+    Γ' T⊢ t
+  preservation-etvu-unwrap-equiv WFBase equiv = WFBase
+  preservation-etvu-unwrap-equiv WFHole equiv = WFHole
+  preservation-etvu-unwrap-equiv (WFArrow wf wf₁) equiv 
+    = WFArrow (preservation-etvu-unwrap-equiv wf equiv) (preservation-etvu-unwrap-equiv wf₁ equiv)
+  preservation-etvu-unwrap-equiv (WFProd wf wf₁) equiv 
+    = WFProd (preservation-etvu-unwrap-equiv wf equiv) (preservation-etvu-unwrap-equiv wf₁ equiv)
+  preservation-etvu-unwrap-equiv (WFTVar x) equiv = WFTVar (etvu-unwrap-equiv-inctx x equiv)
+  preservation-etvu-unwrap-equiv (WFForall wf) equiv = WFForall (preservation-etvu-unwrap-equiv wf (ETVUUECons? equiv))
+
+  mutual 
+
+    preservation-etvu-unwrap-equiv-ana : ∀ {Γ Γ' e} ->
+      Γ L⊢ e ->
+      etvu-unwrap-equiv Γ Γ' ->
+      Γ' L⊢ e
+    preservation-etvu-unwrap-equiv-ana (WFSubsume x x₁ x₂ x₃) equiv = WFSubsume x x₁ x₂ (preservation-etvu-unwrap-equiv-syn x₃ equiv)
+    preservation-etvu-unwrap-equiv-ana (WFFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ x₈ wf) equiv = WFFun (preservation-etvu-unwrap-equiv x equiv) x₁ x₂ x₃ x₄ x₅ x₆ x₇ x₈ (preservation-etvu-unwrap-equiv-ana wf (ETVUUEVCons? equiv))
+    preservation-etvu-unwrap-equiv-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wf wf₁) equiv = WFPair x x₁ x₂ x₃ x₄ x₅ x₆ (preservation-etvu-unwrap-equiv-ana wf equiv) (preservation-etvu-unwrap-equiv-ana wf₁ equiv)
+    preservation-etvu-unwrap-equiv-ana (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) equiv = WFTypFun x x₁ x₂ x₃ x₄ x₅ (preservation-etvu-unwrap-equiv-ana wf (ETVUUECons? equiv))
+
+    preservation-etvu-unwrap-equiv-syn : ∀ {Γ Γ' e} ->
+      Γ S⊢ e ->
+      etvu-unwrap-equiv Γ Γ' ->
+      Γ' S⊢ e
+    preservation-etvu-unwrap-equiv-syn (WFConst x) equiv = WFConst x
+    preservation-etvu-unwrap-equiv-syn (WFHole x) equiv = WFHole x
+    preservation-etvu-unwrap-equiv-syn (WFAp x x₁ x₂ x₃ x₄ x₅) equiv = WFAp x x₁ x₂ x₃ (preservation-etvu-unwrap-equiv-ana x₄ equiv) (preservation-etvu-unwrap-equiv-ana x₅ equiv)
+    preservation-etvu-unwrap-equiv-syn (WFVar x x₁) equiv with etvu-unwrap-equiv-inctx-var equiv x 
+    ... | t , inctx' , beyond = WFVar inctx' (beyond-▷ beyond x₁)
+    preservation-etvu-unwrap-equiv-syn (WFAsc x x₁ x₂ x₃) equiv = WFAsc (preservation-etvu-unwrap-equiv x equiv) x₁ x₂ (preservation-etvu-unwrap-equiv-ana x₃ equiv)
+    preservation-etvu-unwrap-equiv-syn (WFProj x x₁ x₂ x₃) equiv = WFProj x x₁ x₂ (preservation-etvu-unwrap-equiv-ana x₃ equiv)
+    preservation-etvu-unwrap-equiv-syn (WFTypAp x x₁ x₂ x₃ x₄ x₅) equiv = WFTypAp (preservation-etvu-unwrap-equiv x equiv) x₁ x₂ x₃ x₄ (preservation-etvu-unwrap-equiv-ana x₅ equiv)
+
+  preservation-etvu-unwrap :
+    ∀ {x Γ Γ' t t' m} ->
+    Γ T⊢ t ->
+    x T∈ Γ' , m ->
+    TypVariableUpdate x m t t' ->
+    etvu-unwrap-inv x Γ Γ' ->
+    Γ' T⊢ t'
+  preservation-etvu-unwrap WFBase inctx TVUBase inv = WFBase
+  preservation-etvu-unwrap WFHole inctx TVUHole inv = WFHole
+  preservation-etvu-unwrap (WFArrow typ1 typ2) inctx (TVUArrow tvu1 tvu2) inv 
+    = WFArrow (preservation-etvu-unwrap typ1 inctx tvu1 inv) (preservation-etvu-unwrap typ2 inctx tvu2 inv)
+  preservation-etvu-unwrap (WFProd typ1 typ2) inctx (TVUProd tvu1 tvu2) inv 
+    = WFProd (preservation-etvu-unwrap typ1 inctx tvu1 inv) (preservation-etvu-unwrap typ2 inctx tvu2 inv)
+  preservation-etvu-unwrap (WFTVar inctx) inctx' TVUVarEq inv = WFTVar inctx'
+  preservation-etvu-unwrap (WFTVar inctx) inctx' (TVUVarNeq neq) inv = WFTVar (etvu-unwrap-inctx inv inctx neq)
+  preservation-etvu-unwrap (WFForall typ) inctx TVUForallEq inv = WFForall (preservation-etvu-unwrap-equiv typ (ETVUUEInit inv))
+  preservation-etvu-unwrap (WFForall typ) inctx (TVUForallNeq neq tvu) inv = WFForall (preservation-etvu-unwrap typ (InCtxTSkip? neq inctx) tvu (ETVUUCons? inv neq))
+
   mutual 
 
     preservation-etvu-unwrap-ana :
@@ -457,13 +579,13 @@ module Core.TypVariableUpdatePreservation where
       ExpTypVariableUpdate x m e e' ->
       etvu-unwrap-inv x Γ Γ' ->
       Γ' L⊢ (e' [ m' ]⇐ ana)
-    preservation-etvu-unwrap-ana {e' = e' ⇒ syn'} (WFSubsume x x₁ x₂ syn) inctx etvu inv  with etvu-syn etvu 
+    preservation-etvu-unwrap-ana {e' = e' ⇒ syn'} (WFSubsume x x₁ x₂ syn) inctx etvu inv with etvu-syn etvu 
     ... | refl = WFSubsume (etvu-subsumable etvu x) x₁ x₂ (preservation-etvu-unwrap-syn syn inctx etvu inv)
     preservation-etvu-unwrap-ana (WFFun typ x₁ x₂ x₃ x₄ x₅ x₆ x₇ x₈ ana) inctx (ETVUFun {e-body' = e' ⇒ syn'} tvu etvu) inv 
-      = WFFun {!   !} x₁ (■~N-pair (~N-pair (proj₂ (~D-dec _ _)))) x₃ x₄ ▶★ (consist-unless-new x₆) x₇ x₈ (preservation-etvu-unwrap-ana ana (TInCtxSkip? inctx) etvu (ETVUUVCons? inv tvu))
+      = WFFun (preservation-etvu-unwrap typ inctx tvu inv) x₁ (■~N-pair (~N-pair (proj₂ (~D-dec _ _)))) x₃ x₄ ▶★ (consist-unless-new x₆) x₇ x₈ (preservation-etvu-unwrap-ana ana (TInCtxSkip? inctx) etvu (ETVUUVCons? inv tvu))
     preservation-etvu-unwrap-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ ana1 ana2) inctx (ETVUPair {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} etvu1 etvu2) inv with etvu-syn etvu1 | etvu-syn etvu2 
     ... | refl | refl = WFPair x x₁ x₂ x₃ x₄ x₅ x₆ (preservation-etvu-unwrap-ana ana1 inctx etvu1 inv) (preservation-etvu-unwrap-ana ana2 inctx etvu2 inv)
-    preservation-etvu-unwrap-ana (WFTypFun x x₁ x₂ x₃ x₄ x₅ ana) inctx ETVUTypFunEq inv = WFTypFun x x₁ x₂ x₃ x₄ x₅ {!   !} --(ctx-tequiv-ana (CEInitR inv) ana)
+    preservation-etvu-unwrap-ana (WFTypFun x x₁ x₂ x₃ x₄ x₅ ana) inctx ETVUTypFunEq inv = WFTypFun x x₁ x₂ x₃ x₄ x₅ (preservation-etvu-unwrap-equiv-ana ana (ETVUUEInit inv)) 
     preservation-etvu-unwrap-ana (WFTypFun x x₁ x₂ x₃ x₄ x₅ ana) inctx (ETVUTypFunNeq {e' = e' ⇒ syn'} neq etvu) inv with etvu-syn etvu
     ... | refl = WFTypFun x x₁ x₂ x₃ x₄ x₅ (preservation-etvu-unwrap-ana ana (InCtxTSkip? neq inctx) etvu (ETVUUCons? inv neq))
 
@@ -478,19 +600,16 @@ module Core.TypVariableUpdatePreservation where
     preservation-etvu-unwrap-syn (WFHole x) inctx ETVUHole inv = WFHole x
     preservation-etvu-unwrap-syn (WFAp x x₁ x₂ x₃ syn ana) inctx (ETVUAp {e1 = e1 ⇒ syn1} {e2 = e2 ⇒ syn2} {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} etvu1 etvu2) inv with etvu-syn etvu1 | etvu-syn etvu2
     ... | refl | refl = WFAp x x₁ x₂ x₃ (preservation-etvu-unwrap-ana syn inctx etvu1 inv) (preservation-etvu-unwrap-ana ana inctx etvu2 inv)
-    preservation-etvu-unwrap-syn (WFVar x x₁) inctx ETVUVar inv = {!   !}
-    --  with ctx-tinv-inctx-var inv x 
-    -- ... | t , inctx' , beyond = WFVar inctx' (beyond-▷ beyond x₁) 
-    preservation-etvu-unwrap-syn (WFAsc typ x₁ x₂ ana) inctx (ETVUAsc x₄ etvu) inv 
-      = WFAsc {!   !} (▷Pair ▶★) (▷Pair ▶★) (preservation-etvu-unwrap-ana ana inctx etvu inv)
-      -- = WFAsc (preservation-tvu-unwrap typ inctx x₄ inv) (▷Pair ▶★) (▷Pair ▶★) (preservation-etvu-unwrap-ana ana inctx etvu inv)
+    preservation-etvu-unwrap-syn (WFVar x x₁) inctx ETVUVar inv with etvu-unwrap-inctx-var inv x 
+    ... | t , inctx' , beyond = WFVar inctx' (beyond-▷ beyond x₁)
+    preservation-etvu-unwrap-syn (WFAsc typ x₁ x₂ ana) inctx (ETVUAsc tvu etvu) inv 
+      = WFAsc (preservation-etvu-unwrap typ inctx tvu inv) (▷Pair ▶★) (▷Pair ▶★) (preservation-etvu-unwrap-ana ana inctx etvu inv)
     preservation-etvu-unwrap-syn (WFProj {s = s} mprod x₁ x₂ syn) inctx (ETVUProj {e' = e' ⇒ syn'} etvu) inv with ▸NTProj-dec s syn'
     ... | t , m , mprod' with etvu-syn etvu 
     ... | refl with ▸NTProj-unicity mprod mprod' 
     ... | refl , refl = WFProj mprod x₁ x₂ (preservation-etvu-unwrap-ana syn inctx etvu inv)
     preservation-etvu-unwrap-syn (WFTypAp typ x₁ x₂ x₃ x₄ syn) inctx (ETVUTypAp {e' = e' ⇒ syn'} etvu tvu) inv with etvu-syn etvu 
-    ... | refl = WFTypAp {!   !} x₁ x₂ (NSub-pair (proj₂ (DSub-dec _ _ _))) (▷Pair ▶★) (preservation-etvu-unwrap-ana syn inctx etvu inv)  
-    -- ... | refl = WFTypAp (preservation-tvu-unwrap typ inctx tvu inv) x₁ x₂ (NSub-pair (proj₂ (DSub-dec _ _ _))) (▷Pair ▶★) (preservation-etvu-unwrap-ana syn inctx etvu inv)  
+    ... | refl = WFTypAp (preservation-etvu-unwrap typ inctx tvu inv) x₁ x₂ (NSub-pair (proj₂ (DSub-dec _ _ _))) (▷Pair ▶★) (preservation-etvu-unwrap-ana syn inctx etvu inv)  
  
   preservation-etvu-unwrap-ana? :
     ∀ {x Γ e e' m m' ana} ->
@@ -500,3 +619,4 @@ module Core.TypVariableUpdatePreservation where
     Γ L⊢ (e' [ m' ]⇐ ana)
   preservation-etvu-unwrap-ana? {BHole} wf inctx refl = wf
   preservation-etvu-unwrap-ana? {BVar x} wf inctx etvu = preservation-etvu-unwrap-ana wf inctx etvu ETVUUInit
+ 
