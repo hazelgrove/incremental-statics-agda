@@ -25,6 +25,9 @@ module Core.VariableUpdatePreservation where
   var-update-subsumable (VSVarNeq _) SubsumableVar = SubsumableVar
   var-update-subsumable (VSAsc var-update) SubsumableAsc = SubsumableAsc
   var-update-subsumable (VSProj var-update) SubsumableProj = SubsumableProj
+  var-update-subsumable (VSPair var-update var-update₁) ()
+  var-update-subsumable (VSTypFun var-update) ()
+  var-update-subsumable (VSTypAp var-update) SubsumableTypAp = SubsumableTypAp
 
   var-update-beyond : ∀ {x t m e syn e' syn'} ->
     VariableUpdate x t m (e ⇒ syn) (e' ⇒ syn') -> 
@@ -39,6 +42,8 @@ module Core.VariableUpdatePreservation where
   var-update-beyond (VSAsc syn) = =▷Refl
   var-update-beyond (VSPair syn syn₁) = =▷Refl
   var-update-beyond (VSProj syn) = =▷Refl
+  var-update-beyond (VSTypFun vs) = =▷Refl
+  var-update-beyond (VSTypAp vs) = =▷Refl
 
   var-update?-beyond : ∀ {x t m e syn e' syn'} ->
     VariableUpdate? x t m (e ⇒ syn) (e' ⇒ syn') -> 
@@ -272,6 +277,7 @@ module Core.VariableUpdatePreservation where
     preservation-vars-ana (WFFun {t-asc = t-asc} wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunNeq {e-body' = e-body' ⇒ syn-body'} neq var-update) ctx-inv = WFFun (ctx-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma {t = t-asc} (var-update?-beyond var-update) consist-syn) consist-all consist-m-all (preservation-vars-ana ana var-update (CtxInvNeq? neq ctx-inv))    
     preservation-vars-ana (WFFun wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunEq) ctx-inv = WFFun (ctx-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all (ctx-inv-ana (CtxEquivInit ctx-inv) ana)
     preservation-vars-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wf wf₁) (VSPair {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} vs vs₁) ctx-inv = WFPair x x₁ x₂ x₃ (preservation-pair-lemma (var-update?-beyond vs) (var-update?-beyond vs₁) x₄) x₅ x₆ (preservation-vars-ana wf vs ctx-inv) (preservation-vars-ana wf₁ vs₁ ctx-inv)
+    preservation-vars-ana (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (VSTypFun {e-body' = e' ⇒ syn'} vs) ctx-inv = WFTypFun x x₁ x₂ (preservation-typfun-lemma (var-update?-beyond vs) x₃) x₄ x₅ (preservation-vars-ana wf vs (CtxInvTCons? ctx-inv))
 
     preservation-var-update :
       ∀ {Γ Γ' x t n e e'} ->
@@ -290,6 +296,10 @@ module Core.VariableUpdatePreservation where
     preservation-var-update (WFProj {s = s} mprod x₁ x₂ x₃) (VSProj {e' = e-body' ⇒ syn-body'} vs) ctx-inv with ▸NTProj-dec s syn-body' 
     ... | t-side-body' , m-body' , mprod' with beyond-▸NTProj (var-update-beyond vs) mprod mprod' 
     ... | t-beyond , m-beyond = WFProj mprod' (beyond-▷ t-beyond x₁) (beyond-▶ m-beyond x₂) (preservation-vars-ana x₃ vs ctx-inv)
+    preservation-var-update (WFTypAp x mforall x₂ sub x₃ x₅) (VSTypAp {e' = e' ⇒ syn'} {t' = t'} vs) ctx-inv with ▸NTForall-dec syn' 
+    ... | x' , t-body' , m' , mforall' with beyond-▸NTForall (var-update-beyond vs) mforall mforall' | NSub-dec t' x' t-body'
+    ... | x-beyond , t-beyond , m-beyond | t' , sub' with beyond-NSub x-beyond =▷Refl t-beyond sub sub'
+    ... | d-beyond = WFTypAp (ctx-inv-t ctx-inv x) mforall' (beyond-▶ m-beyond x₂) sub' (beyond-▷ d-beyond x₃) (preservation-vars-ana x₅ vs ctx-inv)
 
   preservation-vars-ana? :
     ∀ {x Γ t e e' n m' ana} ->
@@ -320,6 +330,8 @@ module Core.VariableUpdatePreservation where
     preservation-vars-unwrap-ana (WFFun {t-asc = t-asc} wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunNeq {e-body' = e-body' ⇒ syn-body'} neq var-update) ctx-inv = WFFun (unwrap-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma {t = t-asc} (var-update?-beyond var-update) consist-syn) consist-all consist-m-all (preservation-vars-unwrap-ana ana var-update (UnwrapInvCons? neq ctx-inv))    
     preservation-vars-unwrap-ana (WFFun wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunEq) ctx-inv = WFFun (unwrap-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all (ctx-inv-ana (CtxEquivUnwrapInit ctx-inv) ana)
     preservation-vars-unwrap-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wf wf₁) (VSPair {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} vs vs₁) ctx-inv = WFPair x x₁ x₂ x₃ (preservation-pair-lemma (var-update?-beyond vs) (var-update?-beyond vs₁) x₄) x₅ x₆ (preservation-vars-unwrap-ana wf vs ctx-inv) (preservation-vars-unwrap-ana wf₁ vs₁ ctx-inv)
+    preservation-vars-unwrap-ana (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (VSTypFun {e-body' = e' ⇒ syn'} vs) ctx-inv = WFTypFun x x₁ x₂ (preservation-typfun-lemma (var-update?-beyond vs) x₃) x₄ x₅ (preservation-vars-unwrap-ana wf vs (UnwrapInvTCons? ctx-inv))
+
 
     preservation-vars-unwrap-syn :
       ∀ {Γ Γ' x t m e e'} ->
@@ -338,7 +350,11 @@ module Core.VariableUpdatePreservation where
     preservation-vars-unwrap-syn (WFProj {s = s} mprod x₁ x₂ x₃) (VSProj {e' = e-body' ⇒ syn-body'} vs) ctx-inv with ▸NTProj-dec s syn-body' 
     ... | t-side-body' , m-body' , mprod' with beyond-▸NTProj (var-update-beyond vs) mprod mprod' 
     ... | t-beyond , m-beyond = WFProj mprod' (beyond-▷ t-beyond x₁) (beyond-▶ m-beyond x₂) (preservation-vars-unwrap-ana x₃ vs ctx-inv)
-    
+    preservation-vars-unwrap-syn (WFTypAp x mforall x₂ sub x₃ x₅) (VSTypAp {e' = e' ⇒ syn'} {t' = t'} vs) ctx-inv with ▸NTForall-dec syn' 
+    ... | x' , t-body' , m' , mforall' with beyond-▸NTForall (var-update-beyond vs) mforall mforall' | NSub-dec t' x' t-body'
+    ... | x-beyond , t-beyond , m-beyond | t' , sub' with beyond-NSub x-beyond =▷Refl t-beyond sub sub'
+    ... | d-beyond = WFTypAp (unwrap-inv-t ctx-inv x) mforall' (beyond-▶ m-beyond x₂) sub' (beyond-▷ d-beyond x₃) (preservation-vars-unwrap-ana x₅ vs ctx-inv)
+
   preservation-vars-unwrap : 
     ∀ {x Γ t t-old e e' m m' ana n} ->
     (x , (t , n) ∈? Γ , m) -> 
@@ -346,4 +362,4 @@ module Core.VariableUpdatePreservation where
     VariableUpdate? x t m e e' ->
     Γ L⊢ (e' [ m' ]⇐ ana)
   preservation-vars-unwrap {BHole} in-ctx ana refl = ana 
-  preservation-vars-unwrap {BVar x} in-ctx ana var-update = preservation-vars-unwrap-ana ana var-update (UnwrapInvInit in-ctx)   
+  preservation-vars-unwrap {BVar x} in-ctx ana var-update = preservation-vars-unwrap-ana ana var-update (UnwrapInvInit in-ctx)     

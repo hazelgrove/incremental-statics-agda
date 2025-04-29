@@ -1,4 +1,5 @@
 
+open import Data.Sum renaming (_⊎_ to _+_; inj₁ to Inl ; inj₂ to Inr) 
 open import Data.Product
 open import Relation.Binary.PropositionalEquality
 
@@ -53,6 +54,12 @@ module Core.Lemmas where
     {a a' : A} ->
     ▶ (a , (n ⊓ ★)) a'
   ▶★-max-r {n = n} rewrite max-dirty n = ▶★
+
+  =▷★-max-r : ∀ {n n'} -> 
+    {A : Set} -> 
+    {a a' : A} ->
+    =▷ (a , n') (a' , (n ⊓ ★))
+  =▷★-max-r {n = n} rewrite max-dirty n = =▷★
 
   -- not true lol
   -- ▷-trans : ∀ {a b c} ->
@@ -128,6 +135,12 @@ module Core.Lemmas where
   ▸DTForall-dec (■ t) with ▸TForall-dec t
   ... | x , t' , m , match = x , ■ t' , m , DTForallSome match
 
+  ▸NTForall-dec : 
+    (d : ○Data) -> 
+    ∃[ x ] ∃[ t ] ∃[ m ] d ▸NTForall x , t , m
+  ▸NTForall-dec (d , n) with ▸DTForall-dec d
+  ... | x , t' , m , match = x , (t' , n) , (m , n) , NTForallC match
+
   ▸DTForallBind-dec : 
     (d : Data) -> 
     (x : Binding) ->
@@ -176,6 +189,13 @@ module Core.Lemmas where
   DSub-dec t x (■ t1) with Sub-dec t x t1 
   ... | t2 , sub = ■ t2 , NSubSome sub
 
+  NSub-dec : 
+    (t : ○Type) -> 
+    (x : Binding) ->
+    (d1 : ○Data) ->
+    ∃[ d2 ] NSub t x d1 d2 
+  NSub-dec (t , n1) x (d , n2) with DSub-dec t x d
+  ... | d' , sub = (d' , (n1 ⊓ n2)) , NSub-pair sub
   
   ▸DTArrow-unicity : ∀ {d t-in t-in' t-out t-out' m m'} ->
     d ▸DTArrow t-in , t-out , m -> 
@@ -214,6 +234,28 @@ module Core.Lemmas where
     (t ≡ t' × m ≡ m')
   ▸NTProj-unicity (NTProjC match1) (NTProjC match2) with ▸DTProj-unicity match1 match2 
   ... | refl , refl = refl , refl
+  
+  ▸DTForall-unicity : ∀ {d x x' t-body t-body' m m'} ->
+    d ▸DTForall x , t-body , m -> 
+    d ▸DTForall x' , t-body' , m' -> 
+    (x ≡ x' × t-body ≡ t-body' × m ≡ m')
+  ▸DTForall-unicity DTForallNone DTForallNone = refl , refl , refl
+  ▸DTForall-unicity (DTForallSome match1) (DTForallSome match2) with ▸TForall-unicity match1 match2
+  ... | refl , refl , refl = refl , refl , refl
+  
+  ▸NTForall-unicity : ∀ {d x x' t-body t-body' m m'} ->
+    d ▸NTForall x , t-body , m -> 
+    d ▸NTForall x' , t-body' , m' -> 
+    (x ≡ x' × t-body ≡ t-body' × m ≡ m')
+  ▸NTForall-unicity (NTForallC match1) (NTForallC match2) with ▸DTForall-unicity match1 match2 
+  ... | refl , refl , refl = refl , refl , refl
+  
+  DSub-unicity : ∀ {t x d1 d2 d2'} -> 
+    DSub t x d1 d2  -> 
+    DSub t x d1 d2'  -> 
+    d2 ≡ d2'
+  DSub-unicity NSubVoid NSubVoid = refl
+  DSub-unicity (NSubSome x) (NSubSome x₁) rewrite sub-unicity x x₁ = refl
 
   ~D-unicity : ∀ {syn ana m m'} ->
     syn ~D ana , m -> 
@@ -259,6 +301,28 @@ module Core.Lemmas where
   beyond-▸NTProj =▷★ (NTProjC x) (NTProjC x₁) = =▷★ , =▷★
   beyond-▸NTProj =▷Refl (NTProjC x) (NTProjC x₁) with ▸DTProj-unicity x x₁ 
   ... | refl , refl = =▷Refl , =▷Refl
+
+  beyond-▸NTForall : ∀ {syn syn' x x' t-body t-body' m m'} ->
+    =▷ syn syn' ->
+    syn ▸NTForall x , t-body , m -> 
+    syn' ▸NTForall x' , t-body' , m' -> 
+    ((x ≡ x' + (proj₂ t-body') ≡ ★) × =▷ t-body t-body' × =▷ m m')
+  beyond-▸NTForall =▷★ (NTForallC _) (NTForallC _) = Inr refl , =▷★ , =▷★
+  beyond-▸NTForall =▷Refl (NTForallC match1) (NTForallC match2) with ▸DTForall-unicity match1 match2 
+  ... | refl , refl , refl = Inl refl , =▷Refl , =▷Refl
+
+  beyond-NSub : ∀ {t t' d1 d1' d2 d2' x x'} ->
+    (x ≡ x' + (proj₂ d1') ≡ ★) ->
+    =▷ t t' ->
+    =▷ d1 d1' ->
+    NSub t x d1 d2  -> 
+    NSub t' x' d1' d2'  -> 
+    (=▷ d2 d2')
+  beyond-NSub _ =▷★ _ (NSub-pair x) (NSub-pair x₁) = =▷★
+  beyond-NSub _ =▷Refl =▷★ (NSub-pair x) (NSub-pair x₁) = =▷★-max-r
+  beyond-NSub (Inl refl) =▷Refl =▷Refl (NSub-pair x) (NSub-pair x₁) with DSub-unicity x x₁
+  ... | refl = =▷Refl
+  beyond-NSub (Inr refl) =▷Refl =▷Refl (NSub-pair x) (NSub-pair x₁) = =▷★-max-r
 
   NUnless-dirty : ∀ {d n t} ->
     NUnless (d , n) (t , ★) ≡ (DUnless d t , ★)
@@ -334,6 +398,14 @@ module Core.Lemmas where
   preservation-pair-lemma {syn1 = syn1 , n1} {ana = □ , n-ana} =▷Refl =▷★ (▷Pair consist) rewrite max-dirty n1 = ▷Pair ▶★
   preservation-pair-lemma {syn1 = syn1 , n1} {ana = ■ ana , n-ana} =▷Refl =▷★ (▷Pair consist) = ▷Pair consist
   preservation-pair-lemma =▷Refl =▷Refl consist = consist
+
+  preservation-typfun-lemma : ∀ {x syn1 syn1' syn2 ana} ->
+    =▷ syn1 syn1' ->
+    ▷ (NUnless (NForall x syn1) ana) syn2 ->
+    ▷ (NUnless (NForall x syn1') ana) syn2
+  preservation-typfun-lemma =▷Refl consist = consist
+  preservation-typfun-lemma {ana = □ , n-ana} =▷★ (▷Pair x) = ▷Pair ▶★
+  preservation-typfun-lemma {ana = ■ x , n-ana} beyond consist = consist
 
   beyond-▷-contra : 
     {A : Set} -> 

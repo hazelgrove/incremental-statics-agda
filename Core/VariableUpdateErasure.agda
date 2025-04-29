@@ -28,6 +28,10 @@ module Core.VariableUpdateErasure where
     rewrite var-update-erase var-update2 = refl
   var-update-erase (VSProj var-update) 
     rewrite var-update-erase var-update = refl
+  var-update-erase (VSTypFun var-update) 
+    rewrite var-update-erase var-update = refl
+  var-update-erase (VSTypAp var-update) 
+    rewrite var-update-erase var-update = refl
 
   var-update?-erase : ∀{x t m e e'} ->
     VariableUpdate? x t m e e' ->

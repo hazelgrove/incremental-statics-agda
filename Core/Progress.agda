@@ -102,8 +102,8 @@ module Core.Progress where
   ... | no neq = _ , VSVarNeq neq
   var-update-dec {EPair (x [ x₂ ]⇐ x₄) (x₅ [ x₆ ]⇐ x₇) x₃ ⇒ x₁} = _ , (VSPair (proj₂ var-update-dec) (proj₂ var-update-dec))
   var-update-dec {EProj x (x₂ [ x₄ ]⇐ x₅) x₃ ⇒ x₁} = _ , VSProj (proj₂ var-update-dec)
-  var-update-dec {ETypFun x x₂ x₃ ⇒ x₁} = {!   !}
-  var-update-dec {ETypAp x x₂ x₃ ⇒ x₁} = {!   !}
+  var-update-dec {ETypFun x x₁ (x₂ [ x₃ ]⇐ x₄) ⇒ x₅} = _ , VSTypFun (proj₂ var-update-dec)
+  var-update-dec {ETypAp (x [ x₁ ]⇐ x₂) x₃ x₄ ⇒ x₅} = _ , VSTypAp (proj₂ var-update-dec)
 
   var-update?-dec : ∀ {x e t m} ->
     ∃[ e' ] (VariableUpdate? x t m e e')
@@ -140,7 +140,11 @@ module Core.Progress where
     ... | Inl (e' , step ) = Inl (_ , StepLowUp (FillAnaEnvSynRec (FillAnaEnvProj FillA⊙)) step (FillAnaEnvSynRec (FillAnaEnvProj FillA⊙))) 
     ... | Inr (AlmostQuiescentLow (AlmostQuiescentUp {★} settled)) = Inl (_ , StepUp FillS⊙ (StepProj (proj₂ (proj₂ (▸DTProj-dec _ _)))) FillS⊙)
     ... | Inr (AlmostQuiescentLow (AlmostQuiescentUp {•} settled)) = Inr (AlmostQuiescentUp (QuiescentProj (QuiescentLow (QuiescentUp settled))))
-    ProgressUp wf = ?
+    ProgressUp (WFTypAp {n-arg = ★} wf1 x₁ x₂ x₃ x₄ ana) = Inl (_ , StepUp FillS⊙ (StepTypApArg (proj₂ (proj₂ (proj₂ (▸DTForall-dec _)))) (proj₂ (DSub-dec _ _ _))) FillS⊙)
+    ProgressUp (WFTypAp {n-arg = •} wf1 x₁ x₂ x₃ x₄ ana) with ProgressLow ana 
+    ... | Inl (e' , step) = Inl (_ , StepLowUp (FillAnaEnvSynRec (FillAnaEnvTypAp FillA⊙)) step (FillAnaEnvSynRec (FillAnaEnvTypAp FillA⊙)))
+    ... | Inr (AlmostQuiescentLow (AlmostQuiescentUp {★} settled)) = Inl (_ , StepUp FillS⊙ (StepTypApFun (proj₂ (proj₂ (proj₂ (▸DTForall-dec _)))) (proj₂ (DSub-dec _ _ _))) FillS⊙)
+    ... | Inr (AlmostQuiescentLow (AlmostQuiescentUp {•} settled)) = Inr (AlmostQuiescentUp (QuiescentTypAp (QuiescentLow (QuiescentUp settled))))
 
     ProgressLow :  
       ∀ {Γ e} ->
@@ -173,7 +177,14 @@ module Core.Progress where
     ProgressLow (WFPair {ana-all = t , •} {ana-fst = ana-fst , •} {ana-snd = ana-snd , •} mprod con1 con2 con3 con4 consist con5 wt1 wt2) | Inr (AlmostQuiescentLow (AlmostQuiescentUp {•} settled1)) | Inr (AlmostQuiescentLow (AlmostQuiescentUp {★} settled2)) | □ = Inl (_ , StepLow FillA⊙ StepSynPairSnd FillA⊙) 
     ProgressLow (WFPair {ana-all = t , •} {ana-fst = ana-fst , •} {ana-snd = ana-snd , •} mprod con1 con2 con3 con4 consist con5 wt1 wt2) | Inr (AlmostQuiescentLow (AlmostQuiescentUp {•} settled1)) | Inr (AlmostQuiescentLow (AlmostQuiescentUp {★} settled2)) | ■ _ = Inl (_ , StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair2 FillA⊙))) (StepSyn (proj₂ (~D-dec _ _))) (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair2 FillA⊙)))) 
     ProgressLow (WFPair {ana-all = t , •} {ana-fst = ana-fst , •} {ana-snd = ana-snd , •} mprod con1 con2 con3 con4 consist con5 wt1 wt2) | Inr (AlmostQuiescentLow (AlmostQuiescentUp {•} settled1)) | Inr (AlmostQuiescentLow (AlmostQuiescentUp {•} settled2)) = Inr (AlmostQuiescentLow (AlmostQuiescentUp (QuiescentPair (QuiescentLow (QuiescentUp settled1)) (QuiescentLow (QuiescentUp settled2))))) 
-    ProgressLow wf = ?
+    ProgressLow (WFTypFun {ana-all = ana-all , ★} (NTForallBindC mforall) m1 m2 m3 con m4 wt) = Inl (_ , StepLow FillA⊙ (StepAnaTypFun mforall) FillA⊙)
+    ProgressLow (WFTypFun {ana-all = ana-all , •} {ana-body = ana-body , ★} mforall m1 m2 m3 con m4 wt) = Inl (_ , StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvTypFun FillA⊙))) (proj₂ (dirty-ana-steps-inner wt)) (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvTypFun FillA⊙))))
+    ProgressLow (WFTypFun {ana-all = ana-all , •} {ana-body = ana-body , •} mforall m1 m2 m3 con m4 wt) with ProgressLow wt
+    ProgressLow (WFTypFun {ana-all = ana-all , •} {ana-body = ana-body , •} mforall m1 m2 m3 con m4 wt) | Inl (e' , step) = Inl (_ , StepLowLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvTypFun FillA⊙))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvTypFun FillA⊙))))
+    ProgressLow (WFTypFun {ana-all = ana-all , •} {ana-body = ana-body , •} mforall m1 m2 m3 con m4 wt) | Inr (AlmostQuiescentLow (AlmostQuiescentUp {★} settled)) with ana-body
+    ProgressLow (WFTypFun {ana-all = ana-all , •} {ana-body = ana-body , •} mforall m1 m2 m3 con m4 wt) | Inr (AlmostQuiescentLow (AlmostQuiescentUp {★} settled)) | □ = Inl (_ , StepLow FillA⊙ StepSynTypFun FillA⊙)
+    ProgressLow (WFTypFun {ana-all = ana-all , •} {ana-body = ana-body , •} mforall m1 m2 m3 con m4 wt) | Inr (AlmostQuiescentLow (AlmostQuiescentUp {★} settled)) | ■ _ = Inl (_ , StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvTypFun FillA⊙))) (StepSyn (proj₂ (~D-dec _ _))) (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvTypFun FillA⊙))))
+    ProgressLow (WFTypFun {ana-all = ana-all , •} {ana-body = ana-body , •} mforall m1 m2 m3 con m4 wt) | Inr (AlmostQuiescentLow (AlmostQuiescentUp {•} settled)) = Inr (AlmostQuiescentLow (AlmostQuiescentUp (QuiescentTypFun (QuiescentLow (QuiescentUp settled)))))
 
 
   step-preserves-program : ∀ {p e} -> 
@@ -189,7 +200,8 @@ module Core.Progress where
   step-preserves-program {p = Root e n} (StepLow FillA⊙ (StepAnaPair _) FillA⊙) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillA⊙ StepSynPairFst FillA⊙) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow FillA⊙ StepSynPairSnd FillA⊙) = Root _ _ , refl
-  step-preserves-program {p = Root e n} step = ?
+  step-preserves-program {p = Root e n} (StepLow FillA⊙ (StepAnaTypFun x) FillA⊙) = Root _ _ , refl
+  step-preserves-program {p = Root e n} (StepLow FillA⊙ StepSynTypFun FillA⊙) = Root _ _ , refl
 
   ProgressProgram : ∀ {p} ->
     P⊢ p ->   
@@ -212,6 +224,9 @@ module Core.Progress where
     UnProgressUp (WFVar x x₁) (StepUp FillS⊙ () FillS⊙) settled
     UnProgressUp (WFAp _ _ _ _ _ _) (StepUp FillS⊙ (StepAp _) FillS⊙) (QuiescentUp (QuiescentAp (QuiescentLow ()) _))
     UnProgressUp (WFAsc _ _ _ ana) (StepUp FillS⊙ StepAsc FillS⊙) (QuiescentUp ())
+    UnProgressUp (WFTypAp _ _ _ _ _ wf) (StepUp FillS⊙ (StepTypApFun x x₁) FillS⊙) (QuiescentUp (QuiescentTypAp (QuiescentLow ())))
+    UnProgressUp (WFTypAp _ _ _ _ _ wf) (StepUp FillS⊙ (StepTypApArg x x₁) FillS⊙) (QuiescentUp ())
+
     UnProgressUp (WFConst x) (StepUp (FillSynEnvSynRec ()) step (FillSynEnvSynRec x₁)) settled
     UnProgressUp (WFHole x) (StepUp (FillSynEnvSynRec ()) step (FillSynEnvSynRec x₁)) settled
     UnProgressUp (WFVar _ _) (StepUp (FillSynEnvSynRec ()) step (FillSynEnvSynRec x₁)) settled
@@ -220,6 +235,7 @@ module Core.Progress where
     UnProgressUp (WFAsc _ _ _ ana) (StepUp (FillSynEnvSynRec (FillSynEnvAsc fill1)) step (FillSynEnvSynRec (FillSynEnvAsc fill2))) (QuiescentUp (QuiescentAsc settled)) = UnProgressLow ana (StepUp fill1 step fill2) settled
     UnProgressUp (WFProj _ _ _ _) (StepUp FillS⊙ (StepProj _) FillS⊙) (QuiescentUp (QuiescentProj (QuiescentLow ())))
     UnProgressUp (WFProj _ _ _ wt) (StepUp (FillSynEnvSynRec (FillSynEnvProj fill1)) step (FillSynEnvSynRec (FillSynEnvProj fill2))) (QuiescentUp (QuiescentProj settled)) = UnProgressLow wt (StepUp fill1 step fill2) settled
+    UnProgressUp (WFTypAp _ _ _ _ _ wf) (StepUp (FillSynEnvSynRec (FillSynEnvTypAp fill1)) step (FillSynEnvSynRec (FillSynEnvTypAp fill2))) (QuiescentUp (QuiescentTypAp settled)) = UnProgressLow wf (StepUp fill1 step fill2) settled
     
     UnProgressUp (WFConst x) (StepLow (FillAnaEnvSynRec ()) step (FillAnaEnvSynRec fill2)) (QuiescentUp settled)
     UnProgressUp (WFHole x) (StepLow (FillAnaEnvSynRec ()) step (FillAnaEnvSynRec fill2)) (QuiescentUp settled)
@@ -228,7 +244,7 @@ module Core.Progress where
     UnProgressUp (WFAp _ _ _ _ syn ana) (StepLow (FillAnaEnvSynRec (FillAnaEnvAp2 fill1)) step (FillAnaEnvSynRec (FillAnaEnvAp2 fill2))) (QuiescentUp (QuiescentAp _ settled)) = UnProgressLow ana (StepLow fill1 step fill2) settled
     UnProgressUp (WFAsc _ _ _ ana) (StepLow (FillAnaEnvSynRec (FillAnaEnvAsc fill1)) step (FillAnaEnvSynRec (FillAnaEnvAsc fill2))) (QuiescentUp (QuiescentAsc settled)) = UnProgressLow ana (StepLow fill1 step fill2) settled
     UnProgressUp (WFProj _ _ _ wt) (StepLow (FillAnaEnvSynRec (FillAnaEnvProj fill1)) step (FillAnaEnvSynRec (FillAnaEnvProj fill2))) (QuiescentUp (QuiescentProj settled)) = UnProgressLow wt (StepLow fill1 step fill2) settled 
-    UnProgressUp wf step settled = ?
+    UnProgressUp (WFTypAp _ _ _ _ _ wf) (StepLow (FillAnaEnvSynRec (FillAnaEnvTypAp fill1)) step (FillAnaEnvSynRec (FillAnaEnvTypAp fill2))) (QuiescentUp (QuiescentTypAp settled)) = UnProgressLow wf (StepLow fill1 step fill2) settled
 
     UnProgressLow : ∀ {Γ e e'} ->
       (Γ L⊢ e) ->  
@@ -247,7 +263,9 @@ module Core.Progress where
     UnProgressLow (WFPair _ _ _ _ _ _ _ wt1 wt2) (StepLow FillA⊙ StepSynPairSnd FillA⊙) (QuiescentLow (QuiescentUp (QuiescentPair settled1 (QuiescentLow ())))) 
     UnProgressLow (WFPair _ _ _ _ _ _ _ wt1 wt2) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair1 fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair1 fill2)))) (QuiescentLow (QuiescentUp (QuiescentPair settled1 settled2))) = UnProgressLow wt1 (StepLow fill1 step fill2) settled1
     UnProgressLow (WFPair _ _ _ _ _ _ _ wt1 wt2) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair2 fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair2 fill2)))) (QuiescentLow (QuiescentUp (QuiescentPair settled1 settled2))) = UnProgressLow wt2 (StepLow fill1 step fill2) settled2
-    UnProgressLow wf step settled = ?
+    UnProgressLow (WFTypFun _ _ _ _ _ _ wf) (StepLow FillA⊙ StepSynTypFun FillA⊙) (QuiescentLow (QuiescentUp (QuiescentTypFun (QuiescentLow ()))))
+    UnProgressLow (WFTypFun _ _ _ _ _ _ wf) (StepUp (FillSynEnvAnaRec (FillSynEnvSynRec (FillSynEnvTypFun fill1))) step (FillSynEnvAnaRec (FillSynEnvSynRec (FillSynEnvTypFun fill2)))) (QuiescentLow (QuiescentUp (QuiescentTypFun settled))) = UnProgressLow wf (StepUp fill1 step fill2) settled
+    UnProgressLow (WFTypFun _ _ _ _ _ _ wf) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvTypFun fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvTypFun fill2)))) (QuiescentLow (QuiescentUp (QuiescentTypFun settled))) = UnProgressLow wf (StepLow fill1 step fill2) settled
 
   UnProgressProgram : ∀ {p p'} ->  
     P⊢ p ->   
@@ -256,4 +274,4 @@ module Core.Progress where
     ⊥       
   UnProgressProgram {p = Root e .•} (WFProgram ana) (InsideStep step) (QuiescentProgram (QuiescentLow settled)) = UnProgressLow ana step (QuiescentLow settled)   
   
-   
+    

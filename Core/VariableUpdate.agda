@@ -38,6 +38,12 @@ module Core.VariableUpdate where
     VSProj : ∀ {x s m t syn e e' ana m' m''} ->
       VariableUpdate x t m e e' ->
       VariableUpdate x t m ((EProj s (e [ m' ]⇐ ana) m'') ⇒ syn) ((EProj s (e' [ m' ]⇐ ana) m'') ⇒ syn) 
+    VSTypFun : ∀ {x m x' t m-ana e-body e-body' m-body syn-all ana-body} ->
+      VariableUpdate x t m e-body e-body' ->
+      VariableUpdate x t m ((ETypFun x' m-ana (e-body [ m-body ]⇐ ana-body)) ⇒ syn-all) ((ETypFun x' m-ana (e-body' [ m-body ]⇐ ana-body)) ⇒ syn-all)
+    VSTypAp : ∀ {x m t syn e e' t' ana m1 m2} ->
+      VariableUpdate x t m e e' ->
+      VariableUpdate x t m ((ETypAp (e [ m1 ]⇐ ana) m2 t') ⇒ syn) ((ETypAp (e' [ m1 ]⇐ ana) m2 t') ⇒ syn)
 
   VariableUpdate? : Binding -> Type -> Mark -> SynExp -> SynExp -> Set
   VariableUpdate? BHole t m e1 e2 = e1 ≡ e2
