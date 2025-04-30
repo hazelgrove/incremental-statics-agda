@@ -18,6 +18,8 @@ module Core.UpdatePreservation where
   beyond-u↦ (StepAp _) = =▷★
   beyond-u↦ StepAsc = =▷★
   beyond-u↦ (StepProj _) = =▷★
+  beyond-u↦ (StepTypApFun _ _) = =▷★
+  beyond-u↦ (StepTypApArg _ _) = =▷★
 
   beyond-u↦-env : ∀ {ε e e' e-in e-in' syn syn'} -> 
     e-in u↦ e-in' -> 
@@ -38,6 +40,8 @@ module Core.UpdatePreservation where
   beyond-l↦ (StepAnaPair _) = ◁▷C
   beyond-l↦ StepSynPairFst = ◁▷C
   beyond-l↦ StepSynPairSnd = ◁▷C
+  beyond-l↦ (StepAnaTypFun _) = ◁▷C
+  beyond-l↦ StepSynTypFun = ◁▷C
 
   beyond-l↦-inner : ∀ {e e' syn syn' m m' n-ana ana'} -> 
     ((e ⇒ syn) [ m ]⇐ (□ , n-ana)) l↦ ((e' ⇒ syn') [ m' ]⇐ ana') -> 
@@ -49,6 +53,8 @@ module Core.UpdatePreservation where
   beyond-l↦-inner (StepAnaPair _) = =▷★
   beyond-l↦-inner StepSynPairFst = =▷★
   beyond-l↦-inner StepSynPairSnd = =▷★
+  beyond-l↦-inner (StepAnaTypFun _) = =▷★
+  beyond-l↦-inner StepSynTypFun = =▷★
 
   beyond-l↦-env-inner : ∀ {ε e e' e-in e-in' syn syn' m m' n-ana ana'} -> 
     e-in l↦ e-in' -> 
@@ -77,6 +83,8 @@ module Core.UpdatePreservation where
   void-ana-step-same (StepAnaPair _) = refl , refl
   void-ana-step-same StepSynPairFst = refl , refl
   void-ana-step-same StepSynPairSnd = refl , refl
+  void-ana-step-same (StepAnaTypFun _) = refl , refl
+  void-ana-step-same StepSynTypFun = refl , refl
 
   step-subsumable : ∀ {e e' syn syn'} -> 
     (e ⇒ syn) u↦ (e' ⇒ syn') ->
@@ -85,6 +93,8 @@ module Core.UpdatePreservation where
   step-subsumable (StepAp _) SubsumableAp = SubsumableAp
   step-subsumable StepAsc SubsumableAsc = SubsumableAsc
   step-subsumable (StepProj _) SubsumableProj = SubsumableProj
+  step-subsumable (StepTypApFun _ _) SubsumableTypAp = SubsumableTypAp
+  step-subsumable (StepTypApArg _ _) SubsumableTypAp = SubsumableTypAp
 
   random-helper : ∀ {t t' d n n'} -> ▷ (NUnless (NArrow (t , •) (t' , n)) (d , n')) (DUnless (DArrow t t') d , ★)
   random-helper {d = □} = ▷Pair ▶Same
@@ -93,6 +103,10 @@ module Core.UpdatePreservation where
   random-helper-prod : ∀ {t t' d n n'} -> ▷ (NUnless (NProd (t , •) (t' , n)) (d , n')) (DUnless (DProd t t') d , ★)
   random-helper-prod {d = □} = ▷Pair ▶Same
   random-helper-prod {d = ■ x} = ▷Pair ▶Same
+  
+  random-helper-forall : ∀ {t x d n n'} -> ▷ (NUnless (NForall x (t , n)) (d , n')) (DUnless (DForall x t) d , ★)
+  random-helper-forall {d = □} = ▷Pair ▶Same
+  random-helper-forall {d = ■ x} = ▷Pair ▶Same
 
   other-random-helper : ∀ {t d d'} -> ▷ (NUnless t (d , ★)) d'
   other-random-helper {d = □} = ▷Pair ▶★-max-r
@@ -110,6 +124,8 @@ module Core.UpdatePreservation where
   PreservationStepSyn (WFAsc wf consist-syn consist-ana ana) StepAsc = WFAsc wf (▷Pair ▶•) (▷Pair ▶•) (small-dirty-ana ana)
   PreservationStepSyn (WFProj (NTProjC mproj) x₁ x₂ syn) (StepProj mproj') with ▸DTProj-unicity mproj mproj' 
   ... | refl , refl = WFProj (NTProjC mproj) (▷Pair ▶•) ▶• (oldify-syn-inner syn)
+  PreservationStepSyn (WFTypAp x x₁ x₂ x₃ x₄ x₅) (StepTypApFun x₆ x₇) = WFTypAp x (NTForallC x₆) ▶• (NSub-pair x₇) (▷Pair ▶Same) (oldify-syn-inner x₅)
+  PreservationStepSyn (WFTypAp x x₁ x₂ x₃ x₄ x₅) (StepTypApArg x₆ x₇) = WFTypAp x (NTForallC x₆) ▶Same (NSub-pair x₇) (▷Pair ▶Same) x₅
 
   PreservationStepAna :  
     ∀ {Γ e e'} ->
@@ -134,7 +150,11 @@ module Core.UpdatePreservation where
   ... | refl , refl , refl = WFPair (NTProdC mprod) (▷Pair ▶•) (▷Pair ▶•) ▶• (consist-unless-prod {n1 = n-fst}) (~N-pair (proj₂ (~D-dec _ _))) ▶★ (dirty-ana wt1) (dirty-ana wt2)
   PreservationStepAna (WFPair mprod con1 con2 con3 con4 consist con5 wt1 wt2) StepSynPairFst = WFPair mprod con1 con2 con3 random-helper-prod (~N-pair (proj₂ (~D-dec _ _))) ▶★ (oldify-syn-inner wt1) wt2
   PreservationStepAna (WFPair mprod con1 con2 con3 con4 consist con5 wt1 wt2) StepSynPairSnd = WFPair mprod con1 con2 con3 random-helper-prod (~N-pair (proj₂ (~D-dec _ _))) ▶★ wt1 (oldify-syn-inner wt2)
-  PreservationStepAna (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (StepSyn x₆) = {!   !}
+  PreservationStepAna (WFTypFun (NTForallBindC x) x₁ x₂ (▷Pair x₃) (~N-pair x₄) x₅ wf) (StepSyn x₆) with ~D-unicity x₄ x₆ 
+  ... | refl = WFTypFun (NTForallBindC x) x₁ x₂ (▷Pair x₃) (~N-pair x₄) ▶Same wf
+  PreservationStepAna (WFTypFun (NTForallBindC x) (▷Pair x₁) x₂ x₃ x₄ x₅ wf) (StepAnaTypFun x₆) with ▸DTForallBind-unicity x x₆ 
+  ... | refl , refl = WFTypFun (NTForallBindC x) (▷Pair ▶•) ▶• random-helper-forall (~N-pair (proj₂ (~D-dec _ _))) ▶★ (dirty-ana wf)
+  PreservationStepAna (WFTypFun (NTForallBindC x) x₁ x₂ x₃ x₄ x₅ wf) StepSynTypFun = WFTypFun (NTForallBindC x) x₁ x₂ random-helper-forall (~N-pair (proj₂ (~D-dec _ _))) ▶★ (oldify-syn-inner wf)
 
   mutual 
 
@@ -174,7 +194,16 @@ module Core.UpdatePreservation where
     ... | t-side-body' , m-body' , mproj' with beyond-▸NTProj (beyond-l↦-inner step) mproj mproj' 
     ... | t-side-beyond , m-beyond with void-ana-step-same step 
     ... | refl , refl = WFProj mproj' (beyond-▷ t-side-beyond con1) (beyond-▶ m-beyond con2) (PreservationAna wt (StepLow FillA⊙ step FillA⊙))
-    PreservationWF wf step = {!   !}
+    PreservationWF (WFTypAp x mforall x₂ sub x₃ x₅) (StepUp {e-in' = e' ⇒ syn'} (FillSynEnvSynRec (FillSynEnvTypAp (FillSynEnvAnaRec FillS⊙))) step (FillSynEnvSynRec (FillSynEnvTypAp {t = t-arg} (FillSynEnvAnaRec FillS⊙)))) with ▸NTForall-dec syn' 
+    ... | x' , t-body' , m' , mforall' with beyond-▸NTForall (beyond-u↦ step) mforall mforall' | NSub-dec t-arg x' t-body'
+    ... | x-beyond , t-beyond , m-beyond | t' , sub' with beyond-NSub x-beyond =▷Refl t-beyond sub sub' 
+    ... | d-beyond = WFTypAp x mforall' (beyond-▶ m-beyond x₂) sub' (beyond-▷ d-beyond x₃) (PreservationAna x₅ (StepUp (FillSynEnvAnaRec FillS⊙) step (FillSynEnvAnaRec FillS⊙)))
+    PreservationWF (WFTypAp x x₁ x₂ x₃ x₄ x₅) (StepUp (FillSynEnvSynRec (FillSynEnvTypAp (FillSynEnvAnaRec (FillSynEnvSynRec fill1)))) step (FillSynEnvSynRec (FillSynEnvTypAp (FillSynEnvAnaRec (FillSynEnvSynRec fill2))))) = WFTypAp x x₁ x₂ x₃ x₄ ((PreservationAna x₅ (StepUp (FillSynEnvAnaRec (FillSynEnvSynRec fill1)) step (FillSynEnvAnaRec (FillSynEnvSynRec fill2)))))
+    PreservationWF (WFTypAp x mforall x₂ sub x₃ x₅) (StepLow {e-in' = (e' ⇒ syn') [ m' ]⇐ ana'} (FillAnaEnvSynRec (FillAnaEnvTypAp FillA⊙)) step (FillAnaEnvSynRec (FillAnaEnvTypAp {t = t-arg} FillA⊙))) with ▸NTForall-dec syn' 
+    ... | x' , t-body' , m' , mforall' with beyond-▸NTForall (beyond-l↦-inner step) mforall mforall' | NSub-dec t-arg x' t-body'
+    ... | x-beyond , t-beyond , m-beyond | t' , sub' with beyond-NSub x-beyond =▷Refl t-beyond sub sub' | void-ana-step-same step 
+    ... | d-beyond | refl , refl = WFTypAp x mforall' (beyond-▶ m-beyond x₂) sub' (beyond-▷ d-beyond x₃) (PreservationAna x₅ (StepLow FillA⊙ step FillA⊙))
+    PreservationWF (WFTypAp x x₁ x₂ x₃ x₄ x₅) (StepLow (FillAnaEnvSynRec (FillAnaEnvTypAp (FillAnaEnvAnaRec (FillAnaEnvSynRec fill1)))) step (FillAnaEnvSynRec (FillAnaEnvTypAp (FillAnaEnvAnaRec (FillAnaEnvSynRec fill2))))) = WFTypAp x x₁ x₂ x₃ x₄ (PreservationAna x₅ (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec fill1)) step (FillAnaEnvAnaRec (FillAnaEnvSynRec fill2))))
 
     PreservationAna :  
       ∀ {Γ e e'} -> 
@@ -187,25 +216,27 @@ module Core.UpdatePreservation where
     PreservationAna (WFSubsume subsumable consist-t consist-m syn) (StepUp (FillSynEnvAnaRec (FillSynEnvSynRec fill1)) step (FillSynEnvAnaRec (FillSynEnvSynRec fill2))) = WFSubsume (u-env-subsumable fill1 fill2 subsumable) consist-t consist-m (PreservationWF syn (StepUp (FillSynEnvSynRec fill1) step (FillSynEnvSynRec fill2)))
     PreservationAna (WFSubsume subsumable consist-t consist-m syn) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec fill1)) step (FillAnaEnvAnaRec (FillAnaEnvSynRec fill2))) = WFSubsume (l-env-subsumable fill1 fill2 subsumable) consist-t consist-m (PreservationWF syn (StepLow (FillAnaEnvSynRec fill1) step (FillAnaEnvSynRec fill2))) 
     PreservationAna (WFFun {t-asc = t-asc} wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (StepUp (FillSynEnvAnaRec (FillSynEnvSynRec (FillSynEnvFun (FillSynEnvAnaRec fill1)))) step (FillSynEnvAnaRec (FillSynEnvSynRec (FillSynEnvFun (FillSynEnvAnaRec {e' = e' ⇒ syn'} fill2))))) = WFFun wf marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma {t = t-asc} (beyond-u↦-env step fill1 fill2) consist-syn) consist-all consist-m-all (PreservationAna ana (StepUp (FillSynEnvAnaRec fill1) step (FillSynEnvAnaRec fill2))) 
-    
     PreservationAna (WFFun {ana-all = ana-all , ★} {t-asc = (t-asc , n-asc)} wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvFun fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvFun {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2)))) = WFFun wf marrow consist (beyond-▷-contra (beyond-l↦-env step fill1 fill2) consist-ana) consist-asc consist-body NUnless-dirty-▷ consist-all consist-m-all (PreservationAna ana (StepLow fill1 step fill2))
     PreservationAna (WFFun {ana-all = ■ ana-all , •} {t-asc = (t-asc , n-asc)} wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvFun fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvFun {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2)))) =  WFFun wf marrow consist (beyond-▷-contra (beyond-l↦-env step fill1 fill2) consist-ana) consist-asc consist-body consist-syn consist-all consist-m-all (PreservationAna ana (StepLow fill1 step fill2))
-    PreservationAna (WFFun {syn-body = syn-body} {ana-all = □ , •} {t-asc = t-asc , n-asc} wf (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) (▷Pair ▶•) ▶• consist-body consist-syn (~N-pair {d1} {n1 = n1} consist) consist-m-all ana) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvFun fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvFun {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2)))) --= ?
+    PreservationAna (WFFun {syn-body = syn-body} {ana-all = □ , •} {t-asc = t-asc , n-asc} wf (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) (▷Pair ▶•) ▶• consist-body consist-syn (~N-pair {d1} {n1 = n1} consist) consist-m-all ana) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvFun fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvFun {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2))))
       = WFFun wf (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) (beyond-▷-contra (beyond-l↦-env step fill1 fill2) (▷Pair ▶•)) ▶• consist-body (preservation-lambda-lemma {t = (t-asc , n-asc)} {syn1 = syn-body} {syn1' = (syn' , n-syn')} {syn2 = (d1 , n1)} {ana = □ , •} (beyond-l↦-env-inner step fill1 fill2) consist-syn) (~N-pair consist) consist-m-all (PreservationAna ana (StepLow fill1 step fill2))
-    
+
     PreservationAna (WFPair mprod con1 con2 con3 con4 consist con5 wt1 wt2) (StepUp (FillSynEnvAnaRec (FillSynEnvSynRec (FillSynEnvPair1 (FillSynEnvAnaRec fill1)))) step (FillSynEnvAnaRec (FillSynEnvSynRec (FillSynEnvPair1 (FillSynEnvAnaRec {e' = e' ⇒ syn'} fill2))))) = WFPair mprod con1 con2 con3 (preservation-pair-lemma (beyond-u↦-env step fill1 fill2) =▷Refl con4) consist con5 (PreservationAna wt1 (StepUp (FillSynEnvAnaRec fill1) step (FillSynEnvAnaRec fill2))) wt2
     PreservationAna (WFPair mprod con1 con2 con3 con4 consist con5 wt1 wt2) (StepUp (FillSynEnvAnaRec (FillSynEnvSynRec (FillSynEnvPair2 (FillSynEnvAnaRec fill1)))) step (FillSynEnvAnaRec (FillSynEnvSynRec (FillSynEnvPair2 (FillSynEnvAnaRec {e' = e' ⇒ syn'} fill2))))) = WFPair mprod con1 con2 con3 (preservation-pair-lemma =▷Refl (beyond-u↦-env step fill1 fill2) con4) consist con5 wt1 (PreservationAna wt2 (StepUp (FillSynEnvAnaRec fill1) step (FillSynEnvAnaRec fill2))) 
-    
     PreservationAna (WFPair {ana-all = ana-all , ★} mprod con1 con2 con3 con4 consist con5 wt1 wt2) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair1 fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair1 {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2)))) = WFPair mprod (beyond-▷-contra (beyond-l↦-env step fill1 fill2) con1) con2 con3 NUnless-dirty-▷ consist con5 (PreservationAna wt1 (StepLow fill1 step fill2)) wt2
     PreservationAna (WFPair {ana-all = ■ ana-all , •} mprod con1 con2 con3 con4 consist con5 wt1 wt2) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair1 fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair1 {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2)))) = WFPair mprod (beyond-▷-contra (beyond-l↦-env step fill1 fill2) con1) con2 con3 con4 consist con5 (PreservationAna wt1 (StepLow fill1 step fill2)) wt2
     PreservationAna (WFPair {syn-snd = syn-snd} {ana-all = □ , •} (NTProdC DTProdNone) (▷Pair ▶•) (▷Pair ▶•) ▶• con4 (~N-pair consist) con5 wt1 wt2) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair1 fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair1 {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2)))) rewrite ~DVoid-right consist = 
       WFPair (NTProdC DTProdNone) (beyond-▷-contra (beyond-l↦-env step fill1 fill2) (▷Pair ▶•)) (▷Pair ▶•) ▶• (preservation-pair-lemma {syn2 = syn-snd} {ana = □ , •} (beyond-l↦-env-inner step fill1 fill2) =▷Refl con4) (~N-pair ~DVoidR) con5 (PreservationAna wt1 (StepLow fill1 step fill2)) wt2
-
     PreservationAna (WFPair {ana-all = ana-all , ★} mprod con1 con2 con3 con4 consist con5 wt1 wt2) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair2 fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair2 {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2)))) = WFPair mprod con1 (beyond-▷-contra (beyond-l↦-env step fill1 fill2) con2) con3 NUnless-dirty-▷ consist con5 wt1 (PreservationAna wt2 (StepLow fill1 step fill2))
     PreservationAna (WFPair {ana-all = ■ ana-all , •} mprod con1 con2 con3 con4 consist con5 wt1 wt2) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair2 fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair2 {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2)))) = WFPair mprod con1 (beyond-▷-contra (beyond-l↦-env step fill1 fill2) con2) con3 con4 consist con5 wt1 (PreservationAna wt2 (StepLow fill1 step fill2))
     PreservationAna (WFPair {syn-fst = syn-fst} {ana-all = □ , •} (NTProdC DTProdNone) (▷Pair ▶•) (▷Pair ▶•) ▶• con4 (~N-pair consist) con5 wt1 wt2) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair2 fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvPair2 {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2)))) rewrite ~DVoid-right consist = 
       WFPair (NTProdC DTProdNone) (▷Pair ▶•) (beyond-▷-contra (beyond-l↦-env step fill1 fill2) (▷Pair ▶•)) ▶• (preservation-pair-lemma {syn1 = syn-fst} {ana = □ , •} =▷Refl (beyond-l↦-env-inner step fill1 fill2) con4) (~N-pair ~DVoidR) con5 wt1 (PreservationAna wt2 (StepLow fill1 step fill2))
-    PreservationAna wf step = {!   !}
+      
+    PreservationAna (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (StepUp (FillSynEnvAnaRec (FillSynEnvSynRec (FillSynEnvTypFun (FillSynEnvAnaRec fill1)))) step (FillSynEnvAnaRec (FillSynEnvSynRec (FillSynEnvTypFun (FillSynEnvAnaRec {e' = e' ⇒ syn'} fill2))))) = WFTypFun x x₁ x₂ (preservation-typfun-lemma (beyond-u↦-env step fill1 fill2) x₃) x₄ x₅ (PreservationAna wf (StepUp (FillSynEnvAnaRec fill1) step (FillSynEnvAnaRec fill2)))
+    PreservationAna (WFTypFun {ana-all = ana-all , ★} x x₁ x₂ x₃ x₄ x₅ wf) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvTypFun fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvTypFun {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2)))) = WFTypFun x (beyond-▷-contra (beyond-l↦-env step fill1 fill2) x₁) x₂ NUnless-dirty-▷ x₄ x₅ (PreservationAna wf (StepLow fill1 step fill2))
+    PreservationAna (WFTypFun {ana-all = ■ ana-all , •} x x₁ x₂ x₃ x₄ x₅ wf) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvTypFun fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvTypFun {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2)))) = WFTypFun x (beyond-▷-contra (beyond-l↦-env step fill1 fill2) x₁) x₂ x₃ x₄ x₅ (PreservationAna wf (StepLow fill1 step fill2))
+    PreservationAna (WFTypFun {x = x} {ana-all = □ , •} (NTForallBindC DTForallBindNone) (▷Pair ▶•) ▶• x₃ (~N-pair con) x₅ wf) (StepLow (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvTypFun fill1))) step (FillAnaEnvAnaRec (FillAnaEnvSynRec (FillAnaEnvTypFun {e' = (e' ⇒ (syn' , n-syn')) [ m' ]⇐ ana'} fill2)))) 
+      = WFTypFun (NTForallBindC DTForallBindNone) (beyond-▷-contra (beyond-l↦-env step fill1 fill2) (▷Pair ▶•)) ▶• (preservation-typfun-lemma {x = x} {ana = □ , •} (beyond-l↦-env-inner step fill1 fill2) x₃) (~N-pair con) x₅ (PreservationAna wf (StepLow fill1 step fill2))
 
   PreservationProgram :  
     ∀ {p p'} ->
@@ -213,4 +244,4 @@ module Core.UpdatePreservation where
     (p P↦ p') ->     
     (P⊢ p') 
   PreservationProgram (WFProgram ana) (InsideStep step) = WFProgram (PreservationAna ana step)
-  PreservationProgram (WFProgram ana) TopStep = WFProgram (oldify-syn-inner ana)  
+  PreservationProgram (WFProgram ana) TopStep = WFProgram (oldify-syn-inner ana)    

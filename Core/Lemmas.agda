@@ -249,6 +249,14 @@ module Core.Lemmas where
     (x ≡ x' × t-body ≡ t-body' × m ≡ m')
   ▸NTForall-unicity (NTForallC match1) (NTForallC match2) with ▸DTForall-unicity match1 match2 
   ... | refl , refl , refl = refl , refl , refl
+
+  ▸DTForallBind-unicity : ∀ {d x t-body t-body' m m'} ->
+    d , x ▸DTForallBind t-body , m -> 
+    d , x ▸DTForallBind t-body' , m' -> 
+    (t-body ≡ t-body' × m ≡ m')
+  ▸DTForallBind-unicity DTForallBindNone DTForallBindNone = refl , refl
+  ▸DTForallBind-unicity (DTForallBindSome match1) (DTForallBindSome match2) with ▸TForallBind-unicity match1 match2
+  ... | refl , refl = refl , refl
   
   DSub-unicity : ∀ {t x d1 d2 d2'} -> 
     DSub t x d1 d2  -> 

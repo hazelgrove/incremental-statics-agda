@@ -31,6 +31,8 @@ module Core.Termination where
     surface-dirties-mid (EAp e-fun _ e-arg) = surface-dirties-low e-fun + surface-dirties-low e-arg
     surface-dirties-mid (EPair e-fst e-snd _) = surface-dirties-low e-fst + surface-dirties-low e-snd
     surface-dirties-mid (EProj _ e _) = surface-dirties-low e
+    surface-dirties-mid (ETypFun _ _ e) = surface-dirties-low e
+    surface-dirties-mid (ETypAp e _ (_ , n-arg)) = (new-number n-arg) + surface-dirties-low e
 
     surface-dirties-low : AnaExp -> ℕ
     surface-dirties-low (e [ _ ]⇐ _) = surface-dirties-up e
@@ -68,6 +70,8 @@ module Core.Termination where
     SkelMid (EProj _ e _) = S1 (SkelLow e)
     SkelMid (EAp e1 _ e2) = S2 (SkelLow e1) (SkelLow e2)
     SkelMid (EPair e1 e2 _) = S2 (SkelLow e1) (SkelLow e2)
+    SkelMid (ETypFun _ _ e) = S1 (SkelLow e)
+    SkelMid (ETypAp e _ _) = S1 (SkelLow e)
 
     SkelLow : AnaExp -> Skeleton  
     SkelLow (e [ _ ]⇐ _) = SkelUp e
@@ -109,6 +113,12 @@ module Core.Termination where
       <Pair=< : ∀ {s2 a1 a2 e1 e2 e3} ->
         <Low s2 e2 e3 -> 
         <Mid (S2 (SkelLow e1) s2) (EPair e1 e2 a1) (EPair e1 e3 a2)
+      <TypFun : ∀ {s a1 a2 a3 a4 e1 e2} ->
+        <Low s e1 e2 -> 
+        <Mid (S1 s) (ETypFun a1 a2 e1) (ETypFun a3 a4 e2)
+      <TypAp : ∀ {s a1 a2 a3 a4 e1 e2} ->
+        <Low s e1 e2 -> 
+        <Mid (S1 s) (ETypAp e1 a1 a2) (ETypAp e2 a3 a4)
 
     data <Low : Skeleton -> AnaExp -> AnaExp -> Set where 
       <Lower : ∀ {e1 e2 a1 a2 ana1 ana2} ->
@@ -165,6 +175,8 @@ module Core.Termination where
     <Mid-skel (<Ap=< x) rewrite (<Low-skel x) = refl
     <Mid-skel (<Pair< x eq) rewrite (<Low-skel x) rewrite eq = refl
     <Mid-skel (<Pair=< x) rewrite (<Low-skel x) = refl
+    <Mid-skel (<TypFun x) rewrite (<Low-skel x) = refl
+    <Mid-skel (<TypAp x) rewrite (<Low-skel x) = refl
     
     <Low-skel : ∀{s e1 e2} -> 
       <Low s e1 e2 -> 
@@ -192,6 +204,10 @@ module Core.Termination where
   var-update-preserves-surface-dirties (VSPair var-update1 var-update2) 
     rewrite var-update-preserves-surface-dirties var-update1
     rewrite var-update-preserves-surface-dirties var-update2 = refl
+  var-update-preserves-surface-dirties (VSTypFun var-update) 
+    rewrite var-update-preserves-surface-dirties var-update = refl
+  var-update-preserves-surface-dirties (VSTypAp var-update) 
+    rewrite var-update-preserves-surface-dirties var-update = refl
 
   var-update?-preserves-surface-dirties : ∀{x t m e e'} ->
     VariableUpdate? x t m e e' ->
@@ -205,6 +221,8 @@ module Core.Termination where
   StepDecreaseU StepAsc = <SynExp< (n<1+n _)
   StepDecreaseU (StepAp x) = <SynExp= refl (<Upper (<Ap< (<Lower= =★-refl (<Upper= <★C)) refl))
   StepDecreaseU (StepProj x) = <SynExp= refl (<Upper (<Proj (<Lower= =★-refl (<Upper= <★C))))
+  StepDecreaseU (StepTypApFun x x₁) = <SynExp= refl (<Upper (<TypAp (<Lower= =★-refl (<Upper= <★C))))
+  StepDecreaseU (StepTypApArg x x₁) = <SynExp< (n<1+n _)
 
   StepDecreaseL : ∀ {e e'} ->
     e l↦ e' -> 
@@ -220,6 +238,8 @@ module Core.Termination where
   StepDecreaseL (StepAnaPair x) = <AnaExp= refl (<Lower <★C refl)
   StepDecreaseL StepSynPairFst = <AnaExp= refl (<Lower= =★-refl (<Upper (<Pair< (<Lower= =★-refl (<Upper= <★C)) refl)))
   StepDecreaseL StepSynPairSnd = <AnaExp= refl (<Lower= =★-refl (<Upper (<Pair=< (<Lower= =★-refl (<Upper= <★C)))))
+  StepDecreaseL (StepAnaTypFun x) = <AnaExp= refl (<Lower <★C refl)
+  StepDecreaseL StepSynTypFun = <AnaExp= refl (<Lower= =★-refl (<Upper (<TypFun (<Lower= =★-refl (<Upper= <★C)))))
 
   mutual 
     
@@ -235,6 +255,8 @@ module Core.Termination where
     surface-dirties-um (SynEnvAp2 e-fun _ ε) = surface-dirties-low e-fun + surface-dirties-ul ε
     surface-dirties-um (SynEnvPair1 ε e-snd _) = surface-dirties-ul ε + surface-dirties-low e-snd
     surface-dirties-um (SynEnvPair2 e-fst ε _) = surface-dirties-low e-fst + surface-dirties-ul ε
+    surface-dirties-um (SynEnvTypFun _ _ ε) = surface-dirties-ul ε
+    surface-dirties-um (SynEnvTypAp ε _ (_ , n-arg)) = (new-number n-arg) + surface-dirties-ul ε
 
     surface-dirties-ul : SynEnvAna -> ℕ
     surface-dirties-ul (SynEnvAnaRec ε _ _) = surface-dirties-uu ε
@@ -252,7 +274,8 @@ module Core.Termination where
     surface-dirties-lm (AnaEnvAp2 e-fun _ ε) = surface-dirties-low e-fun + surface-dirties-ll ε
     surface-dirties-lm (AnaEnvPair1 ε e-snd _) = surface-dirties-ll ε + surface-dirties-low e-snd
     surface-dirties-lm (AnaEnvPair2 e-fst ε _) = surface-dirties-low e-fst + surface-dirties-ll ε
-
+    surface-dirties-lm (AnaEnvTypFun _ _ ε) = surface-dirties-ll ε
+    surface-dirties-lm (AnaEnvTypAp ε _ (_ , n-arg)) = (new-number n-arg) + surface-dirties-ll ε
 
     surface-dirties-ll : AnaEnvAna -> ℕ
     surface-dirties-ll A⊙ = 0
@@ -296,6 +319,12 @@ module Core.Termination where
     FillSynEnvCon-surface {e-in = e-in} (FillSynEnvPair2 {ε = ε} {e1 = e1} fill) 
       rewrite FillSynEnvAna-surface fill 
       = sym (+-assoc (surface-dirties-low e1) (surface-dirties-ul ε) (surface-dirties-up e-in))
+    FillSynEnvCon-surface {e-in = e-in} (FillSynEnvTypFun {ε = ε} fill) 
+      rewrite FillSynEnvAna-surface fill 
+      = refl
+    FillSynEnvCon-surface {e-in = e-in} (FillSynEnvTypAp {ε = ε} {t = (_ , n)} fill) 
+      rewrite FillSynEnvAna-surface fill 
+      = sym (+-assoc (new-number n) (surface-dirties-ul ε) (surface-dirties-up e-in))
 
     FillSynEnvAna-surface : ∀ {ε e e-in} ->
       ε S⟦ e-in ⟧A≡ e ->
@@ -339,6 +368,12 @@ module Core.Termination where
     FillAnaEnvCon-surface {e-in = e-in} (FillAnaEnvPair2 {ε = ε} {e1 = e1} fill) 
       rewrite FillAnaEnvAna-surface fill 
       = sym (+-assoc (surface-dirties-low e1) (surface-dirties-ll ε) (surface-dirties-low e-in))
+    FillAnaEnvCon-surface {e-in = e-in} (FillAnaEnvTypFun {ε = ε} fill) 
+      rewrite FillAnaEnvAna-surface fill 
+      = refl
+    FillAnaEnvCon-surface {e-in = e-in} (FillAnaEnvTypAp {ε = ε} {t = (_ , n)} fill) 
+      rewrite FillAnaEnvAna-surface fill 
+      = sym (+-assoc (new-number n) (surface-dirties-ll ε) (surface-dirties-low e-in))
 
     FillAnaEnvAna-surface : ∀ {ε e e-in} ->
       ε A⟦ e-in ⟧A≡ e ->
@@ -371,6 +406,8 @@ module Core.Termination where
     skel-lm (AnaEnvAp2 e1 _ e2) = SER (SkelLow e1) (skel-ll e2)
     skel-lm (AnaEnvPair1 e1 e2 _) = SEL (skel-ll e1) (SkelLow e2)
     skel-lm (AnaEnvPair2 e1 e2 _) = SER (SkelLow e1) (skel-ll e2)
+    skel-lm (AnaEnvTypFun _ _ e) = SE1 (skel-ll e)
+    skel-lm (AnaEnvTypAp e _ _) = SE1 (skel-ll e)
 
     skel-ll : AnaEnvAna -> SkelEnv 
     skel-ll A⊙ = S⊙
@@ -390,6 +427,8 @@ module Core.Termination where
     skel-um (SynEnvAp2 e1 _ e2) = SER (SkelLow e1) (skel-ul e2)
     skel-um (SynEnvPair1 e1 e2 _) = SEL (skel-ul e1) (SkelLow e2)
     skel-um (SynEnvPair2 e1 e2 _) = SER (SkelLow e1) (skel-ul e2)
+    skel-um (SynEnvTypFun _ _ e) = SE1 (skel-ul e)
+    skel-um (SynEnvTypAp e _ _) = SE1 (skel-ul e)
 
     skel-ul : SynEnvAna -> SkelEnv 
     skel-ul (SynEnvAnaRec e _ _) = skel-uu e
@@ -411,6 +450,8 @@ module Core.Termination where
     skel-lm-comm (FillAnaEnvAp2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ll-comm x)
     skel-lm-comm (FillAnaEnvPair1 {e2 = e2} x) = cong (λ a -> S2 a (SkelLow e2)) (skel-ll-comm x)
     skel-lm-comm (FillAnaEnvPair2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ll-comm x)
+    skel-lm-comm (FillAnaEnvTypFun x) = cong S1 (skel-ll-comm x)
+    skel-lm-comm (FillAnaEnvTypAp x) = cong S1 (skel-ll-comm x)
 
     skel-ll-comm : ∀ {ε e e-in} ->
       ε A⟦ e-in ⟧A≡ e ->
@@ -436,6 +477,8 @@ module Core.Termination where
     skel-um-comm (FillSynEnvAp2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ul-comm x)
     skel-um-comm (FillSynEnvPair1 {e2 = e2} x) = cong (λ a -> S2 a (SkelLow e2)) (skel-ul-comm x)
     skel-um-comm (FillSynEnvPair2 {e1 = e1} x) = cong (S2 (SkelLow e1)) (skel-ul-comm x)
+    skel-um-comm (FillSynEnvTypFun x) = cong S1 (skel-ul-comm x)
+    skel-um-comm (FillSynEnvTypAp x) = cong S1 (skel-ul-comm x)
 
     skel-ul-comm : ∀ {ε e e-in} ->
       ε S⟦ e-in ⟧A≡ e ->
@@ -463,6 +506,8 @@ module Core.Termination where
     FillAnaEnvCon-<Mid (FillAnaEnvAp2 fill1) (FillAnaEnvAp2 fill2) lt = <Ap=< (FillAnaEnvAna-<Low fill1 fill2 lt)
     FillAnaEnvCon-<Mid (FillAnaEnvPair1 fill1) (FillAnaEnvPair1 fill2) lt = <Pair< (FillAnaEnvAna-<Low fill1 fill2 lt) refl
     FillAnaEnvCon-<Mid (FillAnaEnvPair2 fill1) (FillAnaEnvPair2 fill2) lt = <Pair=< (FillAnaEnvAna-<Low fill1 fill2 lt)
+    FillAnaEnvCon-<Mid (FillAnaEnvTypFun fill1) (FillAnaEnvTypFun fill2) lt = <TypFun (FillAnaEnvAna-<Low fill1 fill2 lt)
+    FillAnaEnvCon-<Mid (FillAnaEnvTypAp fill1) (FillAnaEnvTypAp fill2) lt = <TypAp (FillAnaEnvAna-<Low fill1 fill2 lt)
 
     FillAnaEnvAna-<Low : ∀ {ε e e' e-in e-in' s} ->
       ε A⟦ e-in' ⟧A≡ e' ->
@@ -494,6 +539,8 @@ module Core.Termination where
     FillSynEnvCon-<Mid (FillSynEnvAp2 fill1) (FillSynEnvAp2 fill2) lt = <Ap=< (FillSynEnvAna-<Low fill1 fill2 lt)
     FillSynEnvCon-<Mid (FillSynEnvPair1 fill1) (FillSynEnvPair1 fill2) lt = <Pair< (FillSynEnvAna-<Low fill1 fill2 lt) refl
     FillSynEnvCon-<Mid (FillSynEnvPair2 fill1) (FillSynEnvPair2 fill2) lt = <Pair=< (FillSynEnvAna-<Low fill1 fill2 lt)
+    FillSynEnvCon-<Mid (FillSynEnvTypFun fill1) (FillSynEnvTypFun fill2) lt = <TypFun (FillSynEnvAna-<Low fill1 fill2 lt)
+    FillSynEnvCon-<Mid (FillSynEnvTypAp fill1) (FillSynEnvTypAp fill2) lt = <TypAp (FillSynEnvAna-<Low fill1 fill2 lt)
 
     FillSynEnvAna-<Low : ∀ {ε e e' e-in e-in' s} ->
       ε S⟦ e-in' ⟧A≡ e' ->
@@ -743,6 +790,38 @@ module Core.Termination where
     translate-acc-pair s1 s2 wf1 wf2 = translate-acc-pair' s1 s2 wf1 wf2 (wf1 _) (wf2 _) 
 
   mutual 
+
+    translate-acc-typfun' : ∀ {a1 a2 e} ->
+      (s : Skeleton) ->
+      Acc (<Low s) e ->
+      ∀ {e'} ->
+      (<Mid (S1 s) e' (ETypFun a1 a2 e)) -> 
+      (Acc (<Mid (S1 s)) e') 
+    translate-acc-typfun' s (acc ac) (<TypFun x) = translate-acc-typfun s (ac x)
+     
+    translate-acc-typfun : ∀ {a1 a2 e} ->
+      (s : Skeleton) ->
+      Acc (<Low s) e ->
+      Acc (<Mid (S1 s)) (ETypFun a1 a2 e)
+    translate-acc-typfun s ac = acc (translate-acc-typfun' s ac)
+
+  mutual 
+
+    translate-acc-typap' : ∀ {a1 a2 e} ->
+      (s : Skeleton) ->
+      Acc (<Low s) e ->
+      ∀ {e'} ->
+      (<Mid (S1 s) e' (ETypAp e a1 a2)) -> 
+      (Acc (<Mid (S1 s)) e') 
+    translate-acc-typap' s (acc ac) (<TypAp x) = translate-acc-typap s (ac x)
+     
+    translate-acc-typap : ∀ {a1 a2 e} ->
+      (s : Skeleton) ->
+      Acc (<Low s) e ->
+      Acc (<Mid (S1 s)) (ETypAp e a1 a2)
+    translate-acc-typap s ac = acc (translate-acc-typap' s ac)
+
+  mutual 
     
     <Up-wf-old' : 
       (s : Skeleton) ->
@@ -790,6 +869,8 @@ module Core.Termination where
     <Mid-wf' (S2 s1 s2) (EPair e1 e2 _) (<Pair< {e1 = e3} {e4} lt eq) with <Low-wf s2
     ... | weird = translate-acc-pair s1 s2 (<Low-wf s1) weird
     <Mid-wf' (S2 s1 s2) (EPair e1 e2 _) (<Pair=< lt) = translate-acc-pair s1 s2 (<Low-wf s1) (<Low-wf s2)
+    <Mid-wf' (S1 s) (ETypFun _ _ e) (<TypFun lt) = translate-acc-typfun s (<Low-wf' s e lt)
+    <Mid-wf' (S1 s) (ETypAp e _ _) (<TypAp lt) = translate-acc-typap s (<Low-wf' s e lt)
 
     <Mid-wf : (s : Skeleton) -> WellFounded (<Mid s)
     <Mid-wf s e = acc (<Mid-wf' s e)
