@@ -187,26 +187,26 @@ module Core.Termination where
   var-update-preserves-surface-dirties : ∀{x t m e e'} ->
     VariableUpdate x t m e e' ->
     surface-dirties-up e ≡ surface-dirties-up e'
-  var-update-preserves-surface-dirties VSConst = refl
-  var-update-preserves-surface-dirties VSHole = refl
-  var-update-preserves-surface-dirties VSVarEq = refl
-  var-update-preserves-surface-dirties (VSVarNeq _) = refl
-  var-update-preserves-surface-dirties VSFunEq = refl
-  var-update-preserves-surface-dirties (VSFunNeq _ var-update) 
+  var-update-preserves-surface-dirties VUConst = refl
+  var-update-preserves-surface-dirties VUHole = refl
+  var-update-preserves-surface-dirties VUVarEq = refl
+  var-update-preserves-surface-dirties (VUVarNeq _) = refl
+  var-update-preserves-surface-dirties VUFunEq = refl
+  var-update-preserves-surface-dirties (VUFunNeq _ var-update) 
     rewrite var-update-preserves-surface-dirties var-update = refl
-  var-update-preserves-surface-dirties (VSAsc var-update) 
+  var-update-preserves-surface-dirties (VUAsc var-update) 
     rewrite var-update-preserves-surface-dirties var-update = refl
-  var-update-preserves-surface-dirties (VSProj var-update) 
+  var-update-preserves-surface-dirties (VUProj var-update) 
     rewrite var-update-preserves-surface-dirties var-update = refl
-  var-update-preserves-surface-dirties (VSAp var-update1 var-update2) 
+  var-update-preserves-surface-dirties (VUAp var-update1 var-update2) 
     rewrite var-update-preserves-surface-dirties var-update1
     rewrite var-update-preserves-surface-dirties var-update2 = refl
-  var-update-preserves-surface-dirties (VSPair var-update1 var-update2) 
+  var-update-preserves-surface-dirties (VUPair var-update1 var-update2) 
     rewrite var-update-preserves-surface-dirties var-update1
     rewrite var-update-preserves-surface-dirties var-update2 = refl
-  var-update-preserves-surface-dirties (VSTypFun var-update) 
+  var-update-preserves-surface-dirties (VUTypFun var-update) 
     rewrite var-update-preserves-surface-dirties var-update = refl
-  var-update-preserves-surface-dirties (VSTypAp var-update) 
+  var-update-preserves-surface-dirties (VUTypAp var-update) 
     rewrite var-update-preserves-surface-dirties var-update = refl
 
   var-update?-preserves-surface-dirties : ∀{x t m e e'} ->
@@ -216,7 +216,7 @@ module Core.Termination where
   var-update?-preserves-surface-dirties {BVar x} = var-update-preserves-surface-dirties
 
   StepDecreaseU : ∀ {e e'} ->
-    e u↦ e' -> 
+    e s↦ e' -> 
     <SynExp e' e
   StepDecreaseU StepAsc = <SynExp< (n<1+n _)
   StepDecreaseU (StepAp x) = <SynExp= refl (<Upper (<Ap< (<Lower= =★-refl (<Upper= <★C)) refl))
@@ -225,7 +225,7 @@ module Core.Termination where
   StepDecreaseU (StepTypApArg x x₁) = <SynExp< (n<1+n _)
 
   StepDecreaseL : ∀ {e e'} ->
-    e l↦ e' -> 
+    e a↦ e' -> 
     <AnaExp e' e
   StepDecreaseL (StepAnnFun {e-body = e ⇒ _} {e-body' = e' ⇒ _} var-update) = <AnaExp< helper
     where 
@@ -596,7 +596,7 @@ module Core.Termination where
     fill' rewrite sym (skel-ul-comm fill1) = FillSynEnvAna-<Low fill1 fill2 lt 
   
   StepDecreaseLow : ∀ {e e'} ->
-    e L↦ e' -> 
+    e A↦ e' -> 
     <AnaExp e' e
   StepDecreaseLow (StepLow fill1 step fill2) = FillAnaEnvAna-<AnaExp fill2 fill1 (StepDecreaseL step)
   StepDecreaseLow (StepUp fill1 step fill2) = FillSynEnvAna-<AnaExp fill2 fill1 (StepDecreaseU step)

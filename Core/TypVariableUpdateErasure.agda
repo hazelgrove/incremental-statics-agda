@@ -33,7 +33,7 @@ module Core.TypVariableUpdateErasure where
 
   exp-tvar-update-erase : ∀{x m e e'} ->
     ExpTypVariableUpdate x m e e' ->
-    (U◇ e) ≡ (U◇ e')
+    (S◇ e) ≡ (S◇ e')
   exp-tvar-update-erase ETVUConst = refl
   exp-tvar-update-erase ETVUHole = refl
   exp-tvar-update-erase (ETVUFun tvu etvu)
@@ -60,6 +60,6 @@ module Core.TypVariableUpdateErasure where
     
   exp-tvar-update?-erase : ∀{x m e e'} ->
     ExpTypVariableUpdate? x m e e' ->
-    (U◇ e) ≡ (U◇ e')
+    (S◇ e) ≡ (S◇ e')
   exp-tvar-update?-erase {BHole} refl = refl
   exp-tvar-update?-erase {BVar x} vs = exp-tvar-update-erase vs

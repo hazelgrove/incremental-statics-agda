@@ -8,58 +8,58 @@ module Core.Quiescent where
 
 mutual 
 
-  data _U̸↦ : SynExp -> Set where 
+  data _S̸↦ : SynExp -> Set where 
     QuiescentUp : ∀ {e t} ->
-      e M̸↦ -> 
-      (e ⇒ (t , •)) U̸↦
+      e C̸↦ -> 
+      (e ⇒ (t , •)) S̸↦
 
-  data _M̸↦ : ConExp -> Set where 
+  data _C̸↦ : ConExp -> Set where
     QuiescentConst :
-      EConst M̸↦
+      EConst C̸↦
     QuiescentHole : 
-      EHole M̸↦
+      EHole C̸↦
     QuiescentFun : ∀ {x t e m1 m2} ->
-      e L̸↦ ->
-      ((EFun x (t , •) m1 m2 e)) M̸↦
+      e A̸↦ ->
+      ((EFun x (t , •) m1 m2 e)) C̸↦
     QuiescentAp : ∀ {m e1 e2} ->
-      e1 L̸↦ -> 
-      e2 L̸↦ -> 
-      ((EAp e1 m e2)) M̸↦
+      e1 A̸↦ -> 
+      e2 A̸↦ ->
+      ((EAp e1 m e2)) C̸↦
     QuiescentVar : ∀ {x m} ->
-      (EVar x m) M̸↦
+      (EVar x m) C̸↦
     QuiescentAsc : ∀ {t e} ->
-      e L̸↦ -> 
-      (EAsc (t , •) e) M̸↦
+      e A̸↦ -> 
+      (EAsc (t , •) e) C̸↦
     QuiescentPair : ∀ {m e1 e2} ->
-      e1 L̸↦ -> 
-      e2 L̸↦ -> 
-      ((EPair e1 e2 m)) M̸↦
+      e1 A̸↦ -> 
+      e2 A̸↦ -> 
+      ((EPair e1 e2 m)) C̸↦
     QuiescentProj : ∀ {s e m} ->
-      e L̸↦ -> 
-      ((EProj s e m)) M̸↦
+      e A̸↦ -> 
+      ((EProj s e m)) C̸↦
     QuiescentTypFun : ∀ {x m e} ->
-      e L̸↦ ->
-      ((ETypFun x m e)) M̸↦
+      e A̸↦ ->
+      ((ETypFun x m e)) C̸↦
     QuiescentTypAp : ∀ {m e t} ->
-      e L̸↦ -> 
-      ((ETypAp e m (t , •))) M̸↦
+      e A̸↦ -> 
+      ((ETypAp e m (t , •))) C̸↦
 
-  data _L̸↦ : AnaExp -> Set where 
+  data _A̸↦ : AnaExp -> Set where 
     QuiescentLow : ∀ {t e m} ->
-      e U̸↦ ->
-      (e [ m ]⇐ (t , •)) L̸↦
+      e S̸↦ ->
+      (e [ m ]⇐ (t , •)) A̸↦
 
-data _almost-U̸↦ : SynExp -> Set where 
+data _almost-S̸↦ : SynExp -> Set where 
   AlmostQuiescentUp : ∀ {n e t} ->
-    e M̸↦ -> 
-    (e ⇒ (t , n)) almost-U̸↦
+    e C̸↦ -> 
+    (e ⇒ (t , n)) almost-S̸↦
 
-data _almost-L̸↦ : AnaExp -> Set where 
+data _almost-A̸↦ : AnaExp -> Set where 
   AlmostQuiescentLow : ∀ {t e m} ->
-    e almost-U̸↦ ->
-    (e [ m ]⇐ (t , •)) almost-L̸↦
+    e almost-S̸↦ ->
+    (e [ m ]⇐ (t , •)) almost-A̸↦
 
 data _P̸↦ : Program -> Set where 
   QuiescentProgram : ∀ {p} ->
-    (AnaExpOfProgram p) L̸↦  -> 
+    (AnaExpOfProgram p) A̸↦  -> 
     p P̸↦

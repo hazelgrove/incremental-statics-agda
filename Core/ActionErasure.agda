@@ -42,72 +42,72 @@ module Core.ActionErasure where
   AT↦-erase (AProdTwo step) = ABareProdTwo (AT↦-erase step)
   AT↦-erase (AForall step) = ABareForall (AT↦-erase step)
   
-  αU↦-erase : ∀ {Γ α e e'} ->
-    (Γ ⊢ α , e αU↦ e') ->
-    (α , (U◇ e) αB↦ (U◇ e'))
-  αU↦-erase ActInsertConst = ActInsertConst
-  αU↦-erase ActWrapFun = ActWrapFun
-  αU↦-erase ActWrapApOne = ActWrapApOne
-  αU↦-erase ActWrapApTwo = ActWrapApTwo
-  αU↦-erase ActWrapAsc = ActWrapAsc
-  αU↦-erase ActWrapPairOne = ActWrapPairOne
-  αU↦-erase ActWrapPairTwo = ActWrapPairTwo
-  αU↦-erase ActWrapProj = ActWrapProj
-  αU↦-erase ActWrapTypFun = ActWrapTypFun
-  αU↦-erase ActWrapTypAp = ActWrapTypAp
-  αU↦-erase ActDelete = ActDelete
-  αU↦-erase ActUnwrapApOne = ActUnwrapApOne
-  αU↦-erase ActUnwrapApTwo = ActUnwrapApTwo
-  αU↦-erase ActUnwrapAsc = ActUnwrapAsc
-  αU↦-erase ActUnwrapPairOne = ActUnwrapPairOne
-  αU↦-erase ActUnwrapPairTwo = ActUnwrapPairTwo
-  αU↦-erase ActUnwrapProj = ActUnwrapProj
-  αU↦-erase (ActUnwrapTypFun in-ctx update) 
+  αS↦-erase : ∀ {Γ α e e'} ->
+    (Γ ⊢ α , e αS↦ e') ->
+    (α , (S◇ e) αB↦ (S◇ e'))
+  αS↦-erase ActInsertConst = ActInsertConst
+  αS↦-erase ActWrapFun = ActWrapFun
+  αS↦-erase ActWrapApOne = ActWrapApOne
+  αS↦-erase ActWrapApTwo = ActWrapApTwo
+  αS↦-erase ActWrapAsc = ActWrapAsc
+  αS↦-erase ActWrapPairOne = ActWrapPairOne
+  αS↦-erase ActWrapPairTwo = ActWrapPairTwo
+  αS↦-erase ActWrapProj = ActWrapProj
+  αS↦-erase ActWrapTypFun = ActWrapTypFun
+  αS↦-erase ActWrapTypAp = ActWrapTypAp
+  αS↦-erase ActDelete = ActDelete
+  αS↦-erase ActUnwrapApOne = ActUnwrapApOne
+  αS↦-erase ActUnwrapApTwo = ActUnwrapApTwo
+  αS↦-erase ActUnwrapAsc = ActUnwrapAsc
+  αS↦-erase ActUnwrapPairOne = ActUnwrapPairOne
+  αS↦-erase ActUnwrapPairTwo = ActUnwrapPairTwo
+  αS↦-erase ActUnwrapProj = ActUnwrapProj
+  αS↦-erase (ActUnwrapTypFun in-ctx update) 
     rewrite exp-tvar-update?-erase update = ActUnwrapTypFun
-  αU↦-erase ActUnwrapTypAp = ActUnwrapTypAp
-  αU↦-erase (ActInsertVar in-ctx) = ActInsertVar
-  αU↦-erase (ActUnwrapFun x var-update) 
+  αS↦-erase ActUnwrapTypAp = ActUnwrapTypAp
+  αS↦-erase (ActInsertVar in-ctx) = ActInsertVar
+  αS↦-erase (ActUnwrapFun x var-update) 
     rewrite var-update?-erase var-update = ActUnwrapFun
-  αU↦-erase (ActDeleteBinder in-ctx var-update) 
+  αS↦-erase (ActDeleteBinder in-ctx var-update) 
     rewrite var-update?-erase var-update = ActDeleteBinder
-  αU↦-erase (ActInsertBinder var-update)
+  αS↦-erase (ActInsertBinder var-update)
     rewrite var-update?-erase var-update = ActInsertBinder
-  αU↦-erase (ActDeleteTypBinder in-ctx update)
+  αS↦-erase (ActDeleteTypBinder in-ctx update)
     rewrite exp-tvar-update?-erase update = ActDeleteTypBinder
-  αU↦-erase (ActInsertTypBinder update)
+  αS↦-erase (ActInsertTypBinder update)
     rewrite exp-tvar-update?-erase update = ActInsertTypBinder
 
-  αL↦-erase : ∀ {Γ α e e'} ->
-    (Γ ⊢ α , e αL↦ e') ->
-    (α , (L◇ e) αB↦ (L◇ e'))
-  αL↦-erase (ALC x) = αU↦-erase x
+  αA↦-erase : ∀ {Γ α e e'} ->
+    (Γ ⊢ α , e αA↦ e') ->
+    (α , (A◇ e) αB↦ (A◇ e'))
+  αA↦-erase (ALC x) = αS↦-erase x
 
   mutual 
-    AU↦-erase : ∀ {Γ A e e'} ->
-      (Γ ⊢ A , e AU↦ e') ->
-      (A , (U◇ e) AB↦ (U◇ e'))
-    AU↦-erase (AUpMid step) = AM↦-erase step
+    AS↦-erase : ∀ {Γ A e e'} ->
+      (Γ ⊢ A , e AS↦ e') ->
+      (A , (S◇ e) AB↦ (S◇ e'))
+    AS↦-erase (AUpMid step) = AM↦-erase step
 
     AM↦-erase : ∀ {Γ A e e'} ->
       (Γ ⊢ A , e AM↦ e') ->
-      (A , (M◇ e) AB↦ (M◇ e'))
+      (A , (C◇ e) AB↦ (C◇ e'))
     AM↦-erase (AMidAscOne step) = ABareAscOne (AT↦-erase step)
-    AM↦-erase (AMidAscTwo step) = ABareAscTwo (AL↦-erase step)
+    AM↦-erase (AMidAscTwo step) = ABareAscTwo (AA↦-erase step)
     AM↦-erase (AMidFunOne step) = ABareFunOne (AT↦-erase step)
-    AM↦-erase (AMidFunTwo step) = ABareFunTwo (AL↦-erase step)
-    AM↦-erase (AMidApOne step) = ABareApOne (AL↦-erase step)
-    AM↦-erase (AMidApTwo step) = ABareApTwo (AL↦-erase step)
-    AM↦-erase (AMidPairOne step) = ABarePairOne (AL↦-erase step)
-    AM↦-erase (AMidPairTwo step) = ABarePairTwo (AL↦-erase step)
-    AM↦-erase (AMidProj step) = ABareProj (AL↦-erase step)
+    AM↦-erase (AMidFunTwo step) = ABareFunTwo (AA↦-erase step)
+    AM↦-erase (AMidApOne step) = ABareApOne (AA↦-erase step)
+    AM↦-erase (AMidApTwo step) = ABareApTwo (AA↦-erase step)
+    AM↦-erase (AMidPairOne step) = ABarePairOne (AA↦-erase step)
+    AM↦-erase (AMidPairTwo step) = ABarePairTwo (AA↦-erase step)
+    AM↦-erase (AMidProj step) = ABareProj (AA↦-erase step)
  
-    AL↦-erase : ∀ {Γ A e e'} ->
-      (Γ ⊢ A , e AL↦ e') ->
-      (A , (L◇ e) AB↦ (L◇ e')) 
-    AL↦-erase (ALowDone step) = ABareDone (αL↦-erase step)
-    AL↦-erase (ALowUp step) = AU↦-erase step 
+    AA↦-erase : ∀ {Γ A e e'} ->
+      (Γ ⊢ A , e AA↦ e') ->
+      (A , (A◇ e) AB↦ (A◇ e')) 
+    AA↦-erase (ALowDone step) = ABareDone (αA↦-erase step)
+    AA↦-erase (ALowUp step) = AS↦-erase step 
 
   AP↦-erase : ∀ {A p p'} -> 
     (A , p AP↦ p') ->
     (A , (P◇ p) AB↦ (P◇ p'))
-  AP↦-erase (AStepProgram step) = AL↦-erase step
+  AP↦-erase (AStepProgram step) = AA↦-erase step

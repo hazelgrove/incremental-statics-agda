@@ -20,7 +20,7 @@ module Core.Progress where
 
     productive-syn-syn : ∀{Γ e t n} ->
       SubsumableMid e ->
-      e M̸↦ -> 
+      e C̸↦ -> 
       Γ S⊢ (e ⇒ (t , n)) ->
       ∃[ t' ] (t ≡ ■ t') 
     productive-syn-syn SubsumableConst QuiescentConst (WFConst (▷Pair ▶•)) = _ , refl
@@ -35,8 +35,8 @@ module Core.Progress where
     ... | _ , refl | NTForallC (DTForallSome x) | NSub-pair (NSubSome x₂) | ▷Pair ▶• = _ , refl
 
     productive-syn-ana : ∀{Γ e t m n} ->
-      e M̸↦ -> 
-      Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ (□ , •)) ->
+      e C̸↦ -> 
+      Γ A⊢ ((e ⇒ (t , n)) [ m ]⇐ (□ , •)) ->
       ∃[ t' ] (t ≡ ■ t') 
     productive-syn-ana settled (WFSubsume x x₁ x₂ x₃) = productive-syn-syn x settled x₃
     productive-syn-ana (QuiescentFun (QuiescentLow (QuiescentUp settled))) (WFFun wf (NTArrowC DTArrowNone) a2 (▷Pair ▶•) a4 a5 a6 a7 a8 ana) with productive-syn-ana settled ana | a6
@@ -48,7 +48,7 @@ module Core.Progress where
 
   dirty-ana-steps-syn-inner : ∀ {Γ e m t} ->
     Γ S⊢ e ->
-    ∃[ e' ] (e [ m ]⇐ (t , ★)) l↦ e' 
+    ∃[ e' ] (e [ m ]⇐ (t , ★)) a↦ e' 
   dirty-ana-steps-syn-inner (WFConst (▷Pair x)) = _ , StepAna SubsumableConst (proj₂ (~D-dec _ _)) 
   dirty-ana-steps-syn-inner (WFHole x) = _ , StepAna SubsumableHole (proj₂ (~D-dec _ _)) 
   dirty-ana-steps-syn-inner (WFAp x x₁ x₂ x₃ x₄ x₅) = _ , StepAna SubsumableAp (proj₂ (~D-dec _ _)) 
@@ -59,21 +59,21 @@ module Core.Progress where
 
   dirty-ana-steps-syn : ∀ {Γ e m t} ->
     Γ S⊢ e ->
-    ∃[ e' ] (e [ m ]⇐ (t , ★)) L↦ e' 
+    ∃[ e' ] (e [ m ]⇐ (t , ★)) A↦ e' 
   dirty-ana-steps-syn syn with dirty-ana-steps-syn-inner syn 
   ... | e' , step = e' , (StepLow FillA⊙ step FillA⊙)
 
   dirty-ana-steps-inner : ∀ {Γ e m t} ->
-    Γ L⊢ ((e [ m ]⇐ (t , ★))) ->
-    ∃[ e' ] (e [ m ]⇐ (t , ★)) l↦ e' 
+    Γ A⊢ ((e [ m ]⇐ (t , ★))) ->
+    ∃[ e' ] (e [ m ]⇐ (t , ★)) a↦ e' 
   dirty-ana-steps-inner (WFSubsume x x₁ x₂ syn) = dirty-ana-steps-syn-inner syn
   dirty-ana-steps-inner (WFFun _ x x₁ x₂ x₃ x₄ x₅ x₆ x₇ ana) = _ , (StepAnaFun (proj₂ (proj₂ (proj₂ (▸DTArrow-dec _)))) (■~D-pair (proj₂ (~D-dec _ _))))
   dirty-ana-steps-inner (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) = _ , StepAnaPair (proj₂ (proj₂ (proj₂ (▸DTProd-dec _))))
   dirty-ana-steps-inner (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) = _ , StepAnaTypFun (proj₂ (proj₂ (▸DTForallBind-dec _ _)))
   
   dirty-ana-steps : ∀ {Γ e m t} ->
-    Γ L⊢ (e [ m ]⇐ (t , ★)) ->
-    ∃[ e' ] (e [ m ]⇐ (t , ★)) L↦ e' 
+    Γ A⊢ (e [ m ]⇐ (t , ★)) ->
+    ∃[ e' ] (e [ m ]⇐ (t , ★)) A↦ e' 
   dirty-ana-steps ana with dirty-ana-steps-inner ana 
   ... | e' , step = e' , (StepLow FillA⊙ step FillA⊙)
 
@@ -90,20 +90,20 @@ module Core.Progress where
 
   var-update-dec : ∀ {e x t m} ->
     ∃[ e' ] (VariableUpdate x t m e e')
-  var-update-dec {EConst ⇒ x₁} = (EConst ⇒ x₁) , VSConst
-  var-update-dec {EHole ⇒ x₁} = (EHole ⇒ x₁) , VSHole
-  var-update-dec {EAp (x [ x₄ ]⇐ x₅) x₂ (x₃ [ x₆ ]⇐ x₇) ⇒ x₁} = _ , (VSAp (proj₂ var-update-dec) (proj₂ var-update-dec))
-  var-update-dec {EAsc x (x₂ [ x₃ ]⇐ x₄) ⇒ x₁} = _ , (VSAsc (proj₂ var-update-dec))
+  var-update-dec {EConst ⇒ x₁} = (EConst ⇒ x₁) , VUConst
+  var-update-dec {EHole ⇒ x₁} = (EHole ⇒ x₁) , VUHole
+  var-update-dec {EAp (x [ x₄ ]⇐ x₅) x₂ (x₃ [ x₆ ]⇐ x₇) ⇒ x₁} = _ , (VUAp (proj₂ var-update-dec) (proj₂ var-update-dec))
+  var-update-dec {EAsc x (x₂ [ x₃ ]⇐ x₄) ⇒ x₁} = _ , (VUAsc (proj₂ var-update-dec))
   var-update-dec {EFun x x₂ x₃ x₄ (x₅ [ x₆ ]⇐ x₇) ⇒ x₁} {y} with ((BVar y) ≡B? x) 
-  ... | yes refl = _ , VSFunEq 
-  ... | no neq = _ , VSFunNeq neq (proj₂ var-update-dec)
+  ... | yes refl = _ , VUFunEq 
+  ... | no neq = _ , VUFunNeq neq (proj₂ var-update-dec)
   var-update-dec {EVar x x₂ ⇒ x₁} {y} with (y ≡? x) 
-  ... | yes refl = _ , VSVarEq 
-  ... | no neq = _ , VSVarNeq neq
-  var-update-dec {EPair (x [ x₂ ]⇐ x₄) (x₅ [ x₆ ]⇐ x₇) x₃ ⇒ x₁} = _ , (VSPair (proj₂ var-update-dec) (proj₂ var-update-dec))
-  var-update-dec {EProj x (x₂ [ x₄ ]⇐ x₅) x₃ ⇒ x₁} = _ , VSProj (proj₂ var-update-dec)
-  var-update-dec {ETypFun x x₁ (x₂ [ x₃ ]⇐ x₄) ⇒ x₅} = _ , VSTypFun (proj₂ var-update-dec)
-  var-update-dec {ETypAp (x [ x₁ ]⇐ x₂) x₃ x₄ ⇒ x₅} = _ , VSTypAp (proj₂ var-update-dec)
+  ... | yes refl = _ , VUVarEq 
+  ... | no neq = _ , VUVarNeq neq
+  var-update-dec {EPair (x [ x₂ ]⇐ x₄) (x₅ [ x₆ ]⇐ x₇) x₃ ⇒ x₁} = _ , (VUPair (proj₂ var-update-dec) (proj₂ var-update-dec))
+  var-update-dec {EProj x (x₂ [ x₄ ]⇐ x₅) x₃ ⇒ x₁} = _ , VUProj (proj₂ var-update-dec)
+  var-update-dec {ETypFun x x₁ (x₂ [ x₃ ]⇐ x₄) ⇒ x₅} = _ , VUTypFun (proj₂ var-update-dec)
+  var-update-dec {ETypAp (x [ x₁ ]⇐ x₂) x₃ x₄ ⇒ x₅} = _ , VUTypAp (proj₂ var-update-dec)
 
   var-update?-dec : ∀ {x e t m} ->
     ∃[ e' ] (VariableUpdate? x t m e e')
@@ -120,7 +120,7 @@ module Core.Progress where
     ProgressUp :  
       ∀ {Γ e} ->
       (Γ S⊢ e) ->      
-      (∃[ e' ] (e U↦ e')) + (e almost-U̸↦)
+      (∃[ e' ] (e S↦ e')) + (e almost-S̸↦)
     ProgressUp (WFConst consist) = Inr (AlmostQuiescentUp QuiescentConst)
     ProgressUp (WFHole consist) = Inr (AlmostQuiescentUp QuiescentHole)
     ProgressUp (WFAp marrow x₁ x₂ x₃ syn ana) with ProgressLow syn | ProgressLow ana 
@@ -148,8 +148,8 @@ module Core.Progress where
 
     ProgressLow :  
       ∀ {Γ e} ->
-      (Γ L⊢ e) ->      
-      (∃[ e' ] (e L↦ e')) + (e almost-L̸↦)
+      (Γ A⊢ e) ->      
+      (∃[ e' ] (e A↦ e')) + (e almost-A̸↦)
     ProgressLow (WFSubsume subsumable consist m-consist syn) with ProgressUp syn 
     ProgressLow (WFSubsume subsumable consist m-consist syn) | Inl (e' , step) = Inl (_ , StepUpLow (FillSynEnvAnaRec FillS⊙) step (FillSynEnvAnaRec FillS⊙))
     ProgressLow (WFSubsume {ana-all = t , ★} subsumable consist m-consist syn) | Inr settled = Inl (dirty-ana-steps-syn syn)
@@ -188,7 +188,7 @@ module Core.Progress where
 
 
   step-preserves-program : ∀ {p e} -> 
-    AnaExpOfProgram p L↦ e -> 
+    AnaExpOfProgram p A↦ e -> 
     ∃[ p' ] (e ≡ AnaExpOfProgram p')
   step-preserves-program {p = Root e n} (StepUp (FillSynEnvAnaRec x) step (FillSynEnvAnaRec x₁)) = Root _ _ , refl
   step-preserves-program {p = Root e n} (StepLow (FillAnaEnvAnaRec x) step (FillAnaEnvAnaRec x₁)) = Root _ _ , refl
@@ -216,8 +216,8 @@ module Core.Progress where
     
     UnProgressUp : ∀ {Γ e e'} ->
       (Γ S⊢ e) ->  
-      (e U↦ e') -> 
-      (e U̸↦) ->
+      (e S↦ e') -> 
+      (e S̸↦) ->
       ⊥ 
     UnProgressUp (WFConst x) (StepUp FillS⊙ () FillS⊙) settled
     UnProgressUp (WFHole x) (StepUp FillS⊙ () FillS⊙) settled
@@ -247,9 +247,9 @@ module Core.Progress where
     UnProgressUp (WFTypAp _ _ _ _ _ wf) (StepLow (FillAnaEnvSynRec (FillAnaEnvTypAp fill1)) step (FillAnaEnvSynRec (FillAnaEnvTypAp fill2))) (QuiescentUp (QuiescentTypAp settled)) = UnProgressLow wf (StepLow fill1 step fill2) settled
 
     UnProgressLow : ∀ {Γ e e'} ->
-      (Γ L⊢ e) ->  
-      (e L↦ e') -> 
-      (e L̸↦) ->
+      (Γ A⊢ e) ->  
+      (e A↦ e') -> 
+      (e A̸↦) ->
       ⊥ 
     UnProgressLow (WFSubsume _ _ _ syn) (StepLow FillA⊙ (StepSyn _) FillA⊙) (QuiescentLow ())
     UnProgressLow (WFSubsume _ _ _ syn) (StepLow (FillAnaEnvAnaRec fill1) step (FillAnaEnvAnaRec fill2)) (QuiescentLow settled) = UnProgressUp syn (StepLow fill1 step fill2) settled

@@ -336,9 +336,9 @@ module Core.TypVariableUpdatePreservation where
   mutual 
 
     preservation-etvu-unwrap-equiv-ana : ∀ {Γ Γ' e} ->
-      Γ L⊢ e ->
+      Γ A⊢ e ->
       etvu-unwrap-equiv Γ Γ' ->
-      Γ' L⊢ e
+      Γ' A⊢ e
     preservation-etvu-unwrap-equiv-ana (WFSubsume x x₁ x₂ x₃) equiv = WFSubsume x x₁ x₂ (preservation-etvu-unwrap-equiv-syn x₃ equiv)
     preservation-etvu-unwrap-equiv-ana (WFFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ x₈ wf) equiv = WFFun (preservation-etvu-unwrap-equiv x equiv) x₁ x₂ x₃ x₄ x₅ x₆ x₇ x₈ (preservation-etvu-unwrap-equiv-ana wf (ETVUUEVCons? equiv))
     preservation-etvu-unwrap-equiv-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wf wf₁) equiv = WFPair x x₁ x₂ x₃ x₄ x₅ x₆ (preservation-etvu-unwrap-equiv-ana wf equiv) (preservation-etvu-unwrap-equiv-ana wf₁ equiv)
@@ -379,11 +379,11 @@ module Core.TypVariableUpdatePreservation where
 
     preservation-etvu-unwrap-ana :
       ∀ {x Γ Γ' e e' m m' ana} ->
-      Γ L⊢ (e [ m' ]⇐ ana) ->
+      Γ A⊢ (e [ m' ]⇐ ana) ->
       x T∈ Γ' , m ->
       ExpTypVariableUpdate x m e e' ->
       etvu-unwrap-inv x Γ Γ' ->
-      Γ' L⊢ (e' [ m' ]⇐ ana)
+      Γ' A⊢ (e' [ m' ]⇐ ana)
     preservation-etvu-unwrap-ana {e' = e' ⇒ syn'} (WFSubsume x x₁ x₂ syn) inctx etvu inv with etvu-syn etvu 
     ... | refl = WFSubsume (etvu-subsumable etvu x) x₁ x₂ (preservation-etvu-unwrap-syn syn inctx etvu inv)
     preservation-etvu-unwrap-ana (WFFun typ x₁ x₂ x₃ x₄ x₅ x₆ x₇ x₈ ana) inctx (ETVUFun {e-body' = e' ⇒ syn'} tvu etvu) inv 
@@ -418,10 +418,10 @@ module Core.TypVariableUpdatePreservation where
  
   preservation-etvu-unwrap-ana? :
     ∀ {x Γ e e' m m' ana} ->
-    (x T∷? Γ) L⊢ (e [ m' ]⇐ ana) ->
+    (x T∷? Γ) A⊢ (e [ m' ]⇐ ana) ->
     x T∈? Γ , m ->
     ExpTypVariableUpdate? x m e e' ->
-    Γ L⊢ (e' [ m' ]⇐ ana)
+    Γ A⊢ (e' [ m' ]⇐ ana)
   preservation-etvu-unwrap-ana? {BHole} wf inctx refl = wf
   preservation-etvu-unwrap-ana? {BVar x} wf inctx etvu = preservation-etvu-unwrap-ana wf inctx etvu ETVUUInit
 
@@ -544,9 +544,9 @@ module Core.TypVariableUpdatePreservation where
   mutual 
 
     preservation-etvu-wrap-equiv-ana : ∀ {Γ Γ' e} ->
-      Γ L⊢ e ->
+      Γ A⊢ e ->
       etvu-wrap-equiv Γ Γ' ->
-      Γ' L⊢ e
+      Γ' A⊢ e
     preservation-etvu-wrap-equiv-ana (WFSubsume x x₁ x₂ x₃) equiv = WFSubsume x x₁ x₂ (preservation-etvu-wrap-equiv-syn x₃ equiv)
     preservation-etvu-wrap-equiv-ana (WFFun x x₁ x₂ x₃ x₄ x₅ x₆ x₇ x₈ wf) equiv = WFFun (preservation-etvu-wrap-equiv x equiv) x₁ x₂ x₃ x₄ x₅ x₆ x₇ x₈ (preservation-etvu-wrap-equiv-ana wf (ETVUWEVCons? equiv))
     preservation-etvu-wrap-equiv-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wf wf₁) equiv = WFPair x x₁ x₂ x₃ x₄ x₅ x₆ (preservation-etvu-wrap-equiv-ana wf equiv) (preservation-etvu-wrap-equiv-ana wf₁ equiv)
@@ -587,10 +587,10 @@ module Core.TypVariableUpdatePreservation where
 
     preservation-etvu-wrap-ana :
       ∀ {x Γ Γ' e e' m' ana} ->
-      Γ L⊢ (e [ m' ]⇐ ana) ->
+      Γ A⊢ (e [ m' ]⇐ ana) ->
       ExpTypVariableUpdate x ✔ e e' ->
       etvu-wrap-inv x Γ Γ' ->
-      Γ' L⊢ (e' [ m' ]⇐ ana)
+      Γ' A⊢ (e' [ m' ]⇐ ana)
     preservation-etvu-wrap-ana {e' = e' ⇒ syn'} (WFSubsume x x₁ x₂ syn) etvu inv with etvu-syn etvu 
     ... | refl = WFSubsume (etvu-subsumable etvu x) x₁ x₂ (preservation-etvu-wrap-syn syn etvu inv)
     preservation-etvu-wrap-ana (WFFun typ x₁ x₂ x₃ x₄ x₅ x₆ x₇ x₈ ana) (ETVUFun {e-body' = e' ⇒ syn'} tvu etvu) inv 
@@ -624,8 +624,8 @@ module Core.TypVariableUpdatePreservation where
  
   preservation-etvu-wrap-ana-outer :
     ∀ {x Γ e e' m ana} ->
-    Γ L⊢ (e [ m ]⇐ ana) ->
+    Γ A⊢ (e [ m ]⇐ ana) ->
     ExpTypVariableUpdate x ✔ e e' ->
-    (x T∷ Γ) L⊢ (e' [ m ]⇐ ana)
+    (x T∷ Γ) A⊢ (e' [ m ]⇐ ana)
   preservation-etvu-wrap-ana-outer wf etvu = preservation-etvu-wrap-ana wf etvu ETVUWInit
  

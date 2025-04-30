@@ -16,34 +16,34 @@ module Core.VariableUpdatePreservation where
     VariableUpdate x t m (e ⇒ syn) (e' ⇒ syn') -> 
     SubsumableMid e ->
     SubsumableMid e'
-  var-update-subsumable VSConst SubsumableConst = SubsumableConst
-  var-update-subsumable VSHole SubsumableHole = SubsumableHole
-  var-update-subsumable VSFunEq ()
-  var-update-subsumable (VSFunNeq neq var-update) ()
-  var-update-subsumable (VSAp var-update1 var-update2) SubsumableAp = SubsumableAp
-  var-update-subsumable VSVarEq SubsumableVar = SubsumableVar
-  var-update-subsumable (VSVarNeq _) SubsumableVar = SubsumableVar
-  var-update-subsumable (VSAsc var-update) SubsumableAsc = SubsumableAsc
-  var-update-subsumable (VSProj var-update) SubsumableProj = SubsumableProj
-  var-update-subsumable (VSPair var-update var-update₁) ()
-  var-update-subsumable (VSTypFun var-update) ()
-  var-update-subsumable (VSTypAp var-update) SubsumableTypAp = SubsumableTypAp
+  var-update-subsumable VUConst SubsumableConst = SubsumableConst
+  var-update-subsumable VUHole SubsumableHole = SubsumableHole
+  var-update-subsumable VUFunEq ()
+  var-update-subsumable (VUFunNeq neq var-update) ()
+  var-update-subsumable (VUAp var-update1 var-update2) SubsumableAp = SubsumableAp
+  var-update-subsumable VUVarEq SubsumableVar = SubsumableVar
+  var-update-subsumable (VUVarNeq _) SubsumableVar = SubsumableVar
+  var-update-subsumable (VUAsc var-update) SubsumableAsc = SubsumableAsc
+  var-update-subsumable (VUProj var-update) SubsumableProj = SubsumableProj
+  var-update-subsumable (VUPair var-update var-update₁) ()
+  var-update-subsumable (VUTypFun var-update) ()
+  var-update-subsumable (VUTypAp var-update) SubsumableTypAp = SubsumableTypAp
 
   var-update-beyond : ∀ {x t m e syn e' syn'} ->
     VariableUpdate x t m (e ⇒ syn) (e' ⇒ syn') -> 
     =▷ syn syn' 
-  var-update-beyond VSConst = =▷Refl
-  var-update-beyond VSHole = =▷Refl
-  var-update-beyond VSFunEq = =▷Refl
-  var-update-beyond (VSFunNeq neq syn) = =▷Refl
-  var-update-beyond (VSAp syn syn₁) = =▷Refl
-  var-update-beyond VSVarEq = =▷★
-  var-update-beyond (VSVarNeq x) = =▷Refl
-  var-update-beyond (VSAsc syn) = =▷Refl
-  var-update-beyond (VSPair syn syn₁) = =▷Refl
-  var-update-beyond (VSProj syn) = =▷Refl
-  var-update-beyond (VSTypFun vs) = =▷Refl
-  var-update-beyond (VSTypAp vs) = =▷Refl
+  var-update-beyond VUConst = =▷Refl
+  var-update-beyond VUHole = =▷Refl
+  var-update-beyond VUFunEq = =▷Refl
+  var-update-beyond (VUFunNeq neq syn) = =▷Refl
+  var-update-beyond (VUAp syn syn₁) = =▷Refl
+  var-update-beyond VUVarEq = =▷★
+  var-update-beyond (VUVarNeq x) = =▷Refl
+  var-update-beyond (VUAsc syn) = =▷Refl
+  var-update-beyond (VUPair syn syn₁) = =▷Refl
+  var-update-beyond (VUProj syn) = =▷Refl
+  var-update-beyond (VUTypFun vs) = =▷Refl
+  var-update-beyond (VUTypAp vs) = =▷Refl
 
   var-update?-beyond : ∀ {x t m e syn e' syn'} ->
     VariableUpdate? x t m (e ⇒ syn) (e' ⇒ syn') -> 
@@ -245,8 +245,8 @@ module Core.VariableUpdatePreservation where
 
     ctx-inv-ana : ∀ {Γ Γ' e} ->
       CtxEquiv Γ Γ' ->
-      Γ L⊢ e ->
-      Γ' L⊢ e
+      Γ A⊢ e ->
+      Γ' A⊢ e
     ctx-inv-ana equiv (WFSubsume x x₁ x₂ x₃) = WFSubsume x x₁ x₂ (ctx-inv-syn equiv x₃)
     ctx-inv-ana equiv (WFFun wf x x₁ x₂ x₃ x₄ x₅ x₆ x₇ ana) = WFFun (ctx-equiv-t equiv wf) x x₁ x₂ x₃ x₄ x₅ x₆ x₇ (ctx-inv-ana (CtxEquivCons? equiv) ana)
     ctx-inv-ana equiv (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wf wf₁) = WFPair x x₁ x₂ x₃ x₄ x₅ x₆ (ctx-inv-ana equiv wf) (ctx-inv-ana equiv wf₁)
@@ -268,16 +268,16 @@ module Core.VariableUpdatePreservation where
 
     preservation-vars-ana :
       ∀ {Γ Γ' x t n m' e e' ana} ->
-      Γ L⊢ (e [ m' ]⇐ ana) ->
+      Γ A⊢ (e [ m' ]⇐ ana) ->
       VariableUpdate x t ✔ e e' ->
       CtxInv x t n Γ Γ' ->
-      Γ' L⊢ (e' [ m' ]⇐ ana)
+      Γ' A⊢ (e' [ m' ]⇐ ana)
     preservation-vars-ana {e' = e-all' ⇒ syn-all'} {ana = ana} (WFSubsume subsumable consist-t consist-m syn) var-update ctx-inv with ~N-dec syn-all' ana 
     ... | m-consist' , consist-t' = WFSubsume (var-update-subsumable var-update subsumable) consist-t' (beyond-▶ (beyond-through-~N (var-update-beyond var-update) consist-t consist-t') consist-m) (preservation-var-update syn var-update ctx-inv)
-    preservation-vars-ana (WFFun {t-asc = t-asc} wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunNeq {e-body' = e-body' ⇒ syn-body'} neq var-update) ctx-inv = WFFun (ctx-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma {t = t-asc} (var-update?-beyond var-update) consist-syn) consist-all consist-m-all (preservation-vars-ana ana var-update (CtxInvNeq? neq ctx-inv))    
-    preservation-vars-ana (WFFun wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunEq) ctx-inv = WFFun (ctx-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all (ctx-inv-ana (CtxEquivInit ctx-inv) ana)
-    preservation-vars-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wf wf₁) (VSPair {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} vs vs₁) ctx-inv = WFPair x x₁ x₂ x₃ (preservation-pair-lemma (var-update?-beyond vs) (var-update?-beyond vs₁) x₄) x₅ x₆ (preservation-vars-ana wf vs ctx-inv) (preservation-vars-ana wf₁ vs₁ ctx-inv)
-    preservation-vars-ana (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (VSTypFun {e-body' = e' ⇒ syn'} vs) ctx-inv = WFTypFun x x₁ x₂ (preservation-typfun-lemma (var-update?-beyond vs) x₃) x₄ x₅ (preservation-vars-ana wf vs (CtxInvTCons? ctx-inv))
+    preservation-vars-ana (WFFun {t-asc = t-asc} wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VUFunNeq {e-body' = e-body' ⇒ syn-body'} neq var-update) ctx-inv = WFFun (ctx-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma {t = t-asc} (var-update?-beyond var-update) consist-syn) consist-all consist-m-all (preservation-vars-ana ana var-update (CtxInvNeq? neq ctx-inv))    
+    preservation-vars-ana (WFFun wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VUFunEq) ctx-inv = WFFun (ctx-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all (ctx-inv-ana (CtxEquivInit ctx-inv) ana)
+    preservation-vars-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wf wf₁) (VUPair {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} vs vs₁) ctx-inv = WFPair x x₁ x₂ x₃ (preservation-pair-lemma (var-update?-beyond vs) (var-update?-beyond vs₁) x₄) x₅ x₆ (preservation-vars-ana wf vs ctx-inv) (preservation-vars-ana wf₁ vs₁ ctx-inv)
+    preservation-vars-ana (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (VUTypFun {e-body' = e' ⇒ syn'} vs) ctx-inv = WFTypFun x x₁ x₂ (preservation-typfun-lemma (var-update?-beyond vs) x₃) x₄ x₅ (preservation-vars-ana wf vs (CtxInvTCons? ctx-inv))
 
     preservation-var-update :
       ∀ {Γ Γ' x t n e e'} ->
@@ -285,35 +285,35 @@ module Core.VariableUpdatePreservation where
       VariableUpdate x t ✔ e e' ->
       CtxInv x t n Γ Γ' ->
       Γ' S⊢ e'
-    preservation-var-update (WFConst consist) VSConst ctx-inv = WFConst consist
-    preservation-var-update (WFHole consist) VSHole ctx-inv = WFHole consist
-    preservation-var-update (WFAp marrow consist-syn consist-ana consist-mark syn ana) (VSAp {e1' = e-fun' ⇒ syn-fun'} var-update-fun var-update-arg) ctx-inv with ▸NTArrow-dec syn-fun' 
+    preservation-var-update (WFConst consist) VUConst ctx-inv = WFConst consist
+    preservation-var-update (WFHole consist) VUHole ctx-inv = WFHole consist
+    preservation-var-update (WFAp marrow consist-syn consist-ana consist-mark syn ana) (VUAp {e1' = e-fun' ⇒ syn-fun'} var-update-fun var-update-arg) ctx-inv with ▸NTArrow-dec syn-fun' 
     ... | t-in-fun' , t-out-fun' , m-fun' , marrow' with beyond-▸NTArrow (var-update-beyond var-update-fun) marrow marrow' 
     ... | t-in-beyond , t-out-beyond , m-beyond = WFAp marrow' (beyond-▷ t-out-beyond consist-syn) (beyond-▷ t-in-beyond consist-ana) (beyond-▶ m-beyond consist-mark) (preservation-vars-ana syn var-update-fun ctx-inv) (preservation-vars-ana ana var-update-arg ctx-inv)
-    preservation-var-update {t = t} (WFVar in-ctx consist) VSVarEq ctx-inv = WFVar (ctx-inv-access-eq ctx-inv) (▷Pair ▶Same)
-    preservation-var-update (WFVar in-ctx consist) (VSVarNeq neq) ctx-inv = WFVar (ctx-inv-access-neq ctx-inv (λ eq → neq (sym eq)) in-ctx) consist
-    preservation-var-update (WFAsc wf consist-syn consist-ana ana) (VSAsc var-update) ctx-inv = WFAsc (ctx-inv-t ctx-inv wf) consist-syn consist-ana (preservation-vars-ana ana var-update ctx-inv)
-    preservation-var-update (WFProj {s = s} mprod x₁ x₂ x₃) (VSProj {e' = e-body' ⇒ syn-body'} vs) ctx-inv with ▸NTProj-dec s syn-body' 
+    preservation-var-update {t = t} (WFVar in-ctx consist) VUVarEq ctx-inv = WFVar (ctx-inv-access-eq ctx-inv) (▷Pair ▶Same)
+    preservation-var-update (WFVar in-ctx consist) (VUVarNeq neq) ctx-inv = WFVar (ctx-inv-access-neq ctx-inv (λ eq → neq (sym eq)) in-ctx) consist
+    preservation-var-update (WFAsc wf consist-syn consist-ana ana) (VUAsc var-update) ctx-inv = WFAsc (ctx-inv-t ctx-inv wf) consist-syn consist-ana (preservation-vars-ana ana var-update ctx-inv)
+    preservation-var-update (WFProj {s = s} mprod x₁ x₂ x₃) (VUProj {e' = e-body' ⇒ syn-body'} vs) ctx-inv with ▸NTProj-dec s syn-body' 
     ... | t-side-body' , m-body' , mprod' with beyond-▸NTProj (var-update-beyond vs) mprod mprod' 
     ... | t-beyond , m-beyond = WFProj mprod' (beyond-▷ t-beyond x₁) (beyond-▶ m-beyond x₂) (preservation-vars-ana x₃ vs ctx-inv)
-    preservation-var-update (WFTypAp x mforall x₂ sub x₃ x₅) (VSTypAp {e' = e' ⇒ syn'} {t' = t'} vs) ctx-inv with ▸NTForall-dec syn' 
+    preservation-var-update (WFTypAp x mforall x₂ sub x₃ x₅) (VUTypAp {e' = e' ⇒ syn'} {t' = t'} vs) ctx-inv with ▸NTForall-dec syn' 
     ... | x' , t-body' , m' , mforall' with beyond-▸NTForall (var-update-beyond vs) mforall mforall' | NSub-dec t' x' t-body'
     ... | x-beyond , t-beyond , m-beyond | t' , sub' with beyond-NSub x-beyond =▷Refl t-beyond sub sub'
     ... | d-beyond = WFTypAp (ctx-inv-t ctx-inv x) mforall' (beyond-▶ m-beyond x₂) sub' (beyond-▷ d-beyond x₃) (preservation-vars-ana x₅ vs ctx-inv)
 
   preservation-vars-ana? :
     ∀ {x Γ t e e' n m' ana} ->
-    Γ L⊢ (e [ m' ]⇐ ana) ->
+    Γ A⊢ (e [ m' ]⇐ ana) ->
     VariableUpdate? x t ✔ e e' ->
-    (x ∶ t , n ∷? Γ) L⊢ (e' [ m' ]⇐ ana)
+    (x ∶ t , n ∷? Γ) A⊢ (e' [ m' ]⇐ ana)
   preservation-vars-ana? {BHole} ana refl = ana
   preservation-vars-ana? {BVar x} ana var-update = preservation-vars-ana ana var-update CtxInvInit
 
   preservation-vars-ana?-step :
     ∀ {x Γ t e e' m' ana} ->
-    (x ∶ t , ★ ∷? Γ) L⊢ (e [ m' ]⇐ ana) ->
+    (x ∶ t , ★ ∷? Γ) A⊢ (e [ m' ]⇐ ana) ->
     VariableUpdate? x t ✔ e e' ->
-    (x ∶ t , • ∷? Γ) L⊢ (e' [ m' ]⇐ ana)
+    (x ∶ t , • ∷? Γ) A⊢ (e' [ m' ]⇐ ana)
   preservation-vars-ana?-step {BHole} ana refl = ana
   preservation-vars-ana?-step {BVar x} ana var-update = preservation-vars-ana ana var-update CtxInvInit2
 
@@ -321,16 +321,16 @@ module Core.VariableUpdatePreservation where
 
     preservation-vars-unwrap-ana :
       ∀ {Γ Γ' x t m m' e e' ana} ->
-      Γ L⊢ (e [ m' ]⇐ ana) ->
+      Γ A⊢ (e [ m' ]⇐ ana) ->
       VariableUpdate x t m e e' ->
       UnwrapInv x t m Γ Γ' ->
-      Γ' L⊢ (e' [ m' ]⇐ ana)
+      Γ' A⊢ (e' [ m' ]⇐ ana)
     preservation-vars-unwrap-ana {e' = e-all' ⇒ syn-all'} {ana = ana} (WFSubsume subsumable consist-t consist-m syn) var-update ctx-inv with ~N-dec syn-all' ana 
     ... | m-consist' , consist-t' = WFSubsume (var-update-subsumable var-update subsumable) consist-t' (beyond-▶ (beyond-through-~N (var-update-beyond var-update) consist-t consist-t') consist-m) (preservation-vars-unwrap-syn syn var-update ctx-inv)
-    preservation-vars-unwrap-ana (WFFun {t-asc = t-asc} wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunNeq {e-body' = e-body' ⇒ syn-body'} neq var-update) ctx-inv = WFFun (unwrap-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma {t = t-asc} (var-update?-beyond var-update) consist-syn) consist-all consist-m-all (preservation-vars-unwrap-ana ana var-update (UnwrapInvCons? neq ctx-inv))    
-    preservation-vars-unwrap-ana (WFFun wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VSFunEq) ctx-inv = WFFun (unwrap-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all (ctx-inv-ana (CtxEquivUnwrapInit ctx-inv) ana)
-    preservation-vars-unwrap-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wf wf₁) (VSPair {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} vs vs₁) ctx-inv = WFPair x x₁ x₂ x₃ (preservation-pair-lemma (var-update?-beyond vs) (var-update?-beyond vs₁) x₄) x₅ x₆ (preservation-vars-unwrap-ana wf vs ctx-inv) (preservation-vars-unwrap-ana wf₁ vs₁ ctx-inv)
-    preservation-vars-unwrap-ana (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (VSTypFun {e-body' = e' ⇒ syn'} vs) ctx-inv = WFTypFun x x₁ x₂ (preservation-typfun-lemma (var-update?-beyond vs) x₃) x₄ x₅ (preservation-vars-unwrap-ana wf vs (UnwrapInvTCons? ctx-inv))
+    preservation-vars-unwrap-ana (WFFun {t-asc = t-asc} wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VUFunNeq {e-body' = e-body' ⇒ syn-body'} neq var-update) ctx-inv = WFFun (unwrap-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body (preservation-lambda-lemma {t = t-asc} (var-update?-beyond var-update) consist-syn) consist-all consist-m-all (preservation-vars-unwrap-ana ana var-update (UnwrapInvCons? neq ctx-inv))    
+    preservation-vars-unwrap-ana (WFFun wf marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) (VUFunEq) ctx-inv = WFFun (unwrap-inv-t ctx-inv wf) marrow consist consist-ana consist-asc consist-body consist-syn consist-all consist-m-all (ctx-inv-ana (CtxEquivUnwrapInit ctx-inv) ana)
+    preservation-vars-unwrap-ana (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wf wf₁) (VUPair {e1' = e1' ⇒ syn1'} {e2' = e2' ⇒ syn2'} vs vs₁) ctx-inv = WFPair x x₁ x₂ x₃ (preservation-pair-lemma (var-update?-beyond vs) (var-update?-beyond vs₁) x₄) x₅ x₆ (preservation-vars-unwrap-ana wf vs ctx-inv) (preservation-vars-unwrap-ana wf₁ vs₁ ctx-inv)
+    preservation-vars-unwrap-ana (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) (VUTypFun {e-body' = e' ⇒ syn'} vs) ctx-inv = WFTypFun x x₁ x₂ (preservation-typfun-lemma (var-update?-beyond vs) x₃) x₄ x₅ (preservation-vars-unwrap-ana wf vs (UnwrapInvTCons? ctx-inv))
 
 
     preservation-vars-unwrap-syn :
@@ -339,18 +339,18 @@ module Core.VariableUpdatePreservation where
       VariableUpdate x t m e e' ->
       UnwrapInv x t m Γ Γ' ->
       Γ' S⊢ e'
-    preservation-vars-unwrap-syn (WFConst consist) VSConst ctx-inv = WFConst consist
-    preservation-vars-unwrap-syn (WFHole consist) VSHole ctx-inv = WFHole consist
-    preservation-vars-unwrap-syn (WFAp marrow consist-syn consist-ana consist-mark syn ana) (VSAp {e1' = e-fun' ⇒ syn-fun'} var-update-fun var-update-arg) ctx-inv with ▸NTArrow-dec syn-fun' 
+    preservation-vars-unwrap-syn (WFConst consist) VUConst ctx-inv = WFConst consist
+    preservation-vars-unwrap-syn (WFHole consist) VUHole ctx-inv = WFHole consist
+    preservation-vars-unwrap-syn (WFAp marrow consist-syn consist-ana consist-mark syn ana) (VUAp {e1' = e-fun' ⇒ syn-fun'} var-update-fun var-update-arg) ctx-inv with ▸NTArrow-dec syn-fun' 
     ... | t-in-fun' , t-out-fun' , m-fun' , marrow' with beyond-▸NTArrow (var-update-beyond var-update-fun) marrow marrow' 
     ... | t-in-beyond , t-out-beyond , m-beyond = WFAp marrow' (beyond-▷ t-out-beyond consist-syn) (beyond-▷ t-in-beyond consist-ana) (beyond-▶ m-beyond consist-mark) (preservation-vars-unwrap-ana syn var-update-fun ctx-inv) (preservation-vars-unwrap-ana ana var-update-arg ctx-inv)
-    preservation-vars-unwrap-syn {t = t} (WFVar in-ctx consist) VSVarEq ctx-inv = WFVar (proj₂ (unwrap-inv-access-eq ctx-inv)) (▷Pair ▶Same)
-    preservation-vars-unwrap-syn (WFVar in-ctx consist) (VSVarNeq neq) ctx-inv = WFVar (unwrap-inv-access-neq ctx-inv neq in-ctx) consist
-    preservation-vars-unwrap-syn (WFAsc wf consist-syn consist-ana ana) (VSAsc var-update) ctx-inv = WFAsc (unwrap-inv-t ctx-inv wf) consist-syn consist-ana (preservation-vars-unwrap-ana ana var-update ctx-inv)
-    preservation-vars-unwrap-syn (WFProj {s = s} mprod x₁ x₂ x₃) (VSProj {e' = e-body' ⇒ syn-body'} vs) ctx-inv with ▸NTProj-dec s syn-body' 
+    preservation-vars-unwrap-syn {t = t} (WFVar in-ctx consist) VUVarEq ctx-inv = WFVar (proj₂ (unwrap-inv-access-eq ctx-inv)) (▷Pair ▶Same)
+    preservation-vars-unwrap-syn (WFVar in-ctx consist) (VUVarNeq neq) ctx-inv = WFVar (unwrap-inv-access-neq ctx-inv neq in-ctx) consist
+    preservation-vars-unwrap-syn (WFAsc wf consist-syn consist-ana ana) (VUAsc var-update) ctx-inv = WFAsc (unwrap-inv-t ctx-inv wf) consist-syn consist-ana (preservation-vars-unwrap-ana ana var-update ctx-inv)
+    preservation-vars-unwrap-syn (WFProj {s = s} mprod x₁ x₂ x₃) (VUProj {e' = e-body' ⇒ syn-body'} vs) ctx-inv with ▸NTProj-dec s syn-body' 
     ... | t-side-body' , m-body' , mprod' with beyond-▸NTProj (var-update-beyond vs) mprod mprod' 
     ... | t-beyond , m-beyond = WFProj mprod' (beyond-▷ t-beyond x₁) (beyond-▶ m-beyond x₂) (preservation-vars-unwrap-ana x₃ vs ctx-inv)
-    preservation-vars-unwrap-syn (WFTypAp x mforall x₂ sub x₃ x₅) (VSTypAp {e' = e' ⇒ syn'} {t' = t'} vs) ctx-inv with ▸NTForall-dec syn' 
+    preservation-vars-unwrap-syn (WFTypAp x mforall x₂ sub x₃ x₅) (VUTypAp {e' = e' ⇒ syn'} {t' = t'} vs) ctx-inv with ▸NTForall-dec syn' 
     ... | x' , t-body' , m' , mforall' with beyond-▸NTForall (var-update-beyond vs) mforall mforall' | NSub-dec t' x' t-body'
     ... | x-beyond , t-beyond , m-beyond | t' , sub' with beyond-NSub x-beyond =▷Refl t-beyond sub sub'
     ... | d-beyond = WFTypAp (unwrap-inv-t ctx-inv x) mforall' (beyond-▶ m-beyond x₂) sub' (beyond-▷ d-beyond x₃) (preservation-vars-unwrap-ana x₅ vs ctx-inv)
@@ -358,8 +358,8 @@ module Core.VariableUpdatePreservation where
   preservation-vars-unwrap : 
     ∀ {x Γ t t-old e e' m m' ana n} ->
     (x , (t , n) ∈? Γ , m) -> 
-    (x ∶ t-old ∷? Γ) L⊢ (e [ m' ]⇐ ana) ->
+    (x ∶ t-old ∷? Γ) A⊢ (e [ m' ]⇐ ana) ->
     VariableUpdate? x t m e e' ->
-    Γ L⊢ (e' [ m' ]⇐ ana)
+    Γ A⊢ (e' [ m' ]⇐ ana)
   preservation-vars-unwrap {BHole} in-ctx ana refl = ana 
   preservation-vars-unwrap {BVar x} in-ctx ana var-update = preservation-vars-unwrap-ana ana var-update (UnwrapInvInit in-ctx)     

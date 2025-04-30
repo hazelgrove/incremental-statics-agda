@@ -69,7 +69,7 @@ module Core.QuiescentValidity where
 
   barren-subsumable : ∀ {e} ->
     SubsumableMid e ->
-    BareSubsumable (M◇ e)
+    BareSubsumable (C◇ e)
   barren-subsumable SubsumableConst = BareSubsumableConst
   barren-subsumable SubsumableHole = BareSubsumableHole
   barren-subsumable SubsumableAp = BareSubsumableAp
@@ -79,7 +79,7 @@ module Core.QuiescentValidity where
   barren-subsumable SubsumableTypAp = BareSubsumableTypAp
 
   -- ana-edge-wt : ∀ {Γ e m t} ->
-  --   Γ L⊢ ((e ⇒ (■ t , •)) [ m ]⇐ (□ , •)) -> 
+  --   Γ A⊢ ((e ⇒ (■ t , •)) [ m ]⇐ (□ , •)) -> 
   --   m ≡ ✔
   -- ana-edge-wt (WFSubsume _ (~N-pair ~DVoidR) ▶• _) = refl
   -- ana-edge-wt (WFFun _ _ _ _ _ _ _ (~N-pair ~DVoidR) ▶• _) = refl
@@ -115,9 +115,9 @@ module Core.QuiescentValidity where
       
     quiescent-validity-up : ∀ {Γ e} ->
       Γ S⊢ e ->
-      e U̸↦ ->
+      e S̸↦ ->
       Ctx• Γ -> 
-      QuiescentValidityUp (Γ◇ Γ) (U◇ e) e
+      QuiescentValidityUp (Γ◇ Γ) (S◇ e) e
     quiescent-validity-up (WFConst (▷Pair ▶•)) (QuiescentUp QuiescentConst) ctx-old = QuiescentValidityUpSyn MarkConst
     quiescent-validity-up (WFHole (▷Pair ▶•)) (QuiescentUp QuiescentHole) ctx-old = QuiescentValidityUpSyn MarkHole
     quiescent-validity-up (WFAp (NTArrowC marrow) (▷Pair ▶•) (▷Pair ▶•) ▶• syn ana) (QuiescentUp (QuiescentAp (QuiescentLow settled1) (QuiescentLow settled2))) ctx-old with quiescent-validity-low syn (QuiescentLow settled1) ctx-old | quiescent-validity-low ana (QuiescentLow settled2) ctx-old
@@ -135,10 +135,10 @@ module Core.QuiescentValidity where
     ... | NTForallC (DTForallSome mforall) | NSub-pair (NSubSome sub) | ▶• | ▷Pair ▶• = QuiescentValidityUpSyn (MarkTypAp syn' mforall (validity-typ typ) sub)
 
     quiescent-validity-low : ∀ {Γ e} ->
-      Γ L⊢ e ->
-      e L̸↦ ->
+      Γ A⊢ e ->
+      e A̸↦ ->
       Ctx• Γ -> 
-      QuiescentValidityLow (Γ◇ Γ) (L◇ e) e
+      QuiescentValidityLow (Γ◇ Γ) (A◇ e) e
     quiescent-validity-low (WFSubsume {ana-all = □ , n} x consist m-consist x₃) (QuiescentLow settled) ctx-old with quiescent-validity-up x₃ settled ctx-old 
     ... | QuiescentValidityUpSyn syn with consist | m-consist
     ... | ~N-pair ~DVoidR | ▶• = QuiescentValidityLowSyn syn

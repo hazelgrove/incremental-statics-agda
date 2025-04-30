@@ -465,24 +465,24 @@ module Core.Lemmas where
   oldify-syn (WFTypAp x x₁ x₂ x₃ (▷Pair x₄) x₅) = WFTypAp x x₁ x₂ x₃ (▷Pair x₄) x₅
 
   oldify-syn-inner : ∀ {Γ e t m n n'} ->
-    Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ (□ , n')) ->
-    Γ L⊢ ((e ⇒ (t , •)) [ ✔ ]⇐ (□ , n'))
+    Γ A⊢ ((e ⇒ (t , n)) [ m ]⇐ (□ , n')) ->
+    Γ A⊢ ((e ⇒ (t , •)) [ ✔ ]⇐ (□ , n'))
   oldify-syn-inner (WFSubsume subsumable (~N-pair consist) consist-m syn) = WFSubsume subsumable (~N-pair ~DVoidR) ▶Same (oldify-syn syn)
   oldify-syn-inner (WFFun wf (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ x₅ x₆ x₇ syn) = WFFun wf (NTArrowC DTArrowNone) (■~N-pair (~N-pair ~DVoidR)) x₂ x₃ x₄ (beyond-▷-contra ◁▷C x₅) (~N-pair ~DVoidR) ▶Same syn
   oldify-syn-inner (WFPair (NTProdC DTProdNone) (▷Pair x) (▷Pair x₁) x₃ x₄ x₅ x₆ w w₁) = WFPair (NTProdC DTProdNone) (▷Pair x) (▷Pair x₁) x₃ (beyond-▷-contra ◁▷C x₄) (~N-pair ~DVoidR) ▶Same w w₁
   oldify-syn-inner (WFTypFun (NTForallBindC DTForallBindNone) (▷Pair x) x₂ (▷Pair x₁) x₄ x₅ wf) = WFTypFun (NTForallBindC DTForallBindNone) (▷Pair x) x₂ (▷Pair x₁) (~N-pair ~DVoidR) ▶Same wf
 
   dirty-syn-inner : ∀ {Γ e n m m' ana t} ->
-    Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ ana) -> 
-    Γ L⊢ ((e ⇒ (t , ★)) [ m' ]⇐ ana)
+    Γ A⊢ ((e ⇒ (t , n)) [ m ]⇐ ana) -> 
+    Γ A⊢ ((e ⇒ (t , ★)) [ m' ]⇐ ana)
   dirty-syn-inner (WFSubsume x (~N-pair x₁) x₂ x₃) = WFSubsume x (~N-pair x₁) ▶★ (oldify-syn x₃)
   dirty-syn-inner (WFFun wf x x₁ x₂ x₃ x₄ (▷Pair x₅) (~N-pair x₆) x₇ wt) = WFFun wf x x₁ x₂ x₃ x₄ (▷Pair x₅) (~N-pair x₆) ▶★ wt
   dirty-syn-inner (WFPair (NTProdC y) (▷Pair x) (▷Pair x₁) x₃ x₄ (~N-pair x₅) x₆ w w₁) = WFPair (NTProdC y) (▷Pair x) (▷Pair x₁) x₃ (beyond-▷-contra ◁▷C x₄) (~N-pair x₅) ▶★ w w₁
   dirty-syn-inner (WFTypFun (NTForallBindC x) (▷Pair x₁) x₂ (▷Pair x₃) (~N-pair x₄) x₅ wf) = WFTypFun (NTForallBindC x) (▷Pair x₁) x₂ (▷Pair x₃) (~N-pair x₄) ▶★ wf
 
   dirty-ana : ∀ {Γ e n n' m m' ana t t'} ->
-    Γ L⊢ ((e ⇒ (t , n)) [ m ]⇐ ana) -> 
-    Γ L⊢ ((e ⇒ (t , n')) [ m' ]⇐ (t' , ★))
+    Γ A⊢ ((e ⇒ (t , n)) [ m ]⇐ ana) -> 
+    Γ A⊢ ((e ⇒ (t , n')) [ m' ]⇐ (t' , ★))
   dirty-ana {n' = n'} {t = t} {t' = t'} (WFSubsume {syn-all = syn-all} subsumable consist-t consist-m syn) with ~N-dec (t , n') (t' , ★)
   ... | _ , (~N-pair consist-t') = WFSubsume subsumable (~N-pair consist-t') ▶★-max-r (oldify-syn syn)
   dirty-ana {t = t} {t' = t'} (WFFun {syn-all = syn-all} {syn-body = syn-body , n-body} {t-asc = t-asc , n-asc} wf (NTArrowC _) (■~N-pair (~N-pair consist)) consist-ana consist-asc consist-body consist-syn consist-all consist-m-all ana) with ▸NTArrow-dec (t' , ★)
@@ -495,8 +495,8 @@ module Core.Lemmas where
   dirty-ana {t = t} {t' = t'} (WFTypFun (NTForallBindC x) (▷Pair x₁) x₂ (▷Pair x₃) (~N-pair x₄) x₅ wf) = WFTypFun (NTForallBindC (proj₂ (proj₂ (▸DTForallBind-dec _ _)))) (▷Pair ▶★) ▶★ NUnless-dirty-▷ (~N-pair (proj₂ (~D-dec _ _))) ▶★-max-r wf
 
   small-dirty-ana : ∀ {Γ e m m' ana t} ->
-    Γ L⊢ (e [ m ]⇐ ana) -> 
-    Γ L⊢ (e [ m' ]⇐ (t , ★))
+    Γ A⊢ (e [ m ]⇐ ana) -> 
+    Γ A⊢ (e [ m' ]⇐ (t , ★))
   small-dirty-ana {e = e ⇒ (t , n)} ana = dirty-ana ana
 
   data DirtierCtx : Ctx -> Ctx -> Set where  
@@ -582,14 +582,14 @@ module Core.Lemmas where
 
     dirtier-ctx-l : ∀{Γ Γ' e} ->
       DirtierCtx Γ Γ' -> 
-      Γ' L⊢ e ->
-      Γ L⊢ e
+      Γ' A⊢ e ->
+      Γ A⊢ e
     dirtier-ctx-l dirtier (WFSubsume x x₁ x₂ x₃) = WFSubsume x x₁ x₂ (dirtier-ctx-u dirtier x₃)
     dirtier-ctx-l dirtier (WFFun {x = x} wf x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ wt) = WFFun (dirtier-ctx-t dirtier wf) x₀ x₁ x₂ x₃ x₄ x₅ x₆ x₇ (dirtier-ctx-l (DirtierCtxCons? {x} dirtier) wt)
     dirtier-ctx-l dirtier (WFPair x x₁ x₂ x₃ x₄ x₅ x₆ wt wt₁) = WFPair x x₁ x₂ x₃ x₄ x₅ x₆ (dirtier-ctx-l dirtier wt) (dirtier-ctx-l dirtier wt₁)
     dirtier-ctx-l dirtier (WFTypFun x x₁ x₂ x₃ x₄ x₅ wf) = WFTypFun x x₁ x₂ x₃ x₄ x₅ (dirtier-ctx-l (DirtierCtxTCons? dirtier) wf)
 
   dirty-ctx : ∀{Γ x t t' e} ->  
-    (x ∶ t ∷? Γ) L⊢ e ->  
-    (x ∶ (t' , ★) ∷? Γ) L⊢ e        
+    (x ∶ t ∷? Γ) A⊢ e ->  
+    (x ∶ (t' , ★) ∷? Γ) A⊢ e        
   dirty-ctx {x = x} = dirtier-ctx-l (DirtierCtxInit? {x})  

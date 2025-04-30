@@ -17,26 +17,26 @@ module Core.Marking where
 
   mutual 
 
-    U◇ : SynExp -> BareExp
-    U◇ (e ⇒ syn) = M◇ e
+    S◇ : SynExp -> BareExp
+    S◇ (e ⇒ syn) = C◇ e
 
-    M◇ : ConExp -> BareExp 
-    M◇ EConst = BareEConst
-    M◇ EHole = BareEHole
-    M◇ (EVar x _) = (BareEVar x)
-    M◇ (EAsc (t , _) e) = (BareEAsc (T◇ t) (L◇ e))
-    M◇ (EFun x (t , _) _ _ e) = (BareEFun x (T◇ t) (L◇ e))
-    M◇ (EAp e1 _ e2) = (BareEAp (L◇ e1) (L◇ e2))
-    M◇ (EPair e1 e2 _) = (BareEPair (L◇ e1) (L◇ e2))
-    M◇ (EProj s e _) = (BareEProj s (L◇ e))
-    M◇ (ETypFun x _ e) = BareETypFun x (L◇ e)
-    M◇ (ETypAp e _ (t , _)) = BareETypAp (L◇ e) (T◇ t)
+    C◇ : ConExp -> BareExp 
+    C◇ EConst = BareEConst
+    C◇ EHole = BareEHole
+    C◇ (EVar x _) = (BareEVar x)
+    C◇ (EAsc (t , _) e) = (BareEAsc (T◇ t) (A◇ e))
+    C◇ (EFun x (t , _) _ _ e) = (BareEFun x (T◇ t) (A◇ e))
+    C◇ (EAp e1 _ e2) = (BareEAp (A◇ e1) (A◇ e2))
+    C◇ (EPair e1 e2 _) = (BareEPair (A◇ e1) (A◇ e2))
+    C◇ (EProj s e _) = (BareEProj s (A◇ e))
+    C◇ (ETypFun x _ e) = BareETypFun x (A◇ e)
+    C◇ (ETypAp e _ (t , _)) = BareETypAp (A◇ e) (T◇ t)
     
-    L◇ : AnaExp -> BareExp
-    L◇ (e [ m ]⇐ ana) = U◇ e
+    A◇ : AnaExp -> BareExp
+    A◇ (e [ m ]⇐ ana) = S◇ e
 
   P◇ : Program -> BareExp
-  P◇ p = L◇ (AnaExpOfProgram p) 
+  P◇ p = A◇ (AnaExpOfProgram p) 
 
   Γ◇ : Ctx -> BareCtx 
   Γ◇ ∅ = ∅

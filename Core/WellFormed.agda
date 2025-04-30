@@ -207,8 +207,8 @@ module Core.WellFormed where
         ▷ t-out-fun syn-all -> 
         ▷ t-in-fun ana-arg -> 
         ▶ m-fun m-all -> 
-        Γ L⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) ->
-        Γ L⊢ (e-arg [ m-arg ]⇐ ana-arg) ->
+        Γ A⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) ->
+        Γ A⊢ (e-arg [ m-arg ]⇐ ana-arg) ->
         Γ S⊢ ((EAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) m-all (e-arg [ m-arg ]⇐ ana-arg)) ⇒ syn-all)
       WFVar : ∀ {Γ x syn-all t-var m-var n-syn} ->
         x , t-var ∈ Γ , m-var ->
@@ -218,13 +218,13 @@ module Core.WellFormed where
         Γ T⊢ (proj₁ t-asc) ->
         ▷ t-asc (syn-all , n-syn) -> 
         ▷ t-asc (ana-body , n-ana) -> 
-        Γ L⊢ (e-body [ m-body ]⇐ (■ ana-body , n-ana)) ->
+        Γ A⊢ (e-body [ m-body ]⇐ (■ ana-body , n-ana)) ->
         Γ S⊢ ((EAsc t-asc (e-body [ m-body ]⇐ (■ ana-body , n-ana))) ⇒ (■ syn-all , n-syn))
       WFProj : ∀ {Γ s e-body syn-body syn-all t-side-body m-body m-all n} ->
         syn-body , s ▸NTProj t-side-body , m-body -> 
         ▷ t-side-body syn-all -> 
         ▶ m-body m-all -> 
-        Γ L⊢ ((e-body ⇒ syn-body) [ ✔ ]⇐ (□ , n)) ->
+        Γ A⊢ ((e-body ⇒ syn-body) [ ✔ ]⇐ (□ , n)) ->
         Γ S⊢ ((EProj s ((e-body ⇒ syn-body) [ ✔ ]⇐ (□ , n)) m-all) ⇒ syn-all)
       WFTypAp : ∀ {Γ x e-fun t-arg syn-all syn-fun t-syn t-body-fun m-all m-fun n-arg n} ->
         Γ T⊢ t-arg ->
@@ -232,16 +232,16 @@ module Core.WellFormed where
         ▶ m-fun m-all -> 
         NSub (t-arg , n-arg) x t-body-fun t-syn ->
         ▷ t-syn syn-all -> 
-        Γ L⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) ->
+        Γ A⊢ ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) ->
         Γ S⊢ ((ETypAp ((e-fun ⇒ syn-fun) [ ✔ ]⇐ (□ , n)) m-all (t-arg , n-arg)) ⇒ syn-all)
 
-    data _L⊢_ : (Γ : Ctx) (e : AnaExp) -> Set where 
+    data _A⊢_ : (Γ : Ctx) (e : AnaExp) -> Set where 
       WFSubsume : ∀ {Γ e-all syn-all ana-all m-all m-consist} ->
         SubsumableMid e-all ->
         syn-all ~N ana-all , m-consist ->
         ▶ m-consist m-all ->
         Γ S⊢ (e-all ⇒ syn-all) -> 
-        Γ L⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all)
+        Γ A⊢ ((e-all ⇒ syn-all) [ m-all ]⇐ ana-all)
       WFFun : ∀ {Γ x e-body syn-all syn-body ana-all ana-body t-asc t-in-ana t-out-ana m-ana m-asc m-all m-body m-ana-ana m-asc-ana m-all-ana} ->
         Γ T⊢ (proj₁ t-asc) ->
         ana-all ▸NTArrow t-in-ana , t-out-ana , m-ana-ana -> 
@@ -252,8 +252,8 @@ module Core.WellFormed where
         ▷ (NUnless (NArrow t-asc syn-body) ana-all) syn-all -> -- <-- this step also flows from ana
         syn-all ~N ana-all , m-all-ana ->
         ▶ m-all-ana m-all -> 
-        (x ∶ t-asc ∷? Γ) L⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ->
-        Γ L⊢ (((EFun x t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all)  
+        (x ∶ t-asc ∷? Γ) A⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ->
+        Γ A⊢ (((EFun x t-asc m-ana m-asc ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all)  
       WFPair : ∀ {Γ e-fst e-snd syn-all syn-fst syn-snd ana-all ana-fst ana-snd t-fst-ana t-snd-ana m-ana m-fst m-snd m-all m-ana-ana m-all-ana} ->
         ana-all ▸NTProd t-fst-ana , t-snd-ana , m-ana-ana -> 
         ▷ t-fst-ana ana-fst -> 
@@ -262,9 +262,9 @@ module Core.WellFormed where
         ▷ (NUnless (NProd syn-fst syn-snd) ana-all) syn-all -> 
         syn-all ~N ana-all , m-all-ana ->
         ▶ m-all-ana m-all -> 
-        Γ L⊢ ((e-fst ⇒ syn-fst) [ m-fst ]⇐ ana-fst) ->
-        Γ L⊢ ((e-snd ⇒ syn-snd) [ m-snd ]⇐ ana-snd) ->
-        Γ L⊢ (((EPair ((e-fst ⇒ syn-fst) [ m-fst ]⇐ ana-fst) ((e-snd ⇒ syn-snd) [ m-snd ]⇐ ana-snd) m-ana) ⇒ syn-all) [ m-all ]⇐ ana-all)  
+        Γ A⊢ ((e-fst ⇒ syn-fst) [ m-fst ]⇐ ana-fst) ->
+        Γ A⊢ ((e-snd ⇒ syn-snd) [ m-snd ]⇐ ana-snd) ->
+        Γ A⊢ (((EPair ((e-fst ⇒ syn-fst) [ m-fst ]⇐ ana-fst) ((e-snd ⇒ syn-snd) [ m-snd ]⇐ ana-snd) m-ana) ⇒ syn-all) [ m-all ]⇐ ana-all)  
       WFTypFun : ∀ {Γ x e-body syn-all syn-body ana-all ana-body t-body-ana m-ana m-all m-body m-ana-ana m-all-ana} ->
         ana-all , x ▸NTForallBind t-body-ana , m-ana-ana -> 
         ▷ t-body-ana ana-body ->
@@ -272,12 +272,12 @@ module Core.WellFormed where
         ▷ (NUnless (NForall x syn-body) ana-all) syn-all ->
         syn-all ~N ana-all , m-all-ana ->
         ▶ m-all-ana m-all -> 
-        (x T∷? Γ) L⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ->
-        Γ L⊢ (((ETypFun x m-ana ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all)  
+        (x T∷? Γ) A⊢ ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body) ->
+        Γ A⊢ (((ETypFun x m-ana ((e-body ⇒ syn-body) [ m-body ]⇐ ana-body)) ⇒ syn-all) [ m-all ]⇐ ana-all)  
       
 
 
   data P⊢ : Program -> Set where 
     WFProgram : ∀ {p} ->
-      ∅ L⊢ (AnaExpOfProgram p) ->
+      ∅ A⊢ (AnaExpOfProgram p) ->
       P⊢ p 
